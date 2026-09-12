@@ -189,3 +189,4 @@ class Campaign:
             'pipeline_steps': [p.to_dict() for p in self.pipeline_steps],
             'approvals': [a.to_dict() for a in self.approvals],
         }
+

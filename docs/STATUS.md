@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M05 — Fila, execução e recuperação
+Atual: M06 — Fidelidade, ativos e versões
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -11,7 +11,7 @@ Atual: M05 — Fila, execução e recuperação
 | M02 — Providers, roteamento e controle de gastos | completed | docs/checkpoints/M02/af838fd561df415da30111a24032db95/checkpoint.json |
 | M03 — Creative Director, ideias e contexto | completed | docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/checkpoint.json |
 | M04 — Campanha, storyboard e aprovação | completed | docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/checkpoint.json |
-| M05 — Fila, execução e recuperação | pending | — |
+| M05 — Fila, execução e recuperação | completed | docs/checkpoints/M05/c344c530409f4c1a83eaf142eb61e4ff/checkpoint.json |
 | M06 — Fidelidade, ativos e versões | pending | — |
 | M07 — Layout determinístico e editor | pending | — |
 | M08 — Copy, legendas e Stories | pending | — |

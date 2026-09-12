@@ -31,10 +31,15 @@ class CampaignManager:
         db: SQLiteDatabase,
         cost_manager: Optional[CostManager] = None,
         router: Optional[ImageEngineRouter] = None,
+        queue: Optional[Any] = None,
     ):
         self.db = db
         self.cost_manager = cost_manager
         self.router = router
+        self.queue = queue
+        if self.queue is None and self.cost_manager is not None:
+            from kiros.execution.queue import ExecutionQueue
+            self.queue = ExecutionQueue(self.db, self.cost_manager)
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -438,7 +443,7 @@ class CampaignManager:
             )
 
     def queue_execution(self, campaign_id: str) -> None:
-        """Enfileira campanha para execução. RECUSA no servidor se não houver aprovação válida (M04-A05)."""
+        """Enfileira campanha para execução. RECUSA no servidor se não houver aprovação válida (M04-A05, M05-A01)."""
         now = self._now()
         with sqlite3.connect(self.db.path) as conn:
             conn.row_factory = sqlite3.Row
@@ -464,16 +469,73 @@ class CampaignManager:
                     f"Execução recusada: Nenhuma aprovação ativa e válida encontrada para a versão {current_version}."
                 )
 
-            # Transiciona para 'queued' (Seção 66)
-            conn.execute("UPDATE campaigns SET status='queued', updated_at=? WHERE id=?", (now, campaign_id))
-            conn.execute("UPDATE pipeline_steps SET status='queued', updated_at=? WHERE campaign_id=?", (now, campaign_id))
+        if self.queue:
+            self.queue.enqueue_campaign_execution(campaign_id)
+        else:
+            with sqlite3.connect(self.db.path) as conn:
+                conn.execute("UPDATE campaigns SET status='queued', updated_at=? WHERE id=?", (now, campaign_id))
+                conn.execute("UPDATE pipeline_steps SET status='queued', updated_at=? WHERE campaign_id=?", (now, campaign_id))
 
-    def cancel_campaign(self, campaign_id: str, reason: str = 'Cancelado pelo usuário') -> None:
-        """Cancela campanha e libera reservas de orçamento (Seção 66)."""
+    def cancel_campaign(self, campaign_id: str, reason: str = 'Cancelado pelo usuário') -> Any:
+        """Cancela campanha e libera reservas de orçamento preservando o concluído (Seção 52, 66)."""
+        if self.queue:
+            return self.queue.cancel_campaign(campaign_id, reason=reason)
         now = self._now()
         with sqlite3.connect(self.db.path) as conn:
             conn.execute("UPDATE campaigns SET status='cancelled', updated_at=? WHERE id=?", (now, campaign_id))
             conn.execute("UPDATE pipeline_steps SET status='cancelled', updated_at=? WHERE campaign_id=?", (now, campaign_id))
+        return None
+
+    def pause_campaign(self, campaign_id: str) -> None:
+        """Pausa a execução da campanha (Seção 52)."""
+        if self.queue:
+            self.queue.pause_campaign(campaign_id)
+        else:
+            with sqlite3.connect(self.db.path) as conn:
+                conn.execute("UPDATE campaigns SET status='paused', updated_at=? WHERE id=?", (self._now(), campaign_id))
+
+    def resume_campaign(self, campaign_id: str) -> None:
+        """Retoma a execução da campanha (Seção 52)."""
+        if self.queue:
+            self.queue.resume_campaign(campaign_id)
+        else:
+            with sqlite3.connect(self.db.path) as conn:
+                conn.execute("UPDATE campaigns SET status='running', updated_at=? WHERE id=?", (self._now(), campaign_id))
+
+    def regenerate_slide(self, campaign_id: str, slide_id: str, new_prompt: Optional[str] = None, engine_override: Optional[str] = None) -> Any:
+        """Intervenção localizada: regenera somente o slide afetado e preserva os demais (Seção 51)."""
+        if self.queue:
+            return self.queue.regenerate_slide(campaign_id, slide_id, new_prompt=new_prompt, engine_override=engine_override)
+        raise RuntimeError("Fila de execução não configurada para regeneração.")
+
+    def get_cancellation_impact(self, campaign_id: str) -> Any:
+        """Retorna demonstrativo de impacto financeiro e risco de cobrança (Seção 52)."""
+        if self.queue:
+            return self.queue.get_cancellation_impact(campaign_id)
+        return None
+
+    def set_monitoring_mode(self, campaign_id: str, mode: str) -> None:
+        """Define o modo de monitoramento da campanha (Seção 50)."""
+        if self.queue:
+            self.queue.set_monitoring_mode(campaign_id, mode)
+
+    def get_monitoring_mode(self, campaign_id: str) -> str:
+        """Recupera o modo de monitoramento da campanha (Seção 50)."""
+        if self.queue:
+            return self.queue.get_monitoring_mode(campaign_id)
+        return 'supervised'
+
+    def list_jobs(self, campaign_id: str) -> List[Any]:
+        """Lista trabalhos da fila para a campanha."""
+        if self.queue:
+            return self.queue.list_jobs_for_campaign(campaign_id)
+        return []
+
+    def list_slide_versions(self, slide_id: str) -> List[Any]:
+        """Lista versões geradas de um slide."""
+        if self.queue:
+            return self.queue.list_versions_for_slide(slide_id)
+        return []
 
     def get_campaign(self, campaign_id: str) -> Optional[Campaign]:
         """Recupera a campanha estruturada completa com slides, pipeline e histórico de aprovações."""
@@ -618,7 +680,7 @@ class CampaignManager:
             engines_summary.append(f"Slide {s.slide_order}: {eng}")
 
         is_validly_approved = (
-            campaign.status == 'approved'
+            campaign.status in ('approved', 'queued', 'running', 'paused', 'completed')
             and campaign.approved_version == campaign.plan_version
             and any(a.is_valid and a.plan_version == campaign.plan_version for a in campaign.approvals)
         )

@@ -1,0 +1,1 @@
+Smoke aprovado: 8 rotas, validação HTTP, CSRF/Host, escape HTML, SQLite e arquivos após reinício.

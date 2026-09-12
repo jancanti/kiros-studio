@@ -62,3 +62,4 @@ CREATE TABLE campaign_approvals (
 CREATE INDEX idx_storyboard_campaign ON storyboard_slides(campaign_id);
 CREATE INDEX idx_pipeline_campaign ON pipeline_steps(campaign_id);
 CREATE INDEX idx_approvals_campaign ON campaign_approvals(campaign_id);
+

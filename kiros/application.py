@@ -13,6 +13,8 @@ from kiros.context import ContextOptimizer
 from kiros.director.memory import MemoryStore
 from kiros.director.ideas import IdeaBank
 from kiros.campaigns.manager import CampaignManager
+from kiros.execution.queue import ExecutionQueue
+from kiros.execution.worker import ExecutionWorker
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -35,7 +37,9 @@ class Application:
         self.router = ImageEngineRouter(self.database, self.providers)
         self.cost_manager = CostManager(self.database)
         self.context_optimizer = ContextOptimizer(self.cost_manager)
-        self.campaigns = CampaignManager(self.database, self.cost_manager, self.router)
+        self.queue = ExecutionQueue(self.database, self.cost_manager)
+        self.worker = ExecutionWorker(self.queue, self.providers, self.storage)
+        self.campaigns = CampaignManager(self.database, self.cost_manager, self.router, self.queue)
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

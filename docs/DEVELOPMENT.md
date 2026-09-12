@@ -245,4 +245,39 @@ A M04 implementa o fluxo principal de campanhas, storyboard por slide, pipeline 
    - O status da campanha reverte para `draft`, a versão do plano é incrementada e o vínculo aprovado é limpo.
    - Tentativa de enfileirar (`queue_execution`) sem aprovação válida para a versão corrente é estritamente RECUSADA no servidor com `UnapprovedExecutionError`.
 
+## M05 — Fila, execução e recuperação
+
+A M05 implementa o sistema robusto de fila persistente, execução concorrente, intervenção localizada, monitoramento e recuperação de falhas (Seções 50, 51, 52, 67, 68 e 69 da especificação):
+
+1. **Fila Persistente e Concorrência Segura** (`kiros/execution/queue.py`, `kiros/execution/worker.py`, Seção 67):
+   - Migração `006_execution_queue_and_monitoring.sql` com tabelas `execution_jobs` e `execution_versions`, além da coluna `monitoring_mode` em `campaigns`.
+   - Gerenciador `ExecutionQueue` com reivindicação atômica de trabalhos via `BEGIN IMMEDIATE` no SQLite, ordenação por prioridade (`priority ASC, created_at ASC`), controle de rate limiting por provedor (janela de 60s) e expiração configurada (`timeout_seconds`).
+   - `WorkerPool` multithreaded gerenciando concorrência controlada sem condições de corrida.
+   - Recuperação automática de workers que falharam ou reiniciaram (`release_stale_locks`), liberando travas antigas sem duplicar tentativas.
+
+2. **Pausa, Retomada e Cancelamento com Risco Financeiro** (Seção 52):
+   - Suporte a pausa e retomada de campanhas (`pause_campaign`, `resume_campaign`) e slides (`pause_slide`, `resume_slide`). Trabalhos concluídos são rigorosamente preservados.
+   - Demonstrativo financeiro detalhado de cancelamento (`get_cancellation_impact`): informa custo concluído irrecuperável, risco de cobrança em voo de requisições ativas e orçamento poupado imediatamente.
+   - Cancelamento de campanha ou slide libera reservas de orçamento no `CostManager` e preserva versões geradas intactas.
+
+3. **Idempotência Estrita e Reconciliação de Resultado Incerto** (Seção 68):
+   - Chave de idempotência determinística vinculada à versão do plano (`{campaign_id}:{step_id}:v{plan_version}`), impedindo que requisições repetidas criem trabalhos duplicados ou cobrem mais de uma vez.
+   - Tratamento de timeout sem nova cobrança automática: requisições com tempo esgotado recebem status `uncertain` com resolução pendente.
+   - Reconciliação formal (`reconcile_uncertain_job`): confirmação do resultado com sucesso ou falha sem cobrança, mantendo integridade financeira.
+
+4. **Modos de Acompanhamento e Diagnóstico Estruturado de Falhas** (Seções 50 e 69):
+   - Quatro modos de monitoramento:
+     - `Quick`: execução automática direta.
+     - `Supervised`: execução acompanhada com alertas destacados.
+     - `Detailed`: telemetria de latência, modelos e custos.
+     - `Manual`: inicia trabalhos pausados para controle passo a passo.
+   - Pipeline de diagnóstico de falhas da Seção 69:
+     `Provedor` → `Etapa` → `Causa Provável` → `Sugestão de Correção` → `Custo Potencial`.
+   - Política finita de retries: até `max_retries` tentativas reaproveitando a reserva de orçamento original; falhas definitivas notificadas sem loop infinito.
+
+5. **Intervenção Localizada** (Seção 51):
+   - Regeneração de slide individual (`regenerate_slide`) preservando integralmente todas as demais etapas e slides concluídos.
+   - Histórico de versões preservadas em `execution_versions` exibido no Storyboard.
+
+
 

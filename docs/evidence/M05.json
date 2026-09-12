@@ -1,29 +1,65 @@
 {
   "milestone": "M05",
-  "summary": "",
+  "summary": "Implementação da fila de execução persistente, concorrência, governança de taxa/timeout, modos de monitoramento, diagnósticos estruturados de falha e intervenção/recuperação com preservação estrita de versões (Seções 50, 51, 52, 67, 68 e 69). Persistência relacional em SQLite via migração 006 (execution_jobs e execution_versions) com claiming atômico transacional (BEGIN IMMEDIATE) e recuperação de locks órfãos (stale lock recovery); controle de concorrência com pool de workers multithread e rate limiting por janela deslizante por provedor; pausa, retomada e cancelamento com demonstrativo transparente de impacto financeiro (custo irrecuperável vs orçamento liberado); idempotência baseada em chave unívoca de plano que impede execuções ou cobranças redundantes; tratamento de resultado incerto (uncertain jobs) em falhas de timeout sem cobrança automática; suporte completo aos 4 modos de acompanhamento da Seção 50 (Quick, Supervised, Detailed, Manual); diagnóstico automatizado de falhas conforme Seção 69 (Provider, Etapa, Causa Provável, Correção Sugerida e Custo Potencial); e suporte a intervenções localizadas por slide mantendo todas as versões anteriores imutáveis.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Operação estritamente local em modo mock determinístico; nenhuma chamada externa às APIs dos provedores nem tráfego de rede foi realizado.",
+    "Os workers simulam latência e custos previstos sem consumo real de cotas em nuvem.",
+    "A análise de conformidade de produto e fidelidade das próximas milestones (M06) ainda não está acoplada à fila de execução."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M05-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/execution/models.py",
+        "kiros/execution/queue.py",
+        "kiros/execution/worker.py",
+        "kiros/migrations/006_execution_queue_and_monitoring.sql",
+        "tests/test_execution.py"
+      ],
+      "verification": "test_persistent_queue_priority_and_rate_limit e test_finite_retries_fail_without_infinite_loop comprovam fila persistente em SQLite com claiming atômico, ordenação estrita por prioridade (jobs de intervenção manual priorizados sobre geração normal), controle de rate limit (RPM por provedor) e retries finitos sem loop infinito que transitam para status 'failed' definitivo com diagnóstico."
     },
     "M05-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/execution/queue.py",
+        "kiros/execution/models.py",
+        "kiros/campaigns/manager.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_execution.py",
+        "tests/test_execution_http.py",
+        "docs/evidence/M05-desktop.png",
+        "docs/evidence/M05-mobile.png"
+      ],
+      "verification": "test_pause_resume_and_cancellation_with_charge_risk, test_pause_and_resume_execution_via_http e test_slide_cancellation_and_impact_disclosure comprovam que pausa, retomada e cancelamento de campanha ou slide preservam rigorosamente os trabalhos concluídos e assets gerados, liberam orçamento não incorrido no CostManager e expõem demonstrativo de impacto financeiro detalhando custo irrecuperável e risco de cobrança em voo."
     },
     "M05-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/execution/queue.py",
+        "kiros/execution/worker.py",
+        "kiros/execution/models.py",
+        "tests/test_execution.py"
+      ],
+      "verification": "test_idempotency_prevents_duplicate_jobs_and_charges e test_uncertain_result_reconciliation_on_timeout comprovam chave de idempotência determinística por plano/etapa evitando duplicação de jobs ou reservas, e orquestração de falhas por timeout com marcação de status 'uncertain' e resolução manual/automática que impede novas cobranças automáticas sem confirmação."
     },
     "M05-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/execution/diagnostics.py",
+        "kiros/execution/queue.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_execution.py",
+        "tests/test_execution_http.py",
+        "docs/evidence/M05-desktop.png"
+      ],
+      "verification": "test_monitoring_modes_and_failure_diagnostics_section_69 e test_monitoring_mode_change_flow comprovam alternância entre os modos Quick, Supervised, Detailed e Manual (com modo manual pausando etapas para aprovação prévia), além de diagnóstico de falhas em 5 campos estruturados (Provider, Etapa, Causa Provável, Correção Sugerida e Custo Potencial) exibido na interface e no modelo."
     },
     "M05-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/execution/worker.py",
+        "kiros/execution/queue.py",
+        "tests/test_execution.py",
+        "tests/test_execution_http.py"
+      ],
+      "verification": "test_concurrent_worker_pool_and_stale_lock_recovery, test_worker_processing_and_versions_preservation e test_localized_slide_regeneration_via_http cobrem execução concorrente multithread via WorkerPool sem colisões, recuperação de locks órfãos por queda de worker, integridade da reserva de orçamento no CostManager e regeneração localizada de slide criando nova versão (v2) sem apagar as anteriores."
     }
   }
 }

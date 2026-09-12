@@ -140,14 +140,57 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
         cid = data.get('campaign_id', '').strip()
         try:
             mgr.queue_execution(cid)
-            return urlencode({'campaign_id': cid, 'msg': 'Campanha enfileirada para execução com sucesso.'})
+            return urlencode({'campaign_id': cid, 'msg': 'Campanha enfileirada na fila de execução com sucesso.'})
         except UnapprovedExecutionError as exc:
             return urlencode({'campaign_id': cid, 'error': str(exc)})
 
+    elif action == 'pause':
+        cid = data.get('campaign_id', '').strip()
+        mgr.pause_campaign(cid)
+        return urlencode({'campaign_id': cid, 'msg': 'Execução pausada. Trabalhos concluídos foram preservados.'})
+
+    elif action == 'resume':
+        cid = data.get('campaign_id', '').strip()
+        mgr.resume_campaign(cid)
+        return urlencode({'campaign_id': cid, 'msg': 'Execução retomada sem duplicação de etapas concluídas.'})
+
     elif action == 'cancel':
         cid = data.get('campaign_id', '').strip()
-        mgr.cancel_campaign(cid)
-        return urlencode({'campaign_id': cid, 'msg': 'Campanha cancelada.'})
+        impact = mgr.cancel_campaign(cid)
+        msg = f"Campanha cancelada. {impact.message}" if impact else "Campanha cancelada."
+        return urlencode({'campaign_id': cid, 'msg': msg})
+
+    elif action == 'cancel_slide':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        impact = mgr.queue.cancel_slide(slide_id)
+        return urlencode({'campaign_id': cid, 'msg': f"Slide cancelado. {impact.message}"})
+
+    elif action == 'set_monitoring_mode':
+        cid = data.get('campaign_id', '').strip()
+        mode = data.get('monitoring_mode', 'supervised').strip()
+        mgr.set_monitoring_mode(cid, mode)
+        return urlencode({'campaign_id': cid, 'msg': f"Modo de monitoramento alterado para '{mode.upper()}'."})
+
+    elif action == 'regenerate_slide':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        prompt = data.get('new_prompt', '').strip() or None
+        engine = data.get('engine_override', '').strip() or None
+        mgr.regenerate_slide(cid, slide_id, new_prompt=prompt, engine_override=engine)
+        return urlencode({'campaign_id': cid, 'msg': 'Intervenção localizada: novo trabalho agendado apenas para o slide afetado.'})
+
+    elif action == 'reconcile_job':
+        cid = data.get('campaign_id', '').strip()
+        job_id = data.get('job_id', '').strip()
+        outcome = data.get('outcome', 'failed').strip()
+        mgr.queue.reconcile_uncertain_job(job_id, outcome=outcome)
+        return urlencode({'campaign_id': cid, 'msg': f"Resultado incerto reconciliado como '{outcome}'."})
+
+    elif action == 'run_worker':
+        cid = data.get('campaign_id', '').strip()
+        processed = app.worker.run_all_pending()
+        return urlencode({'campaign_id': cid, 'msg': f"{processed} trabalho(s) processado(s) pelo worker local."})
 
     raise ValueError(f"Ação desconhecida: {action}")
 
@@ -314,6 +357,7 @@ def render_approval_screen(app: Application, camp: Any) -> str:
 
     # Botões de Ação da Seção 75: [Editar] [Cancelar] [Aprovar execução]
     html.append('<div class="card-actions" style="margin-top:20px;">')
+    c_stat_lower = camp.status.lower()
     if not is_approved:
         html.append(f'''
         <form method="post" action="/api/campaigns/approve" class="inline-form">
@@ -322,11 +366,32 @@ def render_approval_screen(app: Application, camp: Any) -> str:
             <button type="submit" class="button" style="background:#273b32;margin-top:0;">Aprovar Execução (v{plan_ver})</button>
         </form>
         ''')
-    else:
+    elif c_stat_lower == 'approved':
         html.append(f'''
         <form method="post" action="/api/campaigns/queue" class="inline-form">
             <input type="hidden" name="campaign_id" value="{cid}">
             <button type="submit" class="button" style="background:#273b32;margin-top:0;">Enfileirar Execução na Fila</button>
+        </form>
+        ''')
+    elif c_stat_lower in ('queued', 'running', 'paused', 'failed'):
+        if c_stat_lower == 'paused':
+            html.append(f'''
+            <form method="post" action="/api/campaigns/resume" class="inline-form">
+                <input type="hidden" name="campaign_id" value="{cid}">
+                <button type="submit" class="button" style="background:#273b32;margin-top:0;">Retomar Execução</button>
+            </form>
+            ''')
+        else:
+            html.append(f'''
+            <form method="post" action="/api/campaigns/pause" class="inline-form">
+                <input type="hidden" name="campaign_id" value="{cid}">
+                <button type="submit" class="button-secondary" style="margin-top:0;">Pausar Execução</button>
+            </form>
+            ''')
+        html.append(f'''
+        <form method="post" action="/api/campaigns/run_worker" class="inline-form">
+            <input type="hidden" name="campaign_id" value="{cid}">
+            <button type="submit" class="button" style="background:#273b32;margin-top:0;">Processar Fila (Worker Local)</button>
         </form>
         ''')
 
@@ -337,6 +402,113 @@ def render_approval_screen(app: Application, camp: Any) -> str:
         </form>
     </div></div>
     ''')
+
+    # Seção: Fila de Execução e Monitoramento (Seções 50, 52, 67, 68, 69)
+    jobs = mgr.list_jobs(camp.id)
+    monitoring_mode = mgr.get_monitoring_mode(camp.id)
+    impact = mgr.get_cancellation_impact(camp.id)
+
+    if jobs or c_stat_lower in ('queued', 'running', 'paused', 'completed', 'failed'):
+        html.append(f'''
+        <div class="panel" style="margin-top:24px;">
+            <div class="card-header">
+                <div>
+                    <span class="tag">Fila e Execução · Seções 50, 52, 67, 68, 69</span>
+                    <h2>Monitoramento da Geração ({c_stat_lower.upper()})</h2>
+                </div>
+                <span class="badge {'badge-success' if c_stat_lower == 'completed' else 'status-active'}">{c_stat_lower.upper()}</span>
+            </div>
+
+            <!-- Seção 50: Modos de Acompanhamento Quick / Supervised / Detailed / Manual -->
+            <div style="margin-top:14px;background:var(--paper);padding:14px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <strong>Modo de Monitoramento:</strong> <span class="tag">{monitoring_mode.upper()}</span>
+                    <p class="hint" style="margin:4px 0 0 0;">Quick (automático direto), Supervised (acompanhado com alertas), Detailed (telemetria e logs), Manual (passo a passo).</p>
+                </div>
+                <form method="post" action="/api/campaigns/set_monitoring_mode" class="inline-form" style="margin:0;">
+                    <input type="hidden" name="campaign_id" value="{cid}">
+                    <select name="monitoring_mode" style="font-size:13px;padding:6px;">
+                        <option value="supervised" {'selected' if monitoring_mode == 'supervised' else ''}>Supervised (Recomendado)</option>
+                        <option value="quick" {'selected' if monitoring_mode == 'quick' else ''}>Quick (Rápido)</option>
+                        <option value="detailed" {'selected' if monitoring_mode == 'detailed' else ''}>Detailed (Detalhado)</option>
+                        <option value="manual" {'selected' if monitoring_mode == 'manual' else ''}>Manual (Passo a passo)</option>
+                    </select>
+                    <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Alterar Modo</button>
+                </form>
+            </div>
+        ''')
+
+        # Seção 52: Demonstrativo de custos, risco de cobrança e cancelamento
+        if impact:
+            html.append(f'''
+            <div style="margin-top:14px;background:var(--paper);padding:14px;border-radius:4px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                <div><strong>Custo Incorrido (Concluído):</strong><br><span style="font-size:18px;font-family:var(--font-heading);">R$ {impact.completed_cost:.2f}</span></div>
+                <div><strong>Risco de Cobrança em Voo:</strong><br><span style="font-size:18px;font-family:var(--font-heading);color:#a84832;">R$ {impact.in_flight_risk:.2f}</span></div>
+                <div><strong>Orçamento Poupado ao Cancelar:</strong><br><span style="font-size:18px;font-family:var(--font-heading);color:#273b32;">R$ {impact.cancellable_budget:.2f}</span></div>
+            </div>
+            ''')
+
+        # Lista de Trabalhos na Fila e Diagnóstico de Falhas (Seção 67, 68, 69)
+        if jobs:
+            html.append('<div class="provider-cards" style="margin-top:16px;">')
+            for job in jobs:
+                j_id = escape(job.id)
+                j_stat = escape(job.status.upper())
+                j_prov = escape(job.provider_id.upper())
+                j_mod = escape(job.model_id)
+                j_cost = job.actual_cost if job.status == 'completed' else job.estimated_cost
+                j_att = job.attempt
+                j_max = job.max_retries
+
+                html.append(f'''
+                <div class="provider-card">
+                    <div class="card-header">
+                        <div>
+                            <span class="tag">Trabalho · {j_prov}</span>
+                            <h3>{escape(job.prompt[:40])}...</h3>
+                        </div>
+                        <span class="badge {'badge-success' if job.status == 'completed' else 'status-active'}">{j_stat}</span>
+                    </div>
+                    <p><strong>Modelo:</strong> <code>{j_mod}</code> | <strong>Tentativas:</strong> {j_att}/{j_max} | <strong>Custo:</strong> R$ {j_cost:.2f}</p>
+                ''')
+
+                # Seção 69: Card de Diagnóstico de Falha
+                if job.status == 'failed' and job.diagnostic:
+                    d = job.diagnostic
+                    html.append(f'''
+                    <div class="notice warning" style="margin-top:10px;border-left:4px solid #a84832;">
+                        <strong>Diagnóstico de Falha (Seção 69):</strong><br>
+                        <strong>Provedor:</strong> {escape(d.provider)} | <strong>Etapa:</strong> {escape(d.step)}<br>
+                        <strong>Causa Provável:</strong> {escape(d.probable_cause)}<br>
+                        <strong>Sugestão de Correção:</strong> {escape(d.suggested_fix)}<br>
+                        <strong>Custo Potencial:</strong> R$ {d.potential_cost:.2f}
+                    </div>
+                    ''')
+
+                # Seção 68: Reconciliação de Resultado Incerto
+                if job.status == 'uncertain':
+                    html.append(f'''
+                    <div class="notice warning" style="margin-top:10px;border-left:4px solid #d48806;">
+                        <strong>Resultado Incerto (Seção 68):</strong> Tempo limite atingido. Requisição não foi cobrada novamente.<br>
+                        <form method="post" action="/api/campaigns/reconcile_job" class="inline-form" style="margin-top:8px;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="job_id" value="{j_id}">
+                            <input type="hidden" name="outcome" value="success">
+                            <button type="submit" class="button-secondary" style="font-size:12px;padding:4px 10px;">Confirmar Sucesso</button>
+                        </form>
+                        <form method="post" action="/api/campaigns/reconcile_job" class="inline-form" style="margin-top:8px;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="job_id" value="{j_id}">
+                            <input type="hidden" name="outcome" value="failed">
+                            <button type="submit" class="button-danger" style="font-size:12px;padding:4px 10px;">Confirmar Falha Sem Cobrança</button>
+                        </form>
+                    </div>
+                    ''')
+
+                html.append('</div>')
+            html.append('</div>')
+
+        html.append('</div>')
 
     # Seção: Storyboard (Slides)
     html.append(f'''
@@ -354,6 +526,9 @@ def render_approval_screen(app: Application, camp: Any) -> str:
         s_caption = escape(s['caption_draft'])
         s_engine = escape(s.get('engine_override') or 'Padrão da campanha')
 
+        # Versões preservadas do slide (Seção 52)
+        slide_versions = mgr.list_slide_versions(s['id'])
+
         html.append(f'''
         <div class="card idea-card">
             <div class="card-header">
@@ -365,18 +540,36 @@ def render_approval_screen(app: Application, camp: Any) -> str:
             </div>
             <p><strong>Prompt Visual:</strong> <code>{s_prompt}</code></p>
             { f"<p><strong>Legenda Preliminar:</strong> <em>{s_caption}</em></p>" if s_caption else "" }
+        ''')
+
+        # Seção 52: Versões de imagem preservadas
+        if slide_versions:
+            html.append('<div style="background:var(--paper);padding:8px 12px;border-radius:4px;margin-top:8px;font-size:13px;"><strong>Versões Preservadas:</strong><ul style="margin:4px 0 0 0;padding-left:18px;">')
+            for v in slide_versions:
+                html.append(f"<li>v{v.version_number}: <code>{escape(v.asset_id or 'gerando')}</code> (R$ {v.actual_cost:.2f}) · {escape(v.provider_id.upper())}</li>")
+            html.append('</ul></div>')
+
+        # Seção 51: Intervenção localizada / Regenerar somente este slide
+        html.append(f'''
             <details style="margin-top:10px;">
-                <summary style="font-size:13px;padding:4px 0;">Alterar engine deste slide</summary>
-                <form method="post" action="/api/campaigns/update_slide_engine" style="margin-top:8px;">
+                <summary style="font-size:13px;padding:4px 0;">Intervenção Localizada · Regenerar ou alterar engine</summary>
+                <form method="post" action="/api/campaigns/regenerate_slide" class="form-grid" style="margin-top:8px;">
                     <input type="hidden" name="campaign_id" value="{cid}">
                     <input type="hidden" name="slide_id" value="{s_id}">
-                    <select name="engine_override" style="font-size:13px;padding:6px;">
-                        <option value="gemini:imagen-3.0-generate-002">Google Gemini Imagen 3 (Fidelidade e Ambientação)</option>
-                        <option value="gemini:imagen-3.0-fast-generate-001">Google Gemini Imagen 3 Fast (Econômico)</option>
-                        <option value="openai:dall-e-3">OpenAI DALL-E 3 (Criativo e Texturas)</option>
-                        <option value="adobe:firefly-image-3">Adobe Firefly 3 (Composição Fotográfica)</option>
-                    </select>
-                    <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Salvar Engine do Slide</button>
+                    <div class="form-group">
+                        <label>Novo Prompt (ou manter atual)</label>
+                        <textarea name="new_prompt" rows="2">{s_prompt}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Motor</label>
+                        <select name="engine_override" style="font-size:13px;padding:6px;">
+                            <option value="gemini:imagen-3.0-generate-002">Google Gemini Imagen 3</option>
+                            <option value="gemini:imagen-3.0-fast-generate-001">Google Gemini Imagen 3 Fast</option>
+                            <option value="openai:dall-e-3">OpenAI DALL-E 3</option>
+                            <option value="adobe:firefly-image-3">Adobe Firefly 3</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Regenerar Somente Este Slide</button>
                 </form>
             </details>
         </div>
@@ -481,3 +674,4 @@ def render_approval_screen(app: Application, camp: Any) -> str:
     html.append('</div></div>')
 
     return '\n'.join(html)
+

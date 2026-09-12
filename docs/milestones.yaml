@@ -257,7 +257,7 @@
       "depends_on": [
         "M04"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         50,
         51,
@@ -289,7 +289,10 @@
           "text": "Testes com mocks cobrem concorrência, orçamento reservado, retries, reinício do worker, cancelamento em andamento e retomada sem duplicação."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M05/c344c530409f4c1a83eaf142eb61e4ff/checkpoint.json",
+        "at": "2026-09-12T16:34:32.399268+00:00"
+      },
       "blocker": null
     },
     {
