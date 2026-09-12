@@ -128,3 +128,4 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
 
     out += '</div>'
     return out
+

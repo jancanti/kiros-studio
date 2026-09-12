@@ -42,3 +42,4 @@ CREATE TABLE IF NOT EXISTS campaign_learnings (
 CREATE INDEX IF NOT EXISTS idx_prompt_library_status ON prompt_library(status);
 CREATE INDEX IF NOT EXISTS idx_learning_proposals_status ON learning_proposals(status);
 CREATE INDEX IF NOT EXISTS idx_campaign_learnings_cid ON campaign_learnings(campaign_id);
+
