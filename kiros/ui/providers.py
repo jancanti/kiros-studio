@@ -1,0 +1,300 @@
+"""Interface de configuração e testes de provedores de imagem."""
+from html import escape
+from typing import Any, Dict
+from urllib.parse import urlencode
+
+from kiros.application import Application
+from kiros.providers.catalog import OFFICIAL_CATALOG
+
+
+def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]) -> str:
+    """Executa ações de provider enviadas via POST."""
+    pm = app.providers
+    if action == 'save':
+        pid = data.get('provider_id', '').strip()
+        ptype = data.get('provider_type', '').strip()
+        name = data.get('name', '').strip()
+        model = data.get('model', '').strip()
+        endpoint = data.get('endpoint', '').strip()
+        secret = data.get('secret', '').strip()
+        is_active = data.get('is_active') == '1'
+
+        if not pid or not ptype or not model:
+            raise ValueError('ID, tipo e modelo são campos obrigatórios.')
+
+        existing = pm.get_provider(pid, include_secret=True)
+        if existing:
+            pm.update_provider(
+                pid,
+                name=name,
+                model=model,
+                endpoint=endpoint,
+                secret=secret if secret else None,
+                is_active=is_active,
+            )
+            return urlencode({'tab': 'providers', 'saved': '1', 'msg': f"Provedor '{pid}' atualizado."})
+        else:
+            pm.add_provider(
+                pid,
+                ptype,
+                name=name,
+                model=model,
+                endpoint=endpoint,
+                secret=secret if secret else None,
+                is_active=is_active,
+            )
+            return urlencode({'tab': 'providers', 'saved': '1', 'msg': f"Provedor '{pid}' adicionado."})
+
+    elif action == 'toggle':
+        pid = data.get('provider_id', '').strip()
+        is_active = data.get('is_active') == '1'
+        pm.toggle_provider(pid, is_active)
+        state_txt = 'ativado' if is_active else 'desativado'
+        return urlencode({'tab': 'providers', 'msg': f"Provedor '{pid}' {state_txt}."})
+
+    elif action == 'delete':
+        pid = data.get('provider_id', '').strip()
+        pm.delete_provider(pid)
+        return urlencode({'tab': 'providers', 'msg': f"Provedor '{pid}' excluído."})
+
+    elif action == 'test_connection':
+        pid = data.get('provider_id', '').strip()
+        res = pm.test_connection(pid)
+        return urlencode({
+            'tab': 'providers',
+            'test_done': '1',
+            'test_type': 'Conexão',
+            'test_status': res.get('status', 'error'),
+            'test_latency': str(res.get('latency_ms', 0)),
+            'test_msg': res.get('message', ''),
+        })
+
+    elif action == 'test_simple':
+        pid = data.get('provider_id', '').strip()
+        res = pm.test_simple(pid)
+        return urlencode({
+            'tab': 'providers',
+            'test_done': '1',
+            'test_type': 'Geração simples',
+            'test_status': res.get('status', 'error'),
+            'test_latency': str(res.get('latency_ms', 0)),
+            'test_msg': res.get('message', ''),
+        })
+
+    raise ValueError(f"Ação desconhecida: {action}")
+
+
+def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
+    """Renderiza painel específico para providers (Seção 8)."""
+    pm = app.providers
+    providers = pm.list_providers()
+    test_logs = pm.get_test_logs(limit=10)
+
+    html = []
+
+    # Avisos e resultados de teste
+    if query.get('msg'):
+        html.append(f'<p role="status" class="notice">{escape(query["msg"][0])}</p>')
+    if query.get('saved'):
+        html.append('<p role="status" class="notice">Configuração salva com segurança. Credenciais nunca são expostas.</p>')
+    if query.get('test_done'):
+        t_type = escape(query.get('test_type', ['Teste'])[0])
+        t_status = escape(query.get('test_status', ['error'])[0])
+        t_lat = escape(query.get('test_latency', ['0'])[0])
+        t_msg = escape(query.get('test_msg', [''])[0])
+        is_ok = t_status == 'ok'
+        badge_class = 'badge-success' if is_ok else 'badge-error'
+        badge_text = 'Sucesso' if is_ok else 'Erro'
+
+        html.append(f'''
+        <div class="panel test-result-panel" role="region" aria-label="Resultado do teste">
+            <span class="tag {badge_class}">{badge_text}</span>
+            <h3>Resultado do Teste: {t_type}</h3>
+            <p><strong>Status:</strong> {t_status.upper()}</p>
+            <p><strong>Latência:</strong> {t_lat} ms</p>
+            <p><strong>Mensagem:</strong> {t_msg}</p>
+        </div>
+        ''')
+
+    # Seção 1: Provedores cadastrados
+    html.append('''
+    <div class="panel">
+        <span class="tag">Motores de Imagem</span>
+        <h2>Provedores Configurados</h2>
+        <p>Cadastre, teste e selecione motores de geração. Credenciais salvas são protegidas e nunca retornam à interface.</p>
+    ''')
+
+    if not providers:
+        html.append('<p class="empty-state">Nenhum provedor configurado ainda. Utilize o formulário abaixo para adicionar.</p>')
+    else:
+        html.append('<div class="provider-cards">')
+        for p in providers:
+            pid = escape(p['id'])
+            pname = escape(p['name'])
+            ptype = escape(p['type'].upper())
+            pmodel = escape(p['model'])
+            pendpoint = escape(p['endpoint'])
+            pactive = p['is_active']
+            status_text = 'Ativo' if pactive else 'Inativo'
+            status_class = 'status-active' if pactive else 'status-inactive'
+            secret_preview = escape(p['secret_preview'])
+
+            html.append(f'''
+            <div class="card provider-card">
+                <div class="card-header">
+                    <div>
+                        <span class="tag">{ptype}</span>
+                        <h3>{pname} <small>({pid})</small></h3>
+                    </div>
+                    <span class="badge {status_class}">{status_text}</span>
+                </div>
+                <div class="card-body">
+                    <p><strong>Modelo:</strong> <code>{pmodel}</code></p>
+                    <p><strong>Endpoint:</strong> <code>{pendpoint}</code></p>
+                    <p><strong>Credencial:</strong> <span class="secret-shield">{secret_preview}</span></p>
+                </div>
+                <div class="card-actions">
+                    <form method="post" action="/api/providers/toggle" class="inline-form">
+                        <input type="hidden" name="provider_id" value="{pid}">
+                        <input type="hidden" name="is_active" value="{'0' if pactive else '1'}">
+                        <button type="submit" class="button-secondary">{'Desativar' if pactive else 'Ativar'}</button>
+                    </form>
+                    <form method="post" action="/api/providers/test_connection" class="inline-form">
+                        <input type="hidden" name="provider_id" value="{pid}">
+                        <button type="submit" class="button-secondary">Testar conexão</button>
+                    </form>
+                    <form method="post" action="/api/providers/test_simple" class="inline-form">
+                        <input type="hidden" name="provider_id" value="{pid}">
+                        <button type="submit" class="button-secondary">Teste simples</button>
+                    </form>
+                    <form method="post" action="/api/providers/delete" class="inline-form" onsubmit="return confirm('Excluir este provedor?');">
+                        <input type="hidden" name="provider_id" value="{pid}">
+                        <button type="submit" class="button-danger">Excluir</button>
+                    </form>
+                </div>
+            </div>
+            ''')
+        html.append('</div>')
+    html.append('</div>')
+
+    # Seção 2: Adicionar / Editar Provedor
+    html.append('''
+    <div class="panel">
+        <h2>Adicionar ou Atualizar Provedor</h2>
+        <p>Cadastre adaptadores oficiais da especificação (Gemini, OpenAI, Firefly) ou provedor customizado. Nenhum modelo inexistente ou presumido é aceito.</p>
+        <form method="post" action="/api/providers/save" class="form-grid">
+            <div class="form-group">
+                <label for="p_id">Identificador único (ID)</label>
+                <input id="p_id" name="provider_id" placeholder="ex: gemini-principal" maxlength="64" required>
+            </div>
+            <div class="form-group">
+                <label for="p_name">Nome de exibição</label>
+                <input id="p_name" name="name" placeholder="ex: Google Gemini (Imagen 3)" maxlength="80">
+            </div>
+            <div class="form-group">
+                <label for="p_type">Tipo de Provedor</label>
+                <select id="p_type" name="provider_type" required>
+                    <option value="gemini">Google Gemini (Imagen 3)</option>
+                    <option value="openai">OpenAI (DALL-E)</option>
+                    <option value="firefly">Adobe Firefly Services</option>
+                    <option value="custom">Custom Image Provider (Auto-hospedado)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="p_model">Modelo</label>
+                <input id="p_model" name="model" value="imagen-3.0-generate-002" required list="known-models">
+                <datalist id="known-models">
+                    <option value="imagen-3.0-generate-002">Imagen 3 (Padrão Google)</option>
+                    <option value="imagen-3.0-fast-generate-001">Imagen 3 Fast (Google)</option>
+                    <option value="dall-e-3">DALL-E 3 (OpenAI)</option>
+                    <option value="dall-e-2">DALL-E 2 (OpenAI)</option>
+                    <option value="firefly-image-3">Firefly Image 3 (Adobe)</option>
+                    <option value="firefly-image-2">Firefly Image 2 (Adobe)</option>
+                </datalist>
+                <small class="hint">Modelos oficiais verificados em 2026-09-12.</small>
+            </div>
+            <div class="form-group">
+                <label for="p_endpoint">Endpoint (Opcional se tipo oficial)</label>
+                <input id="p_endpoint" name="endpoint" placeholder="Deixe em branco para usar o endpoint oficial">
+            </div>
+            <div class="form-group">
+                <label for="p_secret">Chave de API / Segredo</label>
+                <input id="p_secret" name="secret" type="password" placeholder="Digite a chave da API (armazenada de forma segura)">
+                <small class="hint">A chave nunca será reexibida após o salvamento.</small>
+            </div>
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_active" value="1" checked> Provedor ativo para roteamento
+                </label>
+            </div>
+            <button type="submit" class="button">Salvar Provedor</button>
+        </form>
+    </div>
+    ''')
+
+    # Seção 3: Roteamento Inteligente & Orçamento
+    rec = app.router.recommend()
+    html.append(f'''
+    <div class="panel">
+        <span class="tag">Roteador de Motores</span>
+        <h2>Recomendação Automática de Motor</h2>
+        <p>O <code>ImageEngineRouter</code> avalia a tarefa do slide e sugere o motor mais eficiente. Decisões manuais sempre prevalecem.</p>
+        <div class="recommendation-box">
+            <p><strong>Motor Recomendado:</strong> {rec['provider'].upper()} — <code>{rec['model']}</code></p>
+            <p><strong>Motivo:</strong> {rec['reason']}</p>
+            <p><strong>Custo estimado por imagem:</strong> ${rec['estimated_cost']:.4f}</p>
+            <p><strong>Confiança do roteador:</strong> {int(rec['confidence'] * 100)}%</p>
+            <h4>Alternativas avaliadas:</h4>
+            <ul>
+    ''')
+    for alt in rec.get('alternatives', []):
+        html.append(f'''
+            <li><strong>{alt['provider'].upper()}</strong> (<code>{alt['model']}</code>) — ${alt['estimated_cost']:.4f} ({int(alt['confidence']*100)}% confiança): {alt['reason']}</li>
+        ''')
+    html.append('''
+            </ul>
+        </div>
+    </div>
+    ''')
+
+    # Seção 4: Histórico de testes
+    if test_logs:
+        html.append('''
+        <div class="panel">
+            <h2>Histórico Recente de Testes</h2>
+            <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Provedor</th>
+                        <th>Tipo de Teste</th>
+                        <th>Status</th>
+                        <th>Latência</th>
+                        <th>Mensagem</th>
+                        <th>Data/Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+        ''')
+        for log in test_logs:
+            st = escape(log['status'])
+            st_badge = 'badge-success' if st == 'ok' else 'badge-error'
+            html.append(f'''
+                <tr>
+                    <td><code>{escape(log['provider_id'])}</code></td>
+                    <td>{escape(log['test_type'])}</td>
+                    <td><span class="tag {st_badge}">{st}</span></td>
+                    <td>{log['latency_ms']} ms</td>
+                    <td>{escape(log['message'])}</td>
+                    <td><small>{escape(log['executed_at'][:19].replace('T', ' '))}</small></td>
+                </tr>
+            ''')
+        html.append('''
+                </tbody>
+            </table>
+            </div>
+        </div>
+        ''')
+
+    return '\n'.join(html)
+

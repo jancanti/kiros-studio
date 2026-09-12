@@ -1,0 +1,75 @@
+{
+  "milestone": "M02",
+  "summary": "Implementação completa da arquitetura de providers (Gemini, OpenAI, Firefly, Custom), catálogo de modelos oficiais vigentes (sem IDs presumidos), tela de configuração com proteção rigorosa de segredos e medição de latência, ImageEngineRouter com recomendação e prevalência manual, CostManager com separação de custo estimado vs real e reservas atômicas concorrentes, economia de tokens com contexto seletivo e bloqueio de gasto com preço desconhecido, e política central de bloqueio de rede em modo mock.",
+  "critical_errors": [],
+  "limitations": [
+    "Testes de adaptadores executados exclusivamente com mocks determinísticos e fixtures locais; nenhuma chamada de rede externa, consumo pago ou geração real de imagem foi realizada na sessão local.",
+    "Para testes ao vivo de geração e conexão real de providers são necessárias contas e chaves de API oficiais com autorização explícita de faturamento e habilitação de rede fora da sandbox.",
+    "CostManager calcula custos com base na tabela oficial vigente dos provedores; custos reais futuros podem sofrer ajustes pelas plataformas de IA."
+  ],
+  "real_readiness": false,
+  "acceptance": {
+    "M02-A01": {
+      "files": [
+        "kiros/providers/manager.py",
+        "kiros/migrations/003_providers_and_costs.sql",
+        "kiros/ui/providers.py",
+        "kiros/ui/page.py",
+        "kiros/__main__.py",
+        "tests/test_providers.py",
+        "tests/test_providers_http.py",
+        "docs/evidence/M02-desktop.png"
+      ],
+      "verification": "test_provider_registration_toggle_and_secret_protection e test_providers_ui_and_secret_never_returned comprovam cadastro, edição, ativação/desativação, exclusão e persistência SQLite. Segredos nunca retornam à interface (exibidos como máscara ••••••••), nunca aparecem em logs de teste nem em serialização de status. Rotas HTTP /api/providers/* validadas com proteção Origin/Host e CSRF."
+    },
+    "M02-A02": {
+      "files": [
+        "kiros/providers/catalog.py",
+        "kiros/providers/engines.py",
+        "tests/test_providers.py",
+        "docs/INTEGRATIONS.md"
+      ],
+      "verification": "test_official_catalog_and_model_validation comprova validação estrita contra a documentação oficial vigente em 2026-09-12 (Gemini imagen-3.0-generate-002 / fast-001; OpenAI dall-e-3 / dall-e-2; Firefly firefly-image-3 / firefly-image-2; Custom configurável). IDs presumidos ou inexistentes são expressamente recusados. URLs oficiais e datas registradas em docs/INTEGRATIONS.md."
+    },
+    "M02-A03": {
+      "files": [
+        "kiros/providers/engines.py",
+        "tests/test_providers.py"
+      ],
+      "verification": "test_deterministic_contract_gemini, test_deterministic_contract_openai, test_deterministic_contract_firefly e test_deterministic_contract_custom_provider cobrem conexão (200), erro HTTP (400, 500), timeout de conexão, credencial inválida (401 com sanitização de segredo) e indisponibilidade (503) com medição de latência em milissegundos sem qualquer tráfego externo real."
+    },
+    "M02-A04": {
+      "files": [
+        "kiros/providers/router.py",
+        "tests/test_router.py",
+        "kiros/migrations/003_providers_and_costs.sql"
+      ],
+      "verification": "test_automatic_recommendation_structure, test_recommendation_varies_by_context e test_manual_override_priority comprovam que a recomendação exibe Provider, Model, Reason, Estimated cost, Confidence e Alternatives para múltiplos contextos (ambient, conceptual, studio, economy). Resolução respeita estritamente a prioridade manual: override do slide > padrão da campanha > recomendação automática."
+    },
+    "M02-A05": {
+      "files": [
+        "kiros/cost.py",
+        "tests/test_cost_manager.py",
+        "kiros/migrations/003_providers_and_costs.sql"
+      ],
+      "verification": "test_estimated_vs_actual_cost_separation, test_budget_limits_and_alert_thresholds, test_plan_action_before_expensive_operations, test_budget_reservation_and_concurrency e test_concurrent_reservations_thread_safety comprovam separação de estimativa e custo real, registro completo (campanha/asset/etapa/provider/modelo/timestamp/provenance), plano prévio antes de ações caras e reserva atômica de orçamento à prova de race conditions entre threads."
+    },
+    "M02-A06": {
+      "files": [
+        "kiros/context.py",
+        "tests/test_token_economy.py"
+      ],
+      "verification": "test_selective_brand_retrieval_never_sends_full_knowledge_base e test_selective_product_retrieval comprovam recuperação cirúrgica sem envio de toda a base. test_compact_context_and_budget_enforcement valida compactação e limite de caracteres. test_cache_deduplication_and_invalidation comprova deduplicação por hash e invalidação por tag de entidade. test_failure_or_unknown_price_rejects_spend comprova que preço desconhecido bloqueia gasto por segurança financeira."
+    },
+    "M02-A07": {
+      "files": [
+        "kiros/infrastructure/security.py",
+        "kiros/providers/engines.py",
+        "tests/test_providers.py",
+        "docs/INTEGRATIONS.md",
+        "docs/DEVELOPMENT.md"
+      ],
+      "verification": "test_central_policy_blocks_egress_in_mock_mode_for_all_adapters comprova que ExternalGateway bloqueia qualquer chamada externa no modo mock para Gemini, OpenAI, Firefly e Custom antes do transporte. Matriz de integrações atualizada em docs/INTEGRATIONS.md detalhando documentação oficial, modelos, contratos e pendências para execução ao vivo."
+    }
+  }
+}

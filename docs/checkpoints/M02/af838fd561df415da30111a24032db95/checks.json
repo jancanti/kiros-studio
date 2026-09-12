@@ -1,0 +1,31 @@
+[
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "exit_code": 0,
+    "log": "docs/checkpoints/M02/af838fd561df415da30111a24032db95/check-1.log"
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/build.py"
+    ],
+    "exit_code": 0,
+    "log": "docs/checkpoints/M02/af838fd561df415da30111a24032db95/check-2.log"
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/smoke.py"
+    ],
+    "exit_code": 0,
+    "log": "docs/checkpoints/M02/af838fd561df415da30111a24032db95/check-3.log"
+  }
+]
