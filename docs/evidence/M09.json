@@ -1,0 +1,33 @@
+{
+  "milestone": "M09",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M09-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M09-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M09-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M09-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M09-A05": {
+      "files": [],
+      "verification": ""
+    },
+    "M09-A06": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

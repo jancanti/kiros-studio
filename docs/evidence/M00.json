@@ -1,0 +1,75 @@
+{
+  "milestone": "M00",
+  "summary": "Fundação local em Python stdlib: navegação base, preferência persistente, SQLite com migração, arquivos locais, dez portas, Director injetável e gateway externo bloqueado por padrão.",
+  "critical_errors": [],
+  "limitations": [
+    "Somente M00; seções funcionais exibem indisponibilidade. Não há adaptadores externos reais nem validação ao vivo, gasto ou publicação.",
+    "Segurança local pressupõe conta e diretório de dados confiáveis; servidor loopback não destinado à Internet.",
+    "Navegador conectado indisponível; inspeção visual feita por capturas do Chrome headless em 1440 e 600 px. Sem auditoria completa com leitor de tela."
+  ],
+  "real_readiness": false,
+  "acceptance": {
+    "M00-A01": {
+      "files": [
+        "docs/DEVELOPMENT.md",
+        "kiros/__main__.py",
+        "kiros/application.py",
+        "kiros/ui/page.py",
+        "kiros/ui/style.css",
+        "docs/evidence/M00-desktop.png",
+        "docs/evidence/M00-mobile.png",
+        "scripts/smoke.py"
+      ],
+      "verification": "Smoke verifica oito rotas HTTP, títulos, link para conteúdo e aria-current. Inspeção visual desktop 1440x1100 e responsiva 600x1000; links nativos, foco e formulário rotulado. Stack sem instalação de dependências."
+    },
+    "M00-A02": {
+      "files": [
+        "kiros/infrastructure/local.py",
+        "kiros/migrations/001_preferences.sql",
+        "tests/test_foundation.py",
+        "scripts/smoke.py"
+      ],
+      "verification": "Testes verificam migração aplicada uma vez e proveniência; smoke encerra servidor e inicia novo processo mantendo preferência SQLite, grava e relê fixture filesystem em processos distintos. Schema sem BLOB."
+    },
+    "M00-A03": {
+      "files": [
+        "kiros/core/contracts.py",
+        "kiros/core/director.py",
+        "kiros/providers/mock.py",
+        "tests/test_foundation.py"
+      ],
+      "verification": "Dez Protocols definidos; teste substitui LLM por implementação local alternativa no Director, sem importar provider concreto no núcleo."
+    },
+    "M00-A04": {
+      "files": [
+        ".env.example",
+        "kiros/infrastructure/security.py",
+        "kiros/application.py",
+        "tests/test_foundation.py"
+      ],
+      "verification": "Matriz paid/publish em modo mock mesmo com flags e aprovação ativas recusa sem chamar transporte. Testados defaults, modo inválido, gates live e aprovação usando callbacks locais, sem rede externa."
+    },
+    "M00-A05": {
+      "files": [
+        "kiros/core/contracts.py",
+        "kiros/infrastructure/security.py",
+        "kiros/infrastructure/local.py",
+        "kiros/__main__.py",
+        "tests/test_foundation.py",
+        "scripts/smoke.py"
+      ],
+      "verification": "Proveniência inválida rejeitada; segredos omitidos de repr/str, status e erro público. Traversal, caminhos absolutos e symlink rejeitados para leitura/escrita. Smoke verifica Host, Origin, validação de entrada e escape HTML."
+    },
+    "M00-A06": {
+      "files": [
+        "docs/DEVELOPMENT.md",
+        "docs/checks.json",
+        "scripts/build.py",
+        "scripts/smoke.py",
+        "tests/test_foundation.py",
+        "tests/test_flow.py"
+      ],
+      "verification": "Checkpoint executa unittest do aplicativo e fluxo, build ZIP com Python/CSS/SQL e smoke HTTP com reinício. Capturas documentam servidor real em loopback; nenhum provider pago usado. Primeiro checkpoint detectou duas falhas preexistentes de isolamento: testes do fluxo copiavam status ativo mas esperavam pending. Setup agora restaura somente a cópia temporária a pending, preservando asserções e manifesto real."
+    }
+  }
+}

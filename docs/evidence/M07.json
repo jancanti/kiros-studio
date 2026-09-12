@@ -1,0 +1,29 @@
+{
+  "milestone": "M07",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M07-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M07-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M07-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M07-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M07-A05": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

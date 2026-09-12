@@ -1,0 +1,131 @@
+{
+  "at": "2026-09-12T14:12:15.163257+00:00",
+  "report": {
+    "milestone": "M00",
+    "summary": "Fundação local em Python stdlib: navegação base, preferência persistente, SQLite com migração, arquivos locais, dez portas, Director injetável e gateway externo bloqueado por padrão.",
+    "critical_errors": [],
+    "limitations": [
+      "Somente M00; seções funcionais exibem indisponibilidade. Não há adaptadores externos reais nem validação ao vivo, gasto ou publicação.",
+      "Segurança local pressupõe conta e diretório de dados confiáveis; servidor loopback não destinado à Internet.",
+      "Navegador conectado indisponível; inspeção visual feita por capturas do Chrome headless em 1440 e 600 px. Sem auditoria completa com leitor de tela."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M00-A01": {
+        "files": [
+          "docs/DEVELOPMENT.md",
+          "kiros/__main__.py",
+          "kiros/application.py",
+          "kiros/ui/page.py",
+          "kiros/ui/style.css",
+          "docs/evidence/M00-desktop.png",
+          "docs/evidence/M00-mobile.png",
+          "scripts/smoke.py"
+        ],
+        "verification": "Smoke verifica oito rotas HTTP, títulos, link para conteúdo e aria-current. Inspeção visual desktop 1440x1100 e responsiva 600x1000; links nativos, foco e formulário rotulado. Stack sem instalação de dependências."
+      },
+      "M00-A02": {
+        "files": [
+          "kiros/infrastructure/local.py",
+          "kiros/migrations/001_preferences.sql",
+          "tests/test_foundation.py",
+          "scripts/smoke.py"
+        ],
+        "verification": "Testes verificam migração aplicada uma vez e proveniência; smoke encerra servidor e inicia novo processo mantendo preferência SQLite, grava e relê fixture filesystem em processos distintos. Schema sem BLOB."
+      },
+      "M00-A03": {
+        "files": [
+          "kiros/core/contracts.py",
+          "kiros/core/director.py",
+          "kiros/providers/mock.py",
+          "tests/test_foundation.py"
+        ],
+        "verification": "Dez Protocols definidos; teste substitui LLM por implementação local alternativa no Director, sem importar provider concreto no núcleo."
+      },
+      "M00-A04": {
+        "files": [
+          ".env.example",
+          "kiros/infrastructure/security.py",
+          "kiros/application.py",
+          "tests/test_foundation.py"
+        ],
+        "verification": "Matriz paid/publish em modo mock mesmo com flags e aprovação ativas recusa sem chamar transporte. Testados defaults, modo inválido, gates live e aprovação usando callbacks locais, sem rede externa."
+      },
+      "M00-A05": {
+        "files": [
+          "kiros/core/contracts.py",
+          "kiros/infrastructure/security.py",
+          "kiros/infrastructure/local.py",
+          "kiros/__main__.py",
+          "tests/test_foundation.py",
+          "scripts/smoke.py"
+        ],
+        "verification": "Proveniência inválida rejeitada; segredos omitidos de repr/str, status e erro público. Traversal, caminhos absolutos e symlink rejeitados para leitura/escrita. Smoke verifica Host, Origin, validação de entrada e escape HTML."
+      },
+      "M00-A06": {
+        "files": [
+          "docs/DEVELOPMENT.md",
+          "docs/checks.json",
+          "scripts/build.py",
+          "scripts/smoke.py",
+          "tests/test_foundation.py",
+          "tests/test_flow.py"
+        ],
+        "verification": "Checkpoint executa unittest do aplicativo e fluxo, build ZIP com Python/CSS/SQL e smoke HTTP com reinício. Capturas documentam servidor real em loopback; nenhum provider pago usado. Primeiro checkpoint detectou duas falhas preexistentes de isolamento: testes do fluxo copiavam status ativo mas esperavam pending. Setup agora restaura somente a cópia temporária a pending, preservando asserções e manifesto real."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M00/959f1cda6a03491eb1c9afd7dbedb244/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M00/959f1cda6a03491eb1c9afd7dbedb244/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M00/959f1cda6a03491eb1c9afd7dbedb244/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    ".env.example": "41c1f88ceb264ad7b2db9482c5396caec88a707dbddb99930dbd503142d69d0f",
+    "docs/DEVELOPMENT.md": "b082c22ea0c6a06a77e85c79264c4e82cd1dc079bcb58f41fceb9b89b8af7f4a",
+    "docs/checks.json": "9fde88ab65e9c679c92f8ddff3b0152d33683e604c11492af821f21cccd60ec6",
+    "docs/evidence/M00-desktop.png": "a3eca4e6e90e26f8ad39d2b683d648ff21ea91a9b374400ae1605eff37ebd4cd",
+    "docs/evidence/M00-mobile.png": "fd2ecae362cc0f043bdaacbc67b49f4b4f5df4792460b3f81d934430065f584f",
+    "kiros/__main__.py": "e5f011e0a24615269207cdf7ae4928f501fcc67b787902c5ee144a353fabdf65",
+    "kiros/application.py": "55753b8a86265d064f0d511b049ec0f7851e8d7a155b5037801d7f37843f2b69",
+    "kiros/core/contracts.py": "417496e9908eb8daba31f220b69a363e1976ffde888691ec1b93740942491011",
+    "kiros/core/director.py": "755c7e072174a2f47b95ddad377269cd6ae822d5c17414f53d5288ce56ff732f",
+    "kiros/infrastructure/local.py": "c90371b9a28837f36f156829bc95e905933f267690cdd46f8d0d884f630d6d23",
+    "kiros/infrastructure/security.py": "e030bfaa49962bc730481be7bff20375696b3852858d3d134c1229bc4d42740f",
+    "kiros/migrations/001_preferences.sql": "ced2b1994a9987e0eac686a2b1d35a7821c1d760a25bb693acba3624fca701ab",
+    "kiros/providers/mock.py": "66f0688e6734b7039bab01dd77479164ff2a50e65253e8570ae7d594eb004125",
+    "kiros/ui/page.py": "de63b2badc83d8c2d2c72f04307d0c2f1cb77aadf58df288e4300fa6507e89d4",
+    "kiros/ui/style.css": "133e7b5c44ef90dc9ef59b8ea76b119a512d4f20c733bbd0e24ac09c1be6242d",
+    "scripts/build.py": "ae15cbaa472c71986700cf501374a981a130a74895bdd794cfdb65651eff529e",
+    "scripts/smoke.py": "3f2b2fffc5e516eeb8279a39adccc10b83d181630aa65da88f151a19885c6050",
+    "tests/test_flow.py": "e2953bed5e791fad1ba6f24646ceebca0b90b828c9b4ff40a23379926157c813",
+    "tests/test_foundation.py": "34d7d655016a6e83223aa1e447bc261a47efbae10354c19c2f58068bbe56dc1e"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

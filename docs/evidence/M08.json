@@ -1,0 +1,29 @@
+{
+  "milestone": "M08",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M08-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M08-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M08-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M08-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M08-A05": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

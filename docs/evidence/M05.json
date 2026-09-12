@@ -1,0 +1,29 @@
+{
+  "milestone": "M05",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M05-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M05-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M05-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M05-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M05-A05": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

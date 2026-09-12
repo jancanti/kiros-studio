@@ -1,0 +1,29 @@
+{
+  "milestone": "M10",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M10-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M10-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M10-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M10-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M10-A05": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

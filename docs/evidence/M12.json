@@ -1,0 +1,33 @@
+{
+  "milestone": "M12",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M12-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M12-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M12-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M12-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M12-A05": {
+      "files": [],
+      "verification": ""
+    },
+    "M12-A06": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}

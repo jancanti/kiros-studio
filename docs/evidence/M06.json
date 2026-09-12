@@ -1,0 +1,29 @@
+{
+  "milestone": "M06",
+  "summary": "",
+  "critical_errors": [],
+  "limitations": [],
+  "real_readiness": false,
+  "acceptance": {
+    "M06-A01": {
+      "files": [],
+      "verification": ""
+    },
+    "M06-A02": {
+      "files": [],
+      "verification": ""
+    },
+    "M06-A03": {
+      "files": [],
+      "verification": ""
+    },
+    "M06-A04": {
+      "files": [],
+      "verification": ""
+    },
+    "M06-A05": {
+      "files": [],
+      "verification": ""
+    }
+  }
+}
