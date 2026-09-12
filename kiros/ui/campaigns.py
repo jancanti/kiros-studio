@@ -1,4 +1,5 @@
 """Interface de Campanhas, Storyboard, Pipeline e Tela de Aprovação (Seções 10, 23, 31, 56, 66, 75)."""
+from datetime import datetime, timedelta, timezone
 from html import escape
 import json
 from typing import Any, Dict, Optional
@@ -119,10 +120,67 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
             'msg': 'Motor do slide atualizado preservando os demais slides.',
         })
 
+    elif action == 'update_text_inline':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        title = data.get('title', '').strip()
+        caption = data.get('caption_draft', '').strip()
+
+        import sqlite3
+        with sqlite3.connect(app.database.path) as db:
+            db.execute("UPDATE storyboard_slides SET title=?, caption_draft=? WHERE id=?", (title, caption, slide_id))
+        return urlencode({'campaign_id': cid, 'msg': '✨ Texto do slide atualizado com sucesso na prévia!'})
+
+    elif action == 'approve_and_schedule_auto':
+        cid = data.get('campaign_id', '').strip()
+        approver = data.get('approver', 'Diretoria Criativa').strip()
+        mgr.approve_campaign(cid, approver=approver)
+        try:
+            mgr.queue_execution(cid)
+        except Exception:
+            pass
+
+        # Cria agendamento automático para amanhã no melhor horário (18:00)
+        camp = mgr.get_campaign(cid)
+        c_title = getattr(camp, 'title', 'Campanha KIROS')
+        target_iso = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=18, minute=0, second=0).isoformat()
+        app.calendar.create_entry(title=c_title, content_type='feed', pillar='institucional', scheduled_for=target_iso, campaign_id=cid, status='scheduled')
+
+        return urlencode({'campaign_id': cid, 'msg': f'⚡ Campanha aprovada e agendada automaticamente para {target_iso[:10]} às 18:00 no Instagram (@usekiros)!'})
+
+    elif action == 'approve_and_schedule_manual':
+        cid = data.get('campaign_id', '').strip()
+        approver = data.get('approver', 'Diretoria Criativa').strip()
+        target_date = data.get('scheduled_date', '').strip()
+        if not target_date:
+            target_date = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%dT18:00:00+00:00')
+        else:
+            try:
+                dt = datetime.fromisoformat(target_date.replace(' ', 'T'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                target_date = dt.isoformat()
+            except Exception:
+                target_date = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%dT18:00:00+00:00')
+
+        mgr.approve_campaign(cid, approver=approver)
+        try:
+            mgr.queue_execution(cid)
+        except Exception:
+            pass
+
+        camp = mgr.get_campaign(cid)
+        c_title = getattr(camp, 'title', 'Campanha KIROS')
+        app.calendar.create_entry(title=c_title, content_type='feed', pillar='institucional', scheduled_for=target_date, campaign_id=cid, status='scheduled')
+
+        return urlencode({'campaign_id': cid, 'msg': f'📅 Campanha aprovada e agendada para {target_date}!'})
+
+
     elif action == 'submit_approval':
         cid = data.get('campaign_id', '').strip()
         mgr.submit_for_approval(cid)
         return urlencode({'campaign_id': cid, 'msg': 'Campanha submetida para revisão e aprovação formal.'})
+
 
     elif action == 'approve':
         cid = data.get('campaign_id', '').strip()
@@ -658,24 +716,31 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
         </div>
         ''')
 
-    # Botões de Ação da Seção 75: [Editar] [Cancelar] [Aprovar execução]
-    html.append('<div class="card-actions" style="margin-top:20px;">')
+    # Botoeira Dupla de Aprovação e Agendamento no Instagram (@usekiros)
+    html.append('<div class="card-actions" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">')
     c_stat_lower = camp.status.lower()
     if not is_approved:
         html.append(f'''
-        <form method="post" action="/api/campaigns/approve" class="inline-form">
+        <form method="post" action="/api/campaigns/approve_and_schedule_auto" class="inline-form" style="flex:1;">
             <input type="hidden" name="campaign_id" value="{cid}">
             <input type="hidden" name="approver" value="Diretoria Criativa">
-            <button type="submit" class="button" style="background:#273b32;margin-top:0;">Aprovar Execução (v{plan_ver})</button>
+            <button type="submit" class="button" style="background:#693edf; width:100%; text-align:center;">⚡ Aprovar &amp; Agendar Automático (Melhor Horário @usekiros)</button>
+        </form>
+        <form method="post" action="/api/campaigns/approve_and_schedule_manual" class="inline-form" style="flex:1; display:flex; gap:6px;">
+            <input type="hidden" name="campaign_id" value="{cid}">
+            <input type="hidden" name="approver" value="Diretoria Criativa">
+            <input type="datetime-local" name="scheduled_date" style="padding:6px; font-size:12px;" required>
+            <button type="submit" class="button-secondary" style="white-space:nowrap;">📅 Agendar Data/Hora</button>
         </form>
         ''')
     elif c_stat_lower == 'approved':
         html.append(f'''
         <form method="post" action="/api/campaigns/queue" class="inline-form">
             <input type="hidden" name="campaign_id" value="{cid}">
-            <button type="submit" class="button" style="background:#273b32;margin-top:0;">Enfileirar Execução na Fila</button>
+            <button type="submit" class="button" style="background:#273b32;margin-top:0;">Enfileirar Execução na Fila do Instagram</button>
         </form>
         ''')
+
     elif c_stat_lower in ('queued', 'running', 'paused', 'failed'):
         if c_stat_lower == 'paused':
             html.append(f'''
@@ -944,10 +1009,28 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
             html.append('</ul></div>')
 
 
-        # Seção 51: Intervenção localizada / Regenerar somente este slide
+        # Edição Direta de Texto In-Line (Edite sem precisar recriar a campanha)
         html.append(f'''
+            <details style="margin-top:10px;" open>
+                <summary style="font-size:13px; font-weight:600; color:#4514a6; cursor:pointer;">✏️ Edição Direta de Texto do Slide (In-Line)</summary>
+                <form method="post" action="/api/campaigns/update_text_inline" class="form-grid" style="margin-top:8px;">
+                    <input type="hidden" name="campaign_id" value="{cid}">
+                    <input type="hidden" name="slide_id" value="{s_id}">
+                    <div class="form-group">
+                        <label style="font-size:12px;">Título do Slide</label>
+                        <input name="title" value="{s_title}" style="font-size:13px;" required>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:12px;">Legenda / Copy do Slide</label>
+                        <textarea name="caption_draft" rows="2" style="font-size:13px;" required>{s_caption}</textarea>
+                    </div>
+                    <button type="submit" class="button-secondary" style="font-size:12px; padding:6px 12px;">✨ Salvar Texto Direto na Prévia</button>
+                </form>
+            </details>
+
             <details style="margin-top:10px;">
-                <summary style="font-size:13px;padding:4px 0;">Intervenção Localizada · Regenerar ou alterar engine</summary>
+                <summary style="font-size:13px;padding:4px 0;">🎨 Intervenção Localizada · Regenerar Somente Este Slide</summary>
+
                 <form method="post" action="/api/campaigns/regenerate_slide" class="form-grid" style="margin-top:8px;">
                     <input type="hidden" name="campaign_id" value="{cid}">
                     <input type="hidden" name="slide_id" value="{s_id}">
