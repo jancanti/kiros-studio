@@ -295,3 +295,100 @@ class CreativeDirector:
             })
 
         return slides[:num_slides]
+
+    def generate_ai_recommendations(self, limit: int = 3) -> List[Dict[str, Any]]:
+        """Gera recomendações adaptativas de campanhas (Estética & Luxo, Ingredientes & Qualidade, Ritual & Ocasião)."""
+        brand = self.library.brand_for() if self.library else {}
+        products = self.library.list_products() if self.library else []
+
+        brand_info = brand.get('information', 'Aromas artesanais para casa de luxo acessível')
+        brand_tone = brand.get('photography', 'Elegante, acolhedora, humana e contemporânea')
+
+        ideas = []
+
+        if products:
+            p1 = products[0]
+            p1_bible = self.library.product_bible_for(p1['id']) if self.library else {}
+            p1_vol = p1_bible.get('material', {}).get('value', '200g') if isinstance(p1_bible.get('material'), dict) else '200g'
+            p1_notes = p1_bible.get('label', {}).get('value', 'Notas botânicas frescas') if isinstance(p1_bible.get('label'), dict) else 'Notas botânicas'
+
+            ideas.append({
+                'theme': 'Estética & Luxo',
+                'title': f"Carrossel: A Presença Estética de {p1['name']}",
+                'concept': f"Imagens em iluminação oblíqua natural com destaque para {p1['name']} em ambiente contemporâneo e sofisticado. Tom: {brand_tone}.",
+                'pillar': 'lifestyle',
+                'objective': 'awareness',
+                'product_id': p1['id'],
+                'product_name': p1['name'],
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+
+            ideas.append({
+                'theme': 'Ingredientes & Qualidade',
+                'title': f"Carrossel Informativo: Composição de {p1['name']}",
+                'concept': f"Destaque para cera 100% vegetal, pavio de algodão e notas olfativas ({p1_notes}). Atributo: {p1_vol}.",
+                'pillar': 'produtos',
+                'objective': 'educação',
+                'product_id': p1['id'],
+                'product_name': p1['name'],
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+
+            p2 = products[1] if len(products) > 1 else p1
+            ideas.append({
+                'theme': 'Ritual & Ocasião',
+                'title': f"Stories & Post: O Ritual de Desacelerar com {p2['name']}",
+                'concept': f"Cenas no final de tarde e recepção de visitas. Como {p2['name']} transforma o momento de descanso no lar em um verdadeiro ritual.",
+                'pillar': 'relacionamento',
+                'objective': 'engajamento',
+                'product_id': p2['id'],
+                'product_name': p2['name'],
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+        else:
+            ideas.append({
+                'theme': 'Estética & Luxo',
+                'title': "Carrossel: A Arte de Perfumar a Casa com Intenção",
+                'concept': f"Apresentação da essência da KIROS Aromas ({brand_info}). Tom visual: {brand_tone}.",
+                'pillar': 'marca',
+                'objective': 'awareness',
+                'product_id': None,
+                'product_name': 'Linha de Aromas KIROS',
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+            ideas.append({
+                'theme': 'Ingredientes & Qualidade',
+                'title': "Carrossel: Por que Escolher Velas de Cera 100% Vegetal?",
+                'concept': "Comparativo educativo sobre queima limpa, ausência de tóxicos e pavio de algodão de alta qualidade.",
+                'pillar': 'educativo',
+                'objective': 'educação',
+                'product_id': None,
+                'product_name': 'Linha de Aromas KIROS',
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+            ideas.append({
+                'theme': 'Ritual & Ocasião',
+                'title': "Stories: 3 Dicas para Acolher Visitas com Aromas Marcantes",
+                'concept': "Dicas práticas de ambientação da sala de estar e lavabo para criar memórias olfativas inesquecíveis.",
+                'pillar': 'lifestyle',
+                'objective': 'engajamento',
+                'product_id': None,
+                'product_name': 'Linha de Aromas KIROS',
+                'format': 'Carrossel 4:5 + 3 Stories 9:16',
+            })
+
+        if self.idea_bank:
+            prov = Provenance('automatic_analysis', 'creative_director.recommendations', self._now())
+            for item in ideas[:limit]:
+                try:
+                    self.idea_bank.add_idea(
+                        title=item['title'],
+                        concept=f"[{item['theme']}] {item['concept']}",
+                        pillar=item['pillar'],
+                        provenance=prov,
+                    )
+                except Exception:
+                    pass
+
+        return ideas[:limit]
+

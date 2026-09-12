@@ -40,6 +40,32 @@ def dispatch_creator_action(app: Application, action: str, data: Dict[str, str])
             'has_conflicts': '1' if conflicts else '0',
         })
 
+    elif action == 'generate_ai_ideas':
+        recs = director.generate_ai_recommendations(limit=3)
+        return urlencode({'ideas_generated': '1', 'msg': '3 novas ideias de campanha geradas com base no seu catálogo e marca.'})
+
+    elif action == 'use_idea':
+        title = data.get('title', '').strip()
+        concept = data.get('concept', '').strip()
+        obj = data.get('objective', 'awareness').strip()
+
+        briefing_text = f"Campanha: {title}. Conceito: {concept}"
+        prov = Provenance('user', 'creator.use_idea', now_iso)
+        res = director.interpret_briefing(briefing_text, custom_objective=obj if obj else None, provenance=prov)
+
+        return urlencode({
+            'briefing_done': '1',
+            'raw_briefing': briefing_text,
+            'primary_obj': res['primary_objective'],
+            'secondary_obj': res['secondary_objective'],
+            'justification': res['objective_justification'],
+            'confidence': str(res['confidence']),
+            'visual_tone': res['visual_tone'],
+            'funnel_stage': res['funnel_stage'],
+            'suggested_pillar': res['suggested_pillar'],
+            'msg': f"Ideia '{title}' selecionada! O briefing foi estruturado automaticamente.",
+        })
+
     elif action == 'add_idea':
         title = data.get('title', '').strip()
         concept = data.get('concept', '').strip()
@@ -49,6 +75,7 @@ def dispatch_creator_action(app: Application, action: str, data: Dict[str, str])
 
         idea_id = ideas.add_idea(title, concept, pillar, provenance=prov, is_pinned=is_pinned)
         return urlencode({'saved_idea': '1', 'msg': f"Ideia '{title}' adicionada ao pilar '{pillar}'."})
+
 
     elif action == 'pin_idea':
         idea_id = data.get('idea_id', '').strip()
@@ -104,13 +131,65 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     # ==========================================
     html.append('<div class="creator-primary-col">')
 
+    # 0. Hub de Ideias Recomendadas pela IA
+    ai_recs = director.generate_ai_recommendations(limit=3)
+    html.append('''
+    <div class="panel ai-ideas-hub" style="background: #faf8ff; border: 1px solid #e2d9f8; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <span class="tag" style="background: #693edf; color: white;">Inteligência de Conteúdo</span>
+                <h2 style="margin: 6px 0 0 0; font-size: 20px; color: #171717;">💡 Ideias Recomendadas para Você</h2>
+            </div>
+            <form method="post" action="/api/creator/generate_ai_ideas">
+                <button type="submit" class="button-secondary" style="font-size: 13px;">✨ Gerar Novas Ideias</button>
+            </form>
+        </div>
+        <p style="color: #555; font-size: 14px; margin-bottom: 16px;">A IA analisou seus produtos cadastrados e sua marca para sugerir campanhas prontas de alta conversão. Clique no botão de 1-Clique para iniciar:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+    ''')
+
+    for rec in ai_recs:
+        theme = escape(rec['theme'])
+        title = escape(rec['title'])
+        concept = escape(rec['concept'])
+        obj = escape(rec['objective'])
+        fmt = escape(rec['format'])
+        p_name = escape(rec.get('product_name', 'Produto KIROS'))
+
+        theme_bg = '#693edf' if 'Estética' in theme else ('#10a37f' if 'Ingredientes' in theme else '#e1306c')
+
+        html.append(f'''
+        <div class="card idea-card" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="tag" style="background: {theme_bg}; color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px;">{theme}</span>
+                    <small style="color: #888; font-size: 11px;">{fmt}</small>
+                </div>
+                <h3 style="font-size: 15px; font-weight: 600; color: #171717; margin: 0 0 6px 0;">{title}</h3>
+                <p style="font-size: 12px; color: #555; line-height: 1.4; margin-bottom: 12px;">{concept}</p>
+            </div>
+            <form method="post" action="/api/creator/use_idea">
+                <input type="hidden" name="title" value="{title}">
+                <input type="hidden" name="concept" value="{concept}">
+                <input type="hidden" name="objective" value="{obj}">
+                <button type="submit" class="button" style="width: 100%; padding: 8px; font-size: 13px; text-align: center;">⚡ Criar esta Campanha em 1-Clique</button>
+            </form>
+        </div>
+        ''')
+
+    html.append('''
+        </div>
+    </div>
+    ''')
+
     # 1. Briefing Híbrido
     raw_val = escape(query.get('raw_briefing', [''])[0])
     html.append(f'''
     <div class="briefing-canvas" id="briefing-canvas">
         <span class="tag">Briefing Híbrido</span>
         <h2>Entrada Livre com Estruturação Progressiva</h2>
-        <p>Comece com linguagem livre. O Creative Director recomendará objetivos, tom e perguntas mínimas necessárias.</p>
+        <p>Comece com linguagem livre ou edite a ideia selecionada acima. O Creative Director recomendará objetivos e tom.</p>
+
 
         <div class="quick-chips-container">
             <span class="quick-chips-label">Sugestões de pauta rápida:</span>
