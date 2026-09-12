@@ -417,3 +417,4 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     </div>'''
 
     return html
+

@@ -399,3 +399,4 @@ class MockSocialPublisher(SocialPublisher):
             'simulated': True,
         })
         return post_id
+

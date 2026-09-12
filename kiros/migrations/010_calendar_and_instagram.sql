@@ -72,3 +72,4 @@ CREATE INDEX idx_calendar_entries_campaign ON calendar_entries(campaign_id);
 CREATE INDEX idx_calendar_entries_pillar ON calendar_entries(pillar);
 CREATE INDEX idx_social_publications_idempotency ON social_publications(idempotency_key);
 CREATE INDEX idx_social_publications_calendar ON social_publications(calendar_entry_id);
+

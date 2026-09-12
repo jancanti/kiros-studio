@@ -105,3 +105,4 @@ class AccountStatus:
             'last_checked_at': self.last_checked_at,
             'updated_at': self.updated_at,
         }
+
