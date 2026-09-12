@@ -1,0 +1,113 @@
+{
+  "at": "2026-09-12T14:35:30.528500+00:00",
+  "report": {
+    "milestone": "M01",
+    "summary": "Marca e acervo locais: versões aprovadas, overrides isolados, produtos/estoque com origem, importação CSV atômica, fotos e Reference Set por tarefa, contrato de visão simulado e UI em Marca/Biblioteca.",
+    "critical_errors": [],
+    "limitations": [
+      "Visão somente MockVision: não interpreta pixels, não valida atributos reais e não substitui o adaptador real da M02. Nenhuma API paga, geração de imagem ou publicação.",
+      "Validação de arquivo verifica tamanho e assinatura PNG/JPEG; não há decodificação completa no servidor. Servidor e armazenamento pressupõem conta local confiável.",
+      "CSV deduplica conteúdo idêntico; lotes diferentes com vendas sobrepostas requerem revisão manual. Override de referências é uma seleção sob demanda.",
+      "Navegador conectado indisponível; evidência visual via Chrome headless local, sem auditoria completa com leitor de tela."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M01-A01": {
+        "files": [
+          "kiros/library.py",
+          "kiros/migrations/002_library.sql",
+          "kiros/ui/library.py",
+          "tests/test_library.py",
+          "docs/evidence/M01-desktop.png"
+        ],
+        "verification": "test_brand_approval_version_history_and_campaign_snapshot verifica proposta não oficial, aprovação com responsável/data, histórico preservado, isolamento de duas campanhas, base global fixada e reabertura SQLite. test_stale_and_repeated_approval_rejected cobre conflitos e aprovação repetida."
+      },
+      "M01-A02": {
+        "files": [
+          "kiros/library.py",
+          "tests/test_library.py",
+          "tests/test_library_http.py",
+          "docs/DEVELOPMENT.md"
+        ],
+        "verification": "Testes de estoque distinguem ausência e zero, validam inteiros/origem e preservam histórico. CSV inválido (produto, data, quantidade, receita, colunas), vazio e duplicado não altera estado; receita ausente fica NULL, zero é preservado e estoque não muda. Cenário HTTP importa upload CSV e reabre banco."
+      },
+      "M01-A03": {
+        "files": [
+          "kiros/core/contracts.py",
+          "kiros/providers/mock.py",
+          "kiros/library.py",
+          "kiros/ui/library.py",
+          "tests/test_library.py",
+          "tests/test_library_http.py",
+          "docs/INTEGRATIONS.md"
+        ],
+        "verification": "Fixture PNG técnica percorre upload real e leitura de bytes. VisionProvider substituível recebe 3 fotos; mock cria proposta dos nove atributos, com proveniência simulated=true, sem aprovação automática. Testes cobrem free, confirmação protected, remoção, bloqueio critical e resposta de contrato malformada."
+      },
+      "M01-A04": {
+        "files": [
+          "kiros/library.py",
+          "kiros/ui/library.py",
+          "tests/test_library.py",
+          "tests/test_library_http.py",
+          "docs/evidence/M01-mobile.png"
+        ],
+        "verification": "Reference Set testado por catálogo, etiqueta e ambientação, qualidade manual e override ordenado; fotos de outro produto/campanha e IDs duplicados são recusados. Referências persistem ângulo, escopo, origem e atributos visuais não verificados. UI permite envio e seleção por tarefa."
+      },
+      "M01-A05": {
+        "files": [
+          "kiros/library.py",
+          "tests/test_library.py",
+          "tests/test_library_http.py",
+          "docs/checks.json"
+        ],
+        "verification": "Testes verificam inspiration_only para direitos desconhecidos e fontes externas, isolamento de campanha, versionamento, CSV inválido atômico e preservação após entradas recusadas. HTTP valida CSRF, campos duplicados, upload inválido, UTF-8, escape HTML e rótulos/IDs. Checkpoint executa suíte, build e smoke com reinício."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M01/88610d967cc046d49ff59c24c6b6037a/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M01/88610d967cc046d49ff59c24c6b6037a/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M01/88610d967cc046d49ff59c24c6b6037a/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/DEVELOPMENT.md": "48dd46b6a4b1ff31b6e7d9dfd331ed07326d2f77ff5202651589d98dfcff0bdb",
+    "docs/INTEGRATIONS.md": "8c4a24b81efe22fe6ef9189d684d7aca047860c6b1d8b6b94e441b1d34217c60",
+    "docs/checks.json": "cf4f135553c661348a8d707a64b9f588c9d911a443dd61e163478fd4f7e5f198",
+    "docs/evidence/M01-desktop.png": "09b93a9ca6b41c59d4d944819cd0608fe977ee0ae89e970361bcee330c699941",
+    "docs/evidence/M01-mobile.png": "d354a02ab1400746f9a609ae02f38039fd09a1436b34b9c7c2643c2e91e7d9af",
+    "kiros/core/contracts.py": "66a3b1677e333e6fc322db5dc860c04e85a6fdae9b8f7d88e8291e3eb52b6332",
+    "kiros/library.py": "57404474ed7dc523e07911ab021360e11e73b50b84051a0ac3fef9dfa852ad8f",
+    "kiros/migrations/002_library.sql": "29e82e38f96aa101d1e1a3a392d84904632d95463b90c376c6283ae9a09c3468",
+    "kiros/providers/mock.py": "4b97b91dd9f2c635d842bd75718a3826f6c9404ddf01cf95f01b78a695f319c5",
+    "kiros/ui/library.py": "c8be45637df389ddec6f5f97f49b131835f2e3476c7d0d95a779e8e4d4146462",
+    "tests/test_library.py": "f16806af4081a2c0f5f433f8724920649bf86c3a86efd4372b01088665223628",
+    "tests/test_library_http.py": "8ad96dc175c4cd7e0783302487c8ae63a6f018e29a07fcda47dafc6077c9c747"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

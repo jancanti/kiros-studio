@@ -1,0 +1,64 @@
+{
+  "milestone": "M01",
+  "summary": "Marca e acervo locais: versões aprovadas, overrides isolados, produtos/estoque com origem, importação CSV atômica, fotos e Reference Set por tarefa, contrato de visão simulado e UI em Marca/Biblioteca.",
+  "critical_errors": [],
+  "limitations": [
+    "Visão somente MockVision: não interpreta pixels, não valida atributos reais e não substitui o adaptador real da M02. Nenhuma API paga, geração de imagem ou publicação.",
+    "Validação de arquivo verifica tamanho e assinatura PNG/JPEG; não há decodificação completa no servidor. Servidor e armazenamento pressupõem conta local confiável.",
+    "CSV deduplica conteúdo idêntico; lotes diferentes com vendas sobrepostas requerem revisão manual. Override de referências é uma seleção sob demanda.",
+    "Navegador conectado indisponível; evidência visual via Chrome headless local, sem auditoria completa com leitor de tela."
+  ],
+  "real_readiness": false,
+  "acceptance": {
+    "M01-A01": {
+      "files": [
+        "kiros/library.py",
+        "kiros/migrations/002_library.sql",
+        "kiros/ui/library.py",
+        "tests/test_library.py",
+        "docs/evidence/M01-desktop.png"
+      ],
+      "verification": "test_brand_approval_version_history_and_campaign_snapshot verifica proposta não oficial, aprovação com responsável/data, histórico preservado, isolamento de duas campanhas, base global fixada e reabertura SQLite. test_stale_and_repeated_approval_rejected cobre conflitos e aprovação repetida."
+    },
+    "M01-A02": {
+      "files": [
+        "kiros/library.py",
+        "tests/test_library.py",
+        "tests/test_library_http.py",
+        "docs/DEVELOPMENT.md"
+      ],
+      "verification": "Testes de estoque distinguem ausência e zero, validam inteiros/origem e preservam histórico. CSV inválido (produto, data, quantidade, receita, colunas), vazio e duplicado não altera estado; receita ausente fica NULL, zero é preservado e estoque não muda. Cenário HTTP importa upload CSV e reabre banco."
+    },
+    "M01-A03": {
+      "files": [
+        "kiros/core/contracts.py",
+        "kiros/providers/mock.py",
+        "kiros/library.py",
+        "kiros/ui/library.py",
+        "tests/test_library.py",
+        "tests/test_library_http.py",
+        "docs/INTEGRATIONS.md"
+      ],
+      "verification": "Fixture PNG técnica percorre upload real e leitura de bytes. VisionProvider substituível recebe 3 fotos; mock cria proposta dos nove atributos, com proveniência simulated=true, sem aprovação automática. Testes cobrem free, confirmação protected, remoção, bloqueio critical e resposta de contrato malformada."
+    },
+    "M01-A04": {
+      "files": [
+        "kiros/library.py",
+        "kiros/ui/library.py",
+        "tests/test_library.py",
+        "tests/test_library_http.py",
+        "docs/evidence/M01-mobile.png"
+      ],
+      "verification": "Reference Set testado por catálogo, etiqueta e ambientação, qualidade manual e override ordenado; fotos de outro produto/campanha e IDs duplicados são recusados. Referências persistem ângulo, escopo, origem e atributos visuais não verificados. UI permite envio e seleção por tarefa."
+    },
+    "M01-A05": {
+      "files": [
+        "kiros/library.py",
+        "tests/test_library.py",
+        "tests/test_library_http.py",
+        "docs/checks.json"
+      ],
+      "verification": "Testes verificam inspiration_only para direitos desconhecidos e fontes externas, isolamento de campanha, versionamento, CSV inválido atômico e preservação após entradas recusadas. HTTP valida CSRF, campos duplicados, upload inválido, UTF-8, escape HTML e rótulos/IDs. Checkpoint executa suíte, build e smoke com reinício."
+    }
+  }
+}
