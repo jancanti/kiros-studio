@@ -103,7 +103,7 @@ class StoriesEngine:
             interaction_type='link_sticker',
             interaction_data={
                 'text': 'Ver no catálogo',
-                'url': ctx.get('destination_url') or 'https://instagram.com/kiros.sp',
+                'url': ctx.get('destination_url') or 'https://instagram.com/usekiros',
             },
             interaction_justification='Sticker de link no frame final orientando quem deseja conhecer a coleção completa, sem pressão de venda agressiva.',
             caption_draft='Disponível no link da bio.',

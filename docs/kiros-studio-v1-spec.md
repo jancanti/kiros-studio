@@ -85,7 +85,7 @@ A V1 deve contemplar:
 
 **Nome:** KIROS Aromas
 
-**Instagram:** @kiros.sp
+**Instagram:** @usekiros
 
 **E-mail:** oi@usekiros.com.br
 

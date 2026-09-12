@@ -110,7 +110,7 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             </div>
             <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
                 <strong style="color: #693edf;">3. Instagram API</strong>
-                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Fila de postagens automáticas para @kiros.sp.</p>
+                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Fila de postagens automáticas para @usekiros.</p>
             </div>
         </div>
     </div>
@@ -148,7 +148,7 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
                 <h4 style="margin: 0 0 6px 0;">📸 Instagram Graph API</h4>
                 <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
                     <li>Acesse Meta for Developers</li>
-                    <li>Vincule sua página do Instagram (@kiros.sp)</li>
+                    <li>Vincule sua página do Instagram (@usekiros)</li>
                     <li>Obtenha o User Access Token de publicação</li>
                 </ol>
             </div>

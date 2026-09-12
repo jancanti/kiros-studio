@@ -48,7 +48,7 @@ class StoriesEngineTests(unittest.TestCase):
                 'campaign_id': 'camp-12345',
                 'product_name': 'Vela Alecrim & Algodão',
                 'fragrance': 'Alecrim',
-                'destination_url': 'https://instagram.com/kiros.sp',
+                'destination_url': 'https://instagram.com/usekiros',
             },
         )
 

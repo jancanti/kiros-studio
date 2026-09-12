@@ -92,7 +92,7 @@ class PrePublishAuditTests(unittest.TestCase):
             slide_id="slide-1",
             text="O aroma de alecrim preenche a sala aos poucos. Um detalhe simples que muda o ritmo da manhã.",
             cta_text="Disponível no link da bio.",
-            destination_url="https://instagram.com/kiros.sp",
+            destination_url="https://instagram.com/usekiros",
             show_price=False,
         )
         res = self.auditor.audit_caption(caption_ok)
