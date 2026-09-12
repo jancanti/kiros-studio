@@ -1,29 +1,56 @@
 {
   "milestone": "M11",
-  "summary": "",
+  "summary": "Implementação da Milestone M11 (Aprendizado, busca e experiência integrada) cobrindo Seções 47, 55, 57, 58, 59 e 61 da spec: biblioteca de prompts e serviço central de aprendizado (propostas de preferências recorrentes, regras de marca e produto com aprovação explícita e proveniência), busca global unificada cobrindo 8 tipos de entidade com ranking de relevância e insensibilidade a acentos/caixa, Command Bar com interpretação em linguagem natural, execução de ações seguras/reversíveis, cálculo de impacto financeiro sem consumo indevido de créditos, recusa de comandos ambíguos e publicação automática, Dashboard contextual em 6 blocos na tela inicial e Biblioteca unificada com abas e busca integrada.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Ambiente local de desenvolvimento com mocks determinísticos; nenhuma chamada externa a modelos de IA pagos ou publicação externa em produção foi realizada."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M11-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/learning.py",
+        "kiros/migrations/012_learning_prompts_and_search.sql",
+        "tests/test_learning_and_prompts.py",
+        "tests/test_experience_http.py"
+      ],
+      "verification": "Comprovado em tests/test_learning_and_prompts.py e tests/test_experience_http.py: correções de campanha geram registros locais na tabela campaign_learnings; preferências repetidas geram propostas na tabela learning_proposals; prompts sugeridos em prompt_library exigem aprovação formal de responsável com proveniência gravada antes de se tornarem permanentes."
     },
     "M11-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/search.py",
+        "tests/test_global_search.py",
+        "tests/test_experience_http.py"
+      ],
+      "verification": "Comprovado em tests/test_global_search.py e tests/test_experience_http.py: busca cobre campanhas, produtos, imagens, versões, ideias, templates, decisões e histórico com cálculo de score de relevância, preservando o texto original intacto nos snippets e títulos, e ignorando acentos e caixa alta/baixa ('aromática lavanda' casa com 'Aromática Lavanda')."
     },
     "M11-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/command_bar.py",
+        "kiros/execution/queue.py",
+        "tests/test_command_bar.py",
+        "tests/test_experience_http.py"
+      ],
+      "verification": "Comprovado em tests/test_command_bar.py e tests/test_experience_http.py: Command Bar executa navegação ('Abra a última campanha', 'Mostre minhas ideias de Lifestyle') e ações reversíveis ('Pause a geração', 'Retome a geração'); consultas de gasto calculam estimativa sem debitar créditos; geração exige confirmação de impacto; comandos de publicação no Instagram são recusados para execução automática e exigem confirmação humana."
     },
     "M11-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/dashboard.py",
+        "kiros/ui/dashboard.py",
+        "kiros/ui/library.py",
+        "kiros/ui/page.py",
+        "tests/test_experience_http.py"
+      ],
+      "verification": "Comprovado em tests/test_experience_http.py: Dashboard contextual na rota /inicio integra Hoje, Oportunidade, Próximo passo, Calendário, Criação e Aprendizados com dados reais de campanhas, ideias e aprendizados; rota /biblioteca consolida 7 tipos de ativos (referências, produtos, imagens, campanhas, templates, prompts, versões) sem duplicar serviços."
     },
     "M11-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "tests/test_learning_and_prompts.py",
+        "tests/test_global_search.py",
+        "tests/test_command_bar.py",
+        "tests/test_experience_http.py"
+      ],
+      "verification": "Comprovado na suíte de testes do M11 e na regressão global de 219 testes: aprovação de aprendizados exige aprovador explícito e proveniência válida; busca global ranqueia relevância sem sensibilidade a acentos; comandos ambíguos ('publicar', 'gastar', 'gerar') são explicitamente recusados no servidor."
     }
   }
 }

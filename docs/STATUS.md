@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M11 — Aprendizado, busca e experiência integrada
+Atual: M12 — Backup e aceite completo da V1
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -17,7 +17,7 @@ Atual: M11 — Aprendizado, busca e experiência integrada
 | M08 — Copy, legendas e Stories | completed | docs/checkpoints/M08/207a0f2187ef49aaa429fec826853ede/checkpoint.json |
 | M09 — Calendário e Instagram controlado | completed | docs/checkpoints/M09/452a6eb9c74f4e099754eab3b65c0d0f/checkpoint.json |
 | M10 — Diversidade, tendências e experimentos | completed | docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/checkpoint.json |
-| M11 — Aprendizado, busca e experiência integrada | pending | — |
+| M11 — Aprendizado, busca e experiência integrada | completed | docs/checkpoints/M11/e404a349ef584e03a2791937acb6082d/checkpoint.json |
 | M12 — Backup e aceite completo da V1 | pending | — |
 
 Próxima ação: diga `continue` no Codex aberto nesta pasta. Uma execução termina no checkpoint.

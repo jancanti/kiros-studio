@@ -22,6 +22,10 @@ from kiros.content import CopyEngine, StoriesEngine, PrePublishAuditor
 from kiros.calendar import EditorialCalendarService
 from kiros.social import InstagramPublisher, PublicationAuditor
 from kiros.insights import InsightsService
+from kiros.learning import LearningService, PromptLibrary
+from kiros.search import GlobalSearchService
+from kiros.command_bar import CommandBarService
+from kiros.dashboard import DashboardService
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -88,6 +92,27 @@ class Application:
             library=self.library,
         )
         self.insights = InsightsService(self.database)
+        self.learning = LearningService(self.database, self.library, self.memory)
+        self.prompt_library = PromptLibrary(self.database)
+        self.search = GlobalSearchService(self.database)
+        self.command_bar = CommandBarService(
+            database=self.database,
+            campaigns=self.campaigns,
+            cost_manager=self.cost_manager,
+            queue=self.queue,
+            idea_bank=self.idea_bank,
+            search_service=self.search,
+        )
+        self.dashboard = DashboardService(
+            database=self.database,
+            library=self.library,
+            campaigns=self.campaigns,
+            queue=self.queue,
+            calendar=self.calendar,
+            idea_bank=self.idea_bank,
+            learning=self.learning,
+            prompt_library=self.prompt_library,
+        )
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

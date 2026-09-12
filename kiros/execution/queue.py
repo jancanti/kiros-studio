@@ -578,6 +578,37 @@ class ExecutionQueue:
                 (now, slide_id),
             )
 
+    def pause(self) -> None:
+        """Pausa globalmente a fila ou todos os trabalhos pendentes (Seção 52)."""
+        now = self._now()
+        with sqlite3.connect(self.db.path, timeout=30.0) as conn:
+            conn.execute(
+                "UPDATE execution_jobs SET status='paused', updated_at=? WHERE status='pending'",
+                (now,),
+            )
+            conn.execute(
+                "INSERT INTO preferences (key, value, source, reference, recorded_at) VALUES ('execution_queue_paused', 'true', 'user', 'command_bar', ?) ON CONFLICT(key) DO UPDATE SET value='true', recorded_at=excluded.recorded_at",
+                (now,),
+            )
+
+    def resume(self) -> None:
+        """Retoma globalmente os trabalhos pausados na fila (Seção 52)."""
+        now = self._now()
+        with sqlite3.connect(self.db.path, timeout=30.0) as conn:
+            conn.execute(
+                "UPDATE execution_jobs SET status='pending', updated_at=? WHERE status='paused'",
+                (now,),
+            )
+            conn.execute(
+                "INSERT INTO preferences (key, value, source, reference, recorded_at) VALUES ('execution_queue_paused', 'false', 'user', 'command_bar', ?) ON CONFLICT(key) DO UPDATE SET value='false', recorded_at=excluded.recorded_at",
+                (now,),
+            )
+
+    def is_paused(self) -> bool:
+        with sqlite3.connect(self.db.path) as conn:
+            row = conn.execute("SELECT value FROM preferences WHERE key = 'execution_queue_paused'").fetchone()
+            return bool(row and row[0] == 'true')
+
     def get_cancellation_impact(self, campaign_id: str) -> CancellationImpact:
         """Informa com precisão o custo já incorrido, risco de cobrança em voo e valor cancelável (M05-A02, Seção 52)."""
         with sqlite3.connect(self.db.path) as conn:

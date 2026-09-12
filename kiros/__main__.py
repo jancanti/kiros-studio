@@ -95,6 +95,12 @@ def make_server(data_dir, port=8765):
                     return self.respond(200, json.dumps(entries, ensure_ascii=False), 'application/json')
                 except Exception as exc:
                     return self.respond(500, str(exc))
+            if path == '/api/search':
+                query = parse_qs(urlsplit(self.path).query)
+                q = query.get('q', [''])[0]
+                types = query.get('type', None)
+                results = [r.to_dict() for r in app.search.search(q, entity_types=types)]
+                return self.respond(200, json.dumps(results, ensure_ascii=False), 'application/json')
             section = path.strip('/') or 'inicio'
             if section not in dict(NAVIGATION):
                 return self.respond(404, 'Página não encontrada')
@@ -135,7 +141,7 @@ def make_server(data_dir, port=8765):
                                 data[key] = value.decode('utf-8')
                     else:
                         return self.respond(415, 'Formato não permitido')
-                    section = dispatch(app.library, action, data, uploads)
+                    section = dispatch(app, action, data, uploads)
                 except UnicodeError:
                     return self.respond(303, '', location='/' + section + '?' + urlencode({'error': 'Use texto ou CSV em UTF-8.'}))
                 except ValueError as exc:
@@ -219,6 +225,61 @@ def make_server(data_dir, port=8765):
                     return self.respond(303, '', location='/insights?' + urlencode({'tab': tab, 'saved': '1'}))
                 except (ValueError, UnicodeError, PermissionError) as exc:
                     return self.respond(303, '', location='/insights?' + urlencode({'tab': tab, 'error': str(exc)}))
+            if self.path == '/api/command':
+                if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+                    return self.respond(415, 'Formato não permitido')
+                try:
+                    size = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < size <= 8192:
+                        raise ValueError('Tamanho de comando inválido.')
+                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=10)
+                    cmd_text = parsed.get('command', [''])[0]
+                    res = app.command_bar.execute(cmd_text)
+                    if res.target_url:
+                        sep = '&' if '?' in res.target_url else '?'
+                        loc = res.target_url + sep + urlencode({'notice': res.message})
+                        return self.respond(303, '', location=loc)
+                    return self.respond(303, '', location='/inicio?' + urlencode({'notice': res.message}))
+                except Exception as exc:
+                    return self.respond(303, '', location='/inicio?' + urlencode({'error': str(exc)}))
+            if self.path.startswith('/api/learning/proposals/'):
+                action = self.path.rsplit('/', 1)[-1]
+                if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+                    return self.respond(415, 'Formato não permitido')
+                try:
+                    size = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < size <= 8192:
+                        raise ValueError('Tamanho de requisição inválido.')
+                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=10)
+                    prop_id = parsed.get('proposal_id', [''])[0]
+                    if action == 'approve':
+                        approver = parsed.get('approver', ['Diretor de Criação'])[0]
+                        app.learning.approve_proposal(prop_id, approver)
+                        return self.respond(303, '', location='/inicio?' + urlencode({'notice': 'Proposta de aprendizado aprovada com sucesso.', 'saved': '1'}))
+                    elif action == 'reject':
+                        reviewer = parsed.get('reviewer', ['Diretor de Criação'])[0]
+                        app.learning.reject_proposal(prop_id, reviewer)
+                        return self.respond(303, '', location='/inicio?' + urlencode({'notice': 'Proposta de aprendizado rejeitada.', 'saved': '1'}))
+                    return self.respond(404, 'Ação desconhecida')
+                except Exception as exc:
+                    return self.respond(303, '', location='/inicio?' + urlencode({'error': str(exc)}))
+            if self.path.startswith('/api/prompts/'):
+                action = self.path.rsplit('/', 1)[-1]
+                if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+                    return self.respond(415, 'Formato não permitido')
+                try:
+                    size = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < size <= 8192:
+                        raise ValueError('Tamanho de requisição inválido.')
+                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=10)
+                    prompt_id = parsed.get('prompt_id', [''])[0]
+                    if action == 'approve':
+                        approver = parsed.get('approver', ['Diretor de Criação'])[0]
+                        app.prompt_library.approve_prompt(prompt_id, approver)
+                        return self.respond(303, '', location='/biblioteca?' + urlencode({'tab': 'prompts', 'notice': 'Prompt aprovado e salvo na biblioteca.', 'saved': '1'}))
+                    return self.respond(404, 'Ação desconhecida')
+                except Exception as exc:
+                    return self.respond(303, '', location='/biblioteca?' + urlencode({'tab': 'prompts', 'error': str(exc)}))
             if self.path != '/api/preferences':
                 return self.respond(404, 'Operação não encontrada')
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':

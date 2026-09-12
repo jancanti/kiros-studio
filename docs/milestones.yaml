@@ -519,7 +519,7 @@
       "depends_on": [
         "M10"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         47,
         55,
@@ -551,7 +551,10 @@
           "text": "Testes cobrem aprovação de aprendizado, proveniência, busca relevante com acentos e recusa de comando ambíguo para gastos/publicação."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M11/e404a349ef584e03a2791937acb6082d/checkpoint.json",
+        "at": "2026-09-12T20:14:04.887071+00:00"
+      },
       "blocker": null
     },
     {

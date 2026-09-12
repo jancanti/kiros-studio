@@ -136,3 +136,27 @@ th{font-weight:600;font-family:var(--font-body)}
 .insights button:hover{background:#3d5548}
 .insights summary{padding:8px 0}
 @media(max-width:700px){.insights-fields{grid-template-columns:1fr}.insights-tabs{gap:8px 16px;font-size:14px}.insights-record h3{font-size:20px}}
+
+/* M11: Dashboard contextual, Command Bar, Busca e Abas da Biblioteca */
+.header-command-bar{display:flex;align-items:center;gap:6px;margin:0;width:auto}
+.header-command-bar input{padding:6px 12px;font-size:12px;width:280px;border-radius:3px}
+.header-command-bar button{padding:6px 12px;font-size:12px;margin:0}
+.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:28px}
+.dashboard-card{max-width:100%}
+.dashboard-card h2{font-size:20px;margin:10px 0}
+.dashboard-list{list-style:none;padding:0;margin:14px 0}
+.dashboard-list li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.highlight-step{border-left:4px solid var(--ink);background:var(--paper)}
+.library-tabs{display:flex;flex-wrap:wrap;gap:12px 20px;border-bottom:1px solid var(--line);margin:24px 0 32px}
+.library-tabs a{padding:10px 0;text-decoration:none;color:var(--muted);font-weight:500}
+.library-tabs a.active-tab,.library-tabs a[aria-current]{border-bottom:2px solid var(--ink);color:var(--ink);font-weight:600}
+.search-bar-box{margin-bottom:24px}
+.search-results-list{list-style:none;padding:0;margin:16px 0}
+.search-results-list li{padding:12px;border:1px solid var(--line);border-radius:4px;margin-bottom:10px;background:var(--paper)}
+.proposal-item{padding:12px;border:1px solid var(--line);border-radius:4px;margin:10px 0;background:var(--paper)}
+@media(max-width:700px){
+  .header-command-bar{width:100%;margin-top:10px}
+  .header-command-bar input{width:100%}
+  .dashboard-grid{grid-template-columns:1fr}
+}
+

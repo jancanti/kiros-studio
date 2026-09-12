@@ -326,6 +326,22 @@
       "timeout_seconds": 60
     }
   ],
-  "M11": [],
+  "M11": [
+    {
+      "name": "M11: testes de aprendizado, prompts, busca global, command bar, dashboard e regressão completa",
+      "argv": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"],
+      "timeout_seconds": 180
+    },
+    {
+      "name": "Build local com migração 012 e novos módulos de experiência",
+      "argv": ["python3", "scripts/build.py"],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício",
+      "argv": ["python3", "scripts/smoke.py"],
+      "timeout_seconds": 60
+    }
+  ],
   "M12": []
 }

@@ -17,16 +17,8 @@ def render_page(app, section, saved=False, query=None):
     links = ''.join('<a href="/' + key + '"' + (' aria-current="page"' if key == section else '')
                     + '>' + label + '</a>' for key, label in NAVIGATION)
     if section == 'inicio':
-        content = '''<p class="eyebrow">Seu espaço de criação</p>
-        <h1>Intenção antes<br>da criação.</h1>
-        <p class="intro">Um estúdio para cuidar da presença da KIROS.<br>
-        Da identidade ao conteúdo, com contexto e aprovação.</p>
-        <div class="panel"><span class="tag">Fundação local</span>
-        <h2>Seu estúdio está começando.</h2>
-        <p>A navegação está disponível. Os fluxos de criação e publicação ainda não estão implementados.</p>
-        <a class="button" href="/configuracoes">Configurar o espaço <span aria-hidden="true">↗</span></a></div>
-        <div class="note"><h2>Estratégia · Criação · Cuidado</h2>
-        <p>Antigo chique e novo moderno.<br>O universo da KIROS Aromas como ponto de partida.</p></div>'''
+        from kiros.ui.dashboard import render_dashboard
+        content = render_dashboard(app, query or {})
     elif section in ('marca', 'biblioteca'):
         from kiros.ui.library import render_library
         content = render_library(app, section, query or {})
@@ -72,5 +64,9 @@ def render_page(app, section, saved=False, query=None):
     <aside><a class="wordmark" href="/inicio" aria-label="KIROS Studio, início">KIROS<span>STUDIO</span></a>
     <nav aria-label="Navegação principal">{links}</nav>
     <p class="aside-note">Aromas para casa.<br>Presença com intenção.</p></aside>
-    <div class="workspace"><header><span>{name}</span><span class="mode">Simulação local</span></header>
+    <div class="workspace"><header><span>{name}</span>
+    <form class="header-command-bar" method="post" action="/api/command">
+    <input id="head-cmd" type="text" name="command" placeholder="Command Bar (ex: 'Abra a última campanha')" required>
+    <button type="submit">Executar</button></form>
+    <span class="mode">Simulação local</span></header>
     <main id="main" tabindex="-1">{content}</main><footer>KIROS Aromas <span>Sorocaba · SP</span></footer></div></body></html>'''
