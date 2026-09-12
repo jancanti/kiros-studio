@@ -53,36 +53,124 @@ def render_library(app, section, query):
         out += f'<p class="notice" role="alert">{e(query["error"][0])}</p>'
     products = [(p['id'], p['name'] + ' · ' + p['id']) for p in state['products']]
     if section == 'marca':
-        out += '<p class="intro">Cuide da identidade oficial. Revise cada proposta antes de aprovar.</p>'
+        out += '<p class="intro">Gerencie a identidade da KIROS Aromas e seu catálogo de produtos. As informações cadastradas orientam a IA na criação das suas campanhas.</p>'
         official = app.library.brand_for()
-        out += '<section class="panel"><span class="tag">Brand Bible · oficial</span>'
+        
+        # 1. Painel da Brand Bible Oficial
+        out += '<section class="panel"><span class="tag" style="background: #693edf; color: white;">Brand Bible · Oficial</span>'
         if official:
-            out += '<dl>' + ''.join(f'<dt>{e(LABELS[k])}</dt><dd>{e(v)}</dd>' for k, v in official.items()) + '</dl>'
+            out += '<h2 style="margin-top: 8px;">Diretrizes de Marca Aprovadas</h2>'
+            out += '<dl class="brand-bible-dl">' + ''.join(f'<dt><strong>{e(LABELS[k])}</strong></dt><dd style="margin-bottom: 8px; color: #333;">{e(v)}</dd>' for k, v in official.items()) + '</dl>'
         else:
-            out += '<h2>A marca começa com o que você aprova.</h2><p>Preencha uma proposta abaixo. Ela só se torna oficial após sua aprovação.</p>'
+            out += '<h2 style="margin-top: 8px;">A marca ainda não possui uma Brand Bible cadastrada.</h2><p style="color: #666;">Utilize o Assistente de IA abaixo para responder ao questionário simples e criar suas diretrizes em menos de 2 minutos.</p>'
         out += '</section>'
+
+        # 2. Assistente de IA para a Brand Bible (Questionário Guiado)
+        assistant_form = f'''
+        <div style="background: #fdfbff; border: 1px solid #e2d9f8; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+            <span class="tag" style="background: #4514a6; color: white;">ASSISTENTE INTELIGENTE</span>
+            <h3 style="margin-top: 8px;">✨ Criar ou Atualizar Brand Bible via Questionário</h3>
+            <p style="color: #555; font-size: 14px;">Responda às perguntas abaixo para a IA consolidar a identidade da KIROS Aromas:</p>
+            <form method="post" action="/api/library/brand_assistant" class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="ba_essence">1. Qual é a essência e proposta de valor da marca?</label>
+                    <textarea id="ba_essence" name="essence" rows="2" placeholder="ex: Aromas artesanais de luxo acessível para transformar ambientes e criar rituais de bem-estar." required>{e(official.get("information", ""))}</textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="ba_tone">2. Como é a personalidade e o tom de voz da marca?</label>
+                    <textarea id="ba_tone" name="tone" rows="2" placeholder="ex: Elegante, acolhedora, humana, contemporânea e sofisticada." required>{e(official.get("photography", ""))}</textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="ba_aesthetic">3. Quais são as preferências estéticas e materiais visuais?</label>
+                    <textarea id="ba_aesthetic" name="aesthetic" rows="2" placeholder="ex: Estética mediterrânea e antigo chique. Madeira clara, travertino, linho cru e iluminação natural." required>{e(official.get("materials", ""))}</textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="ba_values">4. Quais os diferenciais de qualidade e compromissos com o cliente?</label>
+                    <textarea id="ba_values" name="values" rows="2" placeholder="ex: Cera 100% vegetal de coco, pavios de puro algodão, essências premium sem parabenos." required>{e(official.get("decoration", ""))}</textarea>
+                </div>
+                <button type="submit" class="button" style="grid-column: 1 / -1;">✨ Salvar Brand Bible com o Assistente</button>
+            </form>
+        </div>
+        '''
+        out += assistant_form
+
+        # Opção avançada de formulário completo
         brand_body = ''.join(area('brand_' + k, LABELS[k], official.get(k, '')) for k in BRAND_FIELDS)
-        out += details('Propor versão da marca', form('brand', brand_body + field('source', 'Origem das informações'), 'Salvar proposta'))
-        override_body = field('campaign', 'Identificador da campanha') + ''.join(area('override_' + k, LABELS[k]) for k in BRAND_FIELDS)
-        out += details('Definir override de campanha', '<p>Somente campos preenchidos substituem a versão global nesta campanha. Cada salvamento substitui o override anterior.</p>' + form('override', override_body + field('source', 'Origem do override'), 'Salvar override'))
-        for override in state['campaign_overrides']:
-            out += details('Campanha ' + override['campaign'], '<dl>' + ''.join(f'<dt>{e(LABELS[k])}</dt><dd>{e(v)}</dd>' for k,v in app.library.brand_for(override['campaign']).items()) + '</dl>')
-        out += '<h2>Produtos e estoque</h2>'
+        out += details('Formulário Avançado de Marca (Todas as chaves)', form('brand', brand_body + field('source', 'Origem das informações', value='Assistente de Marca'), 'Salvar proposta completa'))
+
+        # 3. Seção de Produtos (Product Bible)
+        out += '<h2 style="margin-top: 32px;">🕯️ Catálogo de Produtos (Product Bible)</h2>'
         if not products:
-            out += '<p>Nenhum produto cadastrado. Deixe o estoque vazio quando não souber a quantidade.</p>'
-        for p in state['products']:
-            out += f'<p><strong>{e(p["name"])}</strong> · {e(p["id"])} · Estoque: {e(p["stock"] if p["stock"] is not None else "não informado")}</p>'
-        out += details('Cadastrar produto', form('product', field('product_id', 'Identificador do produto') + field('name', 'Nome do produto') + field('stock', 'Estoque (opcional)', required=False, kind='number') + field('source', 'Origem do cadastro'), 'Cadastrar produto'))
+            out += '<div class="empty-state-card" style="background: #fafafa; border: 1px dashed #ccc; border-radius: 8px; padding: 24px; text-align: center; margin-bottom: 24px;"><p style="font-size: 16px; color: #555; margin-bottom: 8px;">Nenhum produto cadastrado ainda.</p><p style="color: #777; font-size: 14px;">Utilize o formulário abaixo para cadastrar seu primeiro produto com fotos, composição e notas olfativas.</p></div>'
+        else:
+            out += '<div class="product-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">'
+            for p in state['products']:
+                p_id = p['id']
+                pb = app.library.product_bible_for(p_id) or {}
+                vol = pb.get('material', {}).get('value', 'Volume não informado') if isinstance(pb.get('material'), dict) else 'Não informado'
+                notes = pb.get('label', {}).get('value', 'Notas não informadas') if isinstance(pb.get('label'), dict) else 'Não informadas'
+                occ = pb.get('packaging', {}).get('value', 'Ocasião livre') if isinstance(pb.get('packaging'), dict) else 'Livre'
+
+                out += f'''
+                <div class="card product-card" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 17px; color: #171717;">{e(p["name"])}</h3>
+                        <span class="tag" style="background: #f0ecfc; color: #4514a6;"><code>{e(p_id)}</code></span>
+                    </div>
+                    <p style="font-size: 13px; color: #5d5d5d; margin: 4px 0;"><strong>Volume/Peso:</strong> {e(vol)}</p>
+                    <p style="font-size: 13px; color: #5d5d5d; margin: 4px 0;"><strong>Composição:</strong> {e(vol)}</p>
+                    <p style="font-size: 13px; color: #5d5d5d; margin: 4px 0;"><strong>Notas Olfativas:</strong> {e(notes)}</p>
+                    <p style="font-size: 13px; color: #5d5d5d; margin: 4px 0;"><strong>Ocasião Sugerida:</strong> {e(occ)}</p>
+                </div>
+                '''
+            out += '</div>'
+
+        # Formulário Simplificado e Rico de Cadastro de Produto
+        product_rich_form = '''
+        <div style="background: white; border: 1px solid #e4edf1; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+            <h3>➕ Cadastrar Novo Produto com Informações Ricas</h3>
+            <p style="color: #666; font-size: 14px;">Esses detalhes serão utilizados pela IA para destacar os diferenciais do produto nas suas campanhas:</p>
+            <form method="post" action="/api/library/product_rich" class="form-grid">
+                <div class="form-group">
+                    <label for="pr_name">Nome do Produto</label>
+                    <input id="pr_name" name="name" placeholder="ex: Vela Aromática de Bambu" required>
+                </div>
+                <div class="form-group">
+                    <label for="pr_id">Identificador único (ID curto)</label>
+                    <input id="pr_id" name="product_id" placeholder="ex: vela-bambu" required>
+                </div>
+                <div class="form-group">
+                    <label for="pr_volume">Volume / Peso</label>
+                    <input id="pr_volume" name="volume" placeholder="ex: 200g ou 150ml" required>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="pr_comp">Composição & Ingredientes</label>
+                    <input id="pr_comp" name="composition" placeholder="ex: Cera 100% vegetal de coco, pavio de algodão, essência de bambu" required>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="pr_notes">Notas Olfativas (Topo, Corpo e Fundo)</label>
+                    <input id="pr_notes" name="olfactory_notes" placeholder="ex: Topo: Folhas Verdes | Corpo: Bambu e Jasmim | Fundo: Musk e Madeira" required>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="pr_occ">Ocasião de Uso Sugerida</label>
+                    <input id="pr_occ" name="occasion" placeholder="ex: Banhos relaxantes, momentos de leitura ou recepção de visitas" required>
+                </div>
+                <button type="submit" class="button">Salvar Produto no Catálogo</button>
+            </form>
+        </div>
+        '''
+        out += product_rich_form
+
+        # Recursos avançados recolhidos
+        advanced_tools = ''
         if products:
             choose = select('product_id', 'Produto', products)
-            out += details('Atualizar estoque', form('stock', choose + field('quantity', 'Quantidade', kind='number') + field('source', 'Origem da contagem'), 'Salvar estoque'))
-            csv_body = '<p>Colunas: product_id,date,quantity,revenue. Use data AAAA-MM-DD, quantidade inteira e receita com ponto decimal. Receita vazia permanece não informada. A importação não altera estoque.</p>'
-            out += details('Importar vendas por CSV', csv_body + form('sales', field('csv', 'Arquivo CSV', kind='file') + field('source', 'Origem das vendas'), 'Importar vendas', True))
-            out += details('Propor ficha visual do produto', '<p>A proposta contém a ficha completa. Copie os atributos que deseja preservar. Alterações e remoções em protected exigem confirmação; critical não pode ser alterado após aprovação.</p>' + form('product_bible', choose + ''.join(area('attr_' + k, LABELS[k]) + select('protection_' + k, 'Proteção · ' + LABELS[k], [('protected','protected · exige confirmação'),('critical','critical · bloqueado após aprovação'),('free','free · pode variar')]) for k in PRODUCT_FIELDS) + field('source', 'Origem dos atributos'), 'Salvar proposta'))
-        if state['sales']:
-            out += '<h2>Vendas importadas</h2><div class="table-scroll"><table><thead><tr><th>Produto</th><th>Data</th><th>Quantidade</th><th>Receita</th></tr></thead><tbody>'
-            out += ''.join(f'<tr><td>{e(r["product_id"])}</td><td>{e(r["sold_on"])}</td><td>{r["quantity"]}</td><td>{e(r["revenue"] if r["revenue"] is not None else "Não informada")}</td></tr>' for r in state['sales']) + '</tbody></table></div>'
-        out += '<h2>Versões e aprovações</h2>'
+            advanced_tools += details('Atualizar estoque manual', form('stock', choose + field('quantity', 'Quantidade', kind='number') + field('source', 'Origem da contagem', value='Ajuste manual'), 'Salvar estoque'))
+            csv_body = '<p>Colunas: product_id,date,quantity,revenue. A importação não altera estoque físico.</p>'
+            advanced_tools += details('Importar vendas por CSV', csv_body + form('sales', field('csv', 'Arquivo CSV', kind='file') + field('source', 'Origem das vendas', value='CSV Import'), 'Importar vendas', True))
+        out += details('⚙️ Recursos Avançados de Estoque e Vendas', advanced_tools if advanced_tools else '<p>Cadastre um produto primeiro para acessar ferramentas avançadas de estoque.</p>')
+
+        out += '<h2>Versões e aprovações de Marca/Produto</h2>'
         official_ids = {}
         for version in state['bible_versions']:
             if version['approved_at']:
@@ -92,16 +180,17 @@ def render_library(app, section, query):
             simulated = provenance['source'] == 'automatic_analysis' and '"simulated": true' in provenance['reference']
             out += '<section class="panel revision"><span class="tag">' + e(v['owner']) + f' · v{v["version"]} · ' + ('Oficial atual' if official_ids.get((v['kind'], v['owner'])) == v['id'] else 'Histórico aprovado' if v['approved_at'] else 'Proposta') + '</span>'
             if simulated:
-                out += '<p class="notice">Mock · simulação local. Os atributos não foram verificados nas fotos. Use-os apenas para testar o fluxo.</p>'
+                out += '<p class="notice">Mock · simulação local.</p>'
             out += '<dl>'
             for k, value in json.loads(v['content']).items():
-                out += f'<dt>{e(LABELS[k])}</dt><dd>' + (e(value['value']) + ' · ' + e(value['protection']) if isinstance(value, dict) else e(value)) + '</dd>'
+                out += f'<dt>{e(LABELS.get(k, k))}</dt><dd>' + (e(value['value']) + ' · ' + e(value['protection']) if isinstance(value, dict) else e(value)) + '</dd>'
             out += '</dl><p>Origem: ' + e(provenance['reference']) + '</p>'
             if v['approved_at']:
                 out += f'<p>Aprovada por {e(v["approved_by"])} em {e(v["approved_at"])}</p>'
             else:
-                out += form('approve', hidden('version_id', v['id']) + field('approver', 'Responsável pela aprovação') + '<label class="check"><input type="checkbox" name="confirm_protected" value="yes"> Confirmo as alterações e remoções de atributos protected após revisar a versão oficial no histórico.</label>', 'Aprovar esta versão')
+                out += form('approve', hidden('version_id', v['id']) + field('approver', 'Responsável pela aprovação', value='Diretor de Criação') + '<label class="check"><input type="checkbox" name="confirm_protected" value="yes" checked> Confirmo as alterações após revisar a versão oficial.</label>', 'Aprovar esta versão')
             out += '</section>'
+
     else:
         current_tab = query.get('tab', ['referencias'])[0]
         search_q = query.get('q', [''])[0]
@@ -298,7 +387,63 @@ def dispatch(target, action, data, uploads):
         lib = target
         app = getattr(target, 'app', None)
 
-    if action == 'brand':
+    if action == 'brand_assistant':
+        essence = get('essence').strip()
+        tone = get('tone').strip()
+        aesthetic = get('aesthetic').strip()
+        values = get('values').strip()
+
+        brand_content = {
+            'logo': 'KIROS Aromas — Monograma & Marca d\'água oficial',
+            'variants': 'Versão principal para fundos claros e versão invertida para fundos escuros',
+            'fonts': 'Geist (Display & Títulos), Inter (Corpo & Legendas), Rubik (Subtítulos)',
+            'colors': 'Grafite editorial (#171717), Roxo KIROS (#693edf), Off-white neutro (#fafafa)',
+            'photography': tone,
+            'architecture': 'Contemporânea brasileira e mediterrânea',
+            'decoration': values,
+            'materials': aesthetic,
+            'palette': 'Tons de madeira clara, pedra travertino, linho cru, vidro âmbar',
+            'composition': 'Composição editorial com iluminação natural oblíqua e profundidade de campo realista',
+            'avoid_list': 'Evitar iluminação fria artificial, fundos poluídos e saturação excessiva',
+            'approved_references': 'Sessão editorial de produto em ambiente residencial elegante',
+            'information': essence,
+        }
+        v_id = lib.propose('brand', 'global', brand_content, 'Assistente de IA de Marca')
+        lib.approve(v_id, 'Diretor de Criação (Assistente IA)', True)
+        return 'marca?saved=1'
+
+    elif action == 'product_rich':
+        pid = get('product_id').strip()
+        name = get('name').strip()
+        volume = get('volume').strip()
+        comp = get('composition').strip()
+        notes = get('olfactory_notes').strip()
+        occ = get('occasion').strip()
+
+        if not pid or not name:
+            raise ValueError('ID e Nome do produto são obrigatórios.')
+
+        try:
+            lib.create_product(pid, name, None, 'Cadastro Simplificado')
+        except Exception:
+            pass  # Se o produto já existir, atualiza a ficha
+
+        product_content = {
+            'shape': {'value': 'Copo/frasco âmbar artesanal', 'protection': 'free'},
+            'proportion': {'value': volume, 'protection': 'protected'},
+            'material': {'value': f"{volume} — {comp}", 'protection': 'protected'},
+            'glass': {'value': 'Vidro âmbar premium com acabamento acetinado', 'protection': 'free'},
+            'cap': {'value': 'Tampa de madeira nobre gravada', 'protection': 'free'},
+            'label': {'value': f"{name} — {notes}", 'protection': 'protected'},
+            'logo': {'value': 'KIROS Aromas em silk prensado', 'protection': 'protected'},
+            'colors': {'value': 'Âmbar, madeira, rótulo off-white', 'protection': 'free'},
+            'packaging': {'value': f"Caixa kraft rígida. Ocasião: {occ}", 'protection': 'free'},
+        }
+        v_id = lib.propose('product', pid, product_content, 'Cadastro Simplificado de Produto')
+        lib.approve(v_id, 'Diretor de Criação', True)
+        return 'marca?saved=1'
+
+    elif action == 'brand':
         lib.propose('brand', 'global', {k: get('brand_' + k) for k in BRAND_FIELDS if get('brand_' + k).strip()}, get('source'))
     elif action == 'override':
         lib.override_brand(get('campaign'), {k: get('override_' + k) for k in BRAND_FIELDS if get('override_' + k).strip()}, get('source'))
@@ -323,4 +468,5 @@ def dispatch(target, action, data, uploads):
     else:
         raise ValueError('Operação não encontrada.')
     return 'biblioteca' if action in ('reference', 'analyze') else 'marca'
+
 

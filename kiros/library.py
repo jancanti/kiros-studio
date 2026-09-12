@@ -206,6 +206,12 @@ class Library:
                 result.update(json.loads(override['content']))
             return result
 
+    def product_bible_for(self, product_id):
+        with self.connection() as db:
+            row = self._official(db, 'product', product_id)
+            return json.loads(row['content']) if row else {}
+
+
     def add_reference(self, photo, *, product_id=None, scope='permanent', campaign=None,
                       origin='unknown', source_reference='', rights='unknown', angle='front', quality=0):
         if not isinstance(photo, bytes) or not 16 <= len(photo) <= 5_000_000:
