@@ -15,7 +15,7 @@ class FlowTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='kiros-flow-')
         self.root = Path(self.temp.name)/'project with spaces'
-        shutil.copytree(SOURCE, self.root, ignore=shutil.ignore_patterns('__pycache__','.kiros'))
+        shutil.copytree(SOURCE, self.root, ignore=shutil.ignore_patterns('__pycache__', '.kiros', '.git'))
         self.script = self.root/'scripts/kiros_flow.py'
         # Cada cenário parte de um pacote novo, independentemente do avanço real.
         # Alterar somente a cópia temporária; preservar as asserções de transição.
