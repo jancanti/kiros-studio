@@ -220,3 +220,4 @@ O sistema rejeita sombras difusas ou neomórficas, operando prioritariamente sob
 - **Don't** usar a fonte Geist em tamanhos de corpo menores que 18px.
 - **Don't** criar paletas de botões multicoloridas aleatórias; mantenha o binômio `#693edf` (ação) e `#ffffff` com borda (secundário).
 - **Don't** pintar seções inteiras com fundos roxos sólidos; use o *Architectural Gradient Slab* apenas em lajes contidas de métricas.
+

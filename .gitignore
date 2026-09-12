@@ -4,3 +4,4 @@ __pycache__/
 .kiros/
 dist/
 .DS_Store
+.gemini/

@@ -81,9 +81,15 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     pillars = ideas.list_pillars()
     seasonal_ops = ideas.get_seasonal_opportunities()
 
+    selected_pillar = query.get('pillar', [''])[0].strip().lower() if query.get('pillar') else ''
+
     html = []
-    html.append('<p class="eyebrow">Inteligência Estratégica · Creative Director</p><h1>Creative Director</h1>')
-    html.append('<p class="intro">Briefings estruturados, banco de ideias com limites por pilar, sazonalidade antecipada e resolução de conflitos.</p>')
+    html.append('''
+    <div class="creator-header">
+        <h1>Creative Director</h1>
+        <p class="intro">Briefings estruturados, banco de ideias com limites por pilar, sazonalidade antecipada e resolução de conflitos.</p>
+    </div>
+    ''')
 
     # Mensagens e alertas
     if query.get('msg'):
@@ -101,7 +107,7 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     # 1. Briefing Híbrido
     raw_val = escape(query.get('raw_briefing', [''])[0])
     html.append(f'''
-    <div class="briefing-canvas">
+    <div class="briefing-canvas" id="briefing-canvas">
         <span class="tag">Briefing Híbrido</span>
         <h2>Entrada Livre com Estruturação Progressiva</h2>
         <p>Comece com linguagem livre. O Creative Director recomendará objetivos, tom e perguntas mínimas necessárias.</p>
@@ -109,16 +115,33 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         <div class="quick-chips-container">
             <span class="quick-chips-label">Sugestões de pauta rápida:</span>
             <div class="quick-chips">
-                <button type="button" class="quick-chip" onclick="document.getElementById('briefing_text').value='Quero uma campanha para destacar a vela de alecrim como ancoragem de foco no home office.';">🌿 Foco &amp; Alecrim</button>
-                <button type="button" class="quick-chip" onclick="document.getElementById('briefing_text').value='Campanha mostrando o ritual de acender a vela antes de ler um livro à noite, desacelerando das telas.';">🌙 Ritual Noturno</button>
-                <button type="button" class="quick-chip" onclick="document.getElementById('briefing_text').value='Lançamento da nova linha de difusores em vidro âmbar com estética escandinava e minimalista.';">✨ Linha Âmbar</button>
+                <button type="button" class="quick-chip" onclick="setQuickBriefing(this, 'Quero uma campanha para destacar a vela de alecrim como ancoragem de foco no home office.');">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
+                    <span>Foco &amp; Alecrim</span>
+                </button>
+                <button type="button" class="quick-chip" onclick="setQuickBriefing(this, 'Campanha mostrando o ritual de acender a vela antes de ler um livro à noite, desacelerando das telas.');">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    <span>Ritual Noturno</span>
+                </button>
+                <button type="button" class="quick-chip" onclick="setQuickBriefing(this, 'Lançamento da nova linha de difusores em vidro âmbar com estética escandinava e minimalista.');">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                    <span>Linha Âmbar</span>
+                </button>
+                <button type="button" class="quick-chip" onclick="setQuickBriefing(this, 'Ritual matinal acolhedor destacando aromas cítricos e flor de laranjeira para despertar intenções.');">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <span>Manhã de Renovação</span>
+                </button>
             </div>
         </div>
 
-        <form method="post" action="/api/creator/interpret_briefing" class="form-grid">
+        <form method="post" action="/api/creator/interpret_briefing" class="briefing-form">
             <div class="form-group">
                 <label for="briefing_text">Descreva a ideia ou objetivo da campanha</label>
                 <textarea id="briefing_text" name="briefing_text" rows="3" placeholder="Ex: Quero uma campanha para mostrar minhas velas aromáticas em ambientes sofisticados e acolhedores." required>{raw_val}</textarea>
+                <div class="textarea-assist">
+                    <span class="hint">Linguagem natural: o estúdio traduz em objetivos, tom e funil editorial.</span>
+                    <span class="hint">Atalho: <kbd>Cmd</kbd>+<kbd>Enter</kbd></span>
+                </div>
             </div>
             <div class="form-group">
                 <label for="custom_objective">Objetivo específico (opcional, ou deixe o Diretor recomendar)</label>
@@ -130,7 +153,7 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('''
                 </select>
             </div>
-            <button type="submit" class="button">Interpretar Briefing</button>
+            <button type="submit" class="button">Interpretar Briefing <span aria-hidden="true">→</span></button>
         </form>
     </div>
     ''')
@@ -147,8 +170,18 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
 
         html.append(f'''
         <div class="briefing-result-card" role="region" aria-label="Resultado da estruturação">
-            <span class="tag badge-success">Briefing Estruturado</span>
-            <h2>Diretrizes da Campanha</h2>
+            <div class="briefing-result-header">
+                <div>
+                    <span class="tag badge-success">Briefing Estruturado</span>
+                    <h2>Diretrizes da Campanha</h2>
+                </div>
+                <div class="confidence-indicator">
+                    <span class="badge badge-success">{conf}% de Confiança</span>
+                    <div class="confidence-track" aria-hidden="true">
+                        <div class="confidence-bar" style="width:{conf}%;"></div>
+                    </div>
+                </div>
+            </div>
             <div class="briefing-meta-grid">
                 <div class="briefing-meta-item">
                     <strong>Objetivo Principal</strong>
@@ -167,19 +200,24 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
                     <span>{stage} · <strong>{pil.capitalize()}</strong></span>
                 </div>
             </div>
-            <p><strong>Justificativa Estratégica:</strong> {just}</p>
+            <div class="briefing-justification-box">
+                <p><strong>Justificativa Estratégica:</strong> {just}</p>
+            </div>
             <form method="post" action="/api/creator/add_idea" class="inline-form" style="margin-top:16px;">
                 <input type="hidden" name="title" value="Campanha: {raw_val[:50]}">
                 <input type="hidden" name="concept" value="{raw_val}">
                 <input type="hidden" name="pillar" value="{pil}">
-                <button type="submit" class="button">Salvar como Ideia no Banco</button>
+                <button type="submit" class="button">Salvar como Ideia no Banco <span aria-hidden="true">+</span></button>
             </form>
         </div>
         ''')
 
     # 2. Banco de Ideias por Pilar
+    all_ideas = ideas.list_ideas()
+    displayed_ideas = [i for i in all_ideas if i['pillar'].lower() == selected_pillar] if selected_pillar else all_ideas
+
     html.append(f'''
-    <div class="panel">
+    <div class="panel" id="banco-de-ideias">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
             <div>
                 <span class="tag">Governança Editorial</span>
@@ -188,9 +226,38 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
             </div>
         </div>
 
-        <details class="revision" style="margin:14px 0 18px;">
-            <summary style="font-size:15px;color:var(--primary);font-weight:600;cursor:pointer;">+ Propor Nova Ideia Manualmente</summary>
-            <form method="post" action="/api/creator/add_idea" class="form-grid" style="margin-top:14px;background:var(--surface-input);padding:18px;border-radius:var(--radius-sm);border:1px solid var(--hairline-cool);">
+        <div class="idea-filter-bar">
+            <a href="/criar#banco-de-ideias" class="idea-filter-tab {'active' if not selected_pillar else ''}">
+                Todos ({len(all_ideas)})
+            </a>
+    ''')
+    for p in pillars:
+        pid = p['id']
+        pname = p['name']
+        pcount = len([i for i in all_ideas if i['pillar'].lower() == pid.lower()])
+        is_sel = selected_pillar == pid.lower()
+        html.append(f'''
+            <a href="/criar?pillar={pid}#banco-de-ideias" class="idea-filter-tab {'active' if is_sel else ''}">
+                {pname} ({pcount})
+            </a>
+        ''')
+    html.append('''
+        </div>
+    ''')
+
+    if selected_pillar:
+        matching_pillar = next((p['name'] for p in pillars if p['id'].lower() == selected_pillar), selected_pillar.capitalize())
+        html.append(f'''
+        <div class="filter-active-indicator">
+            <span>Filtrando ideias por <strong>{matching_pillar}</strong> ({len(displayed_ideas)} encontradas)</span>
+            <a href="/criar#banco-de-ideias" class="clear-filter-link">Ver todos os pilares ✕</a>
+        </div>
+        ''')
+
+    html.append(f'''
+        <details class="revision idea-form-drawer">
+            <summary>+ Propor Nova Ideia Manualmente</summary>
+            <form method="post" action="/api/creator/add_idea" class="idea-manual-form">
                 <div class="form-group">
                     <label for="idea_title">Título da Ideia</label>
                     <input id="idea_title" name="title" placeholder="Ex: Rituais de Outono com Alecrim" required>
@@ -204,22 +271,22 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
                     <select id="idea_pillar" name="pillar" required>
     ''')
     for p in pillars:
-        html.append(f'<option value="{p["id"]}">{p["name"]}</option>')
+        selected_attr = ' selected' if selected_pillar == p['id'].lower() else ''
+        html.append(f'<option value="{p["id"]}"{selected_attr}>{p["name"]}</option>')
     html.append('''
                     </select>
                 </div>
                 <div class="form-group checkbox-group">
                     <label><input type="checkbox" name="is_pinned" value="1"> Fixar ideia no topo</label>
                 </div>
-                <button type="submit" class="button">Adicionar Ideia</button>
+                <button type="submit" class="button">Adicionar Ideia <span aria-hidden="true">+</span></button>
             </form>
         </details>
     ''')
 
-    all_ideas = ideas.list_ideas()
-    if all_ideas:
+    if displayed_ideas:
         html.append('<div class="idea-cards" style="margin-top:12px;">')
-        for idea in all_ideas:
+        for idea in displayed_ideas:
             iid = escape(idea['id'])
             ititle = escape(idea['title'])
             iconcept = escape(idea['concept'])
@@ -237,13 +304,13 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
                         <span class="tag">{ipillar}</span>
                         <h3 style="margin:4px 0;">{ititle}</h3>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center;">
+                    <div class="card-badge-group">
                         <span class="badge {state_badge}">{istate.upper()}</span>
-                        { '<span class="tag" style="color:var(--primary);font-weight:700;">FIXADA</span>' if ispinned else '' }
+                        { '<span class="badge badge-pinned">FIXADA</span>' if ispinned else '' }
                     </div>
                 </div>
-                <p style="margin:8px 0;">{iconcept}</p>
-                { f'<p class="hint"><em>Rejeitada: {rej_reason}</em></p>' if rej_reason else '' }
+                <p class="idea-concept-text">{iconcept}</p>
+                { f'<div class="rejection-note"><strong>Rejeitada:</strong> <em>{rej_reason}</em></div>' if rej_reason else '' }
                 <div class="card-actions">
             ''')
             if istate != 'rejected':
@@ -253,19 +320,27 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
                         <input type="hidden" name="pin" value="{'0' if ispinned else '1'}">
                         <button type="submit" class="button-secondary">{'Desafixar' if ispinned else 'Fixar'}</button>
                     </form>
-                    <details class="inline-form">
+                    <details class="inline-form reject-drawer">
                         <summary class="button-secondary" style="font-size:12px;padding:6px 12px;min-height:36px;">Rejeitar com motivo</summary>
-                        <form method="post" action="/api/creator/reject_idea" style="margin-top:8px;">
+                        <form method="post" action="/api/creator/reject_idea" class="reject-form">
                             <input type="hidden" name="idea_id" value="{iid}">
-                            <input name="reason" placeholder="Informe o motivo da rejeição" required style="width:250px;padding:6px;">
-                            <button type="submit" class="button-danger" style="padding:6px 10px;min-height:36px;">Confirmar rejeição</button>
+                            <div class="reject-input-group">
+                                <input name="reason" placeholder="Informe o motivo da rejeição" required class="reject-reason-input">
+                                <button type="submit" class="button-danger" style="padding:6px 12px;min-height:36px;font-size:12px;">Confirmar rejeição</button>
+                            </div>
                         </form>
                     </details>
                 ''')
             html.append('</div></div>')
         html.append('</div>')
     else:
-        html.append('<p class="hint" style="margin-top:8px;">Nenhuma ideia cadastrada no momento. Proponha uma ideia acima ou gere novos briefings.</p>')
+        html.append(f'''
+        <div class="empty-idea-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            <p>Nenhuma ideia encontrada {f"no pilar '{selected_pillar.capitalize()}'" if selected_pillar else "no momento"}.</p>
+            <span class="hint">Use as sugestões rápidas de briefing acima ou proponha uma nova ideia manualmente.</span>
+        </div>
+        ''')
     html.append('</div>')
 
     html.append('</div>') # fecha creator-primary-col
@@ -276,11 +351,16 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('<div class="creator-sidebar-col">')
 
     # Mini-painel: Governança dos 6 Pilares
-    html.append('''
+    html.append(f'''
     <div class="panel">
-        <span class="tag">Governança de Pautas</span>
-        <h3 style="margin:6px 0 4px;font-size:16px;">Capacidade dos Pilares</h3>
-        <p style="font-size:12px;margin:0 0 10px;">Monitoramento de cotas para garantir equilíbrio editorial.</p>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+            <div>
+                <span class="tag">Governança de Pautas</span>
+                <h3 style="margin:6px 0 4px;font-size:18px;">Capacidade dos Pilares</h3>
+            </div>
+            {f'<a href="/criar#banco-de-ideias" class="clear-filter-link" style="font-size:12px;">Ver todos</a>' if selected_pillar else ''}
+        </div>
+        <p style="font-size:12px;margin:0 0 12px;color:var(--muted-blue);">Monitoramento de cotas para garantir equilíbrio editorial.</p>
         <div class="pillar-mini-grid">
     ''')
     for p in pillars:
@@ -289,11 +369,18 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         active_count = ideas.count_active_ideas(pid)
         is_full = active_count >= MAX_ACTIVE_IDEAS_PER_PILLAR
         badge_style = 'badge-error' if is_full else 'badge-success'
+        is_active_card = selected_pillar == pid.lower()
+        segments_html = ''.join(f'<div class="pillar-segment {"filled" if i < active_count else ""}"></div>' for i in range(MAX_ACTIVE_IDEAS_PER_PILLAR))
         html.append(f'''
-            <div class="pillar-mini-card">
-                <span style="font-size:13px;font-weight:600;">{pname}</span>
-                <span class="tag {badge_style}" style="font-size:10px;">{active_count}/{MAX_ACTIVE_IDEAS_PER_PILLAR} ativas</span>
-            </div>
+            <a href="/criar?pillar={pid}#banco-de-ideias" class="pillar-mini-card {'active-pillar' if is_active_card else ''}" title="Filtrar por {pname}">
+                <div class="pillar-mini-header">
+                    <span class="pillar-mini-name">{pname}</span>
+                    <span class="pillar-quota-badge {badge_style}">{active_count}/{MAX_ACTIVE_IDEAS_PER_PILLAR} ativas</span>
+                </div>
+                <div class="pillar-segments" aria-hidden="true">
+                    {segments_html}
+                </div>
+            </a>
         ''')
     html.append('</div></div>')
 
@@ -301,8 +388,8 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('''
     <div class="panel">
         <span class="tag">Planejamento Sazonal</span>
-        <h3 style="margin:6px 0 4px;font-size:16px;">Datas Prioritárias (2–3 Meses Antes)</h3>
-        <p style="font-size:12px;margin:0 0 12px;">Natal e Dia das Mães geram rascunhos antecipados em 4 fases, mas <strong>não entram no calendário oficial sem aprovação</strong>.</p>
+        <h3 style="margin:6px 0 4px;font-size:18px;">Datas Prioritárias (2–3 Meses Antes)</h3>
+        <p style="font-size:12px;margin:0 0 12px;color:var(--muted-blue);">Natal e Dia das Mães geram rascunhos antecipados em 4 fases, mas <strong>não entram no calendário oficial sem aprovação</strong>.</p>
         <div class="seasonal-grid">
     ''')
     for ev in seasonal_ops:
@@ -313,12 +400,24 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         html.append(f'''
         <div class="seasonal-item-card">
             <div class="card-header">
-                <h4 style="margin:0;font-size:14px;">{name}</h4>
-                <span class="tag" style="color:var(--primary);font-weight:600;">Faltam {days} dias</span>
+                <h4 style="margin:0;font-size:14px;font-weight:600;">{name}</h4>
+                <span class="tag" style="color:var(--color-primary);font-weight:600;">Faltam {days} dias</span>
             </div>
-            <p style="font-size:12px;margin:4px 0;">Data: <strong>{target}</strong> · Fase: <code>{phase}</code></p>
-            <p class="hint" style="margin:0 0 8px;">Fases previstas: Warm-up → Consideração → Conversão → Last Call.</p>
-            <button type="button" class="button-secondary" style="width:100%;font-size:12px;padding:6px 10px;min-height:34px;" onclick="document.getElementById('briefing_text').value='Campanha sazonal de {name} ({target}): desenvolvimento de narrativa para a fase de {phase}.';document.getElementById('briefing_text').focus();">Usar como Pauta no Briefing ↑</button>
+            <p style="font-size:12px;margin:6px 0 10px;color:var(--muted-blue);">Data: <strong>{target}</strong> · Fase: <code>{phase}</code></p>
+            <div class="seasonal-phase-meter" aria-label="Fase atual: {phase}">
+                <div class="phase-segments">
+                    <span class="phase-seg {'active' if phase == 'Warm-up' else 'done' if phase in ('Consideração', 'Conversão', 'Last Call') else ''}"></span>
+                    <span class="phase-seg {'active' if phase == 'Consideração' else 'done' if phase in ('Conversão', 'Last Call') else ''}"></span>
+                    <span class="phase-seg {'active' if phase == 'Conversão' else 'done' if phase == 'Last Call' else ''}"></span>
+                    <span class="phase-seg {'active' if phase == 'Last Call' else ''}"></span>
+                </div>
+                <div class="phase-label-row">
+                    <span class="phase-current-tag">Fase ativa: <strong>{phase}</strong></span>
+                    <span class="phase-step-count">{'1/4' if phase == 'Warm-up' else ('2/4' if phase == 'Consideração' else ('3/4' if phase == 'Conversão' else '4/4'))}</span>
+                </div>
+            </div>
+            <p class="hint" style="margin:0 0 12px;">Fases previstas: Warm-up → Consideração → Conversão → Last Call.</p>
+            <button type="button" class="button-secondary" style="width:100%;font-size:12px;padding:8px 12px;min-height:36px;" onclick="useSeasonalPauta('Campanha sazonal de {name} ({target}): desenvolvimento de narrativa para a fase de {phase}.');">Usar como Pauta no Briefing ↑</button>
         </div>
         ''')
     html.append('</div></div>')
@@ -327,8 +426,8 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('''
     <div class="panel">
         <span class="tag">Topo de Funil · Descoberta</span>
-        <h3 style="margin:6px 0 4px;font-size:16px;">Conteúdo Adjacente e Pontes de Marca</h3>
-        <p style="font-size:12px;margin:0 0 12px;">Conteúdos de descoberta ampliam alcance dialogando com temas de interesse do público sem descaracterizar a KIROS.</p>
+        <h3 style="margin:6px 0 4px;font-size:18px;">Conteúdo Adjacente e Pontes de Marca</h3>
+        <p style="font-size:12px;margin:0 0 12px;color:var(--muted-blue);">Conteúdos de descoberta ampliam alcance dialogando com temas de interesse do público sem descaracterizar a KIROS.</p>
         <div class="adjacent-grid">
     ''')
     adjacent = ideas.generate_adjacent_content_suggestions('desaceleração e rituais')
@@ -340,15 +439,26 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         apillar = adj['pillar']
         html.append(f'''
         <div class="adjacent-discovery-card">
-            <h4>{atitle}</h4>
-            <p><strong>Por que atrai:</strong> {awhy}</p>
-            <p><strong>Relação com KIROS:</strong> {arelation}</p>
-            <p><strong>Ponte para o produto:</strong> {abridge}</p>
-            <form method="post" action="/api/creator/add_adjacent" style="margin-top:10px;">
+            <div class="card-header">
+                <h4>{atitle}</h4>
+                <span class="tag">{apillar.capitalize()}</span>
+            </div>
+            <div class="adjacent-bridge-flow">
+                <div class="adjacent-row">
+                    <strong>Por que atrai:</strong> {awhy}
+                </div>
+                <div class="adjacent-row">
+                    <strong>Relação com KIROS:</strong> {arelation}
+                </div>
+                <div class="adjacent-row bridge-highlight">
+                    <strong>Ponte para o produto:</strong> {abridge}
+                </div>
+            </div>
+            <form method="post" action="/api/creator/add_adjacent">
                 <input type="hidden" name="title" value="{atitle}">
                 <input type="hidden" name="concept" value="{abridge}">
                 <input type="hidden" name="pillar" value="{apillar}">
-                <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;min-height:34px;">Salvar no pilar {apillar.capitalize()}</button>
+                <button type="submit" class="button-secondary" style="width:100%;font-size:12px;padding:8px 12px;min-height:36px;">Salvar no pilar {apillar.capitalize()}</button>
             </form>
         </div>
         ''')
@@ -356,6 +466,47 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
 
     html.append('</div>') # fecha creator-sidebar-col
     html.append('</div>') # fecha creator-workbench
+
+    # Script com micro-interações do Studio
+    html.append('''
+    <script>
+    function setQuickBriefing(btn, text) {
+        var ta = document.getElementById('briefing_text');
+        if (ta) {
+            ta.value = text;
+            ta.focus();
+            document.querySelectorAll('.quick-chip').forEach(function(c) { c.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+    }
+    function useSeasonalPauta(text) {
+        var ta = document.getElementById('briefing_text');
+        var canvas = document.getElementById('briefing-canvas');
+        if (ta && canvas) {
+            ta.value = text;
+            canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            canvas.classList.add('briefing-pulse');
+            setTimeout(function() {
+                canvas.classList.remove('briefing-pulse');
+                ta.focus();
+            }, 600);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var ta = document.getElementById('briefing_text');
+        if (ta) {
+            ta.addEventListener('keydown', function(e) {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.form) {
+                        this.form.submit();
+                    }
+                }
+            });
+        }
+    });
+    </script>
+    ''')
 
     return '\n'.join(html)
 

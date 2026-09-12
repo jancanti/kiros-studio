@@ -26,7 +26,7 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
             preferred_days=days,
             saturation_threshold=saturation_threshold,
         )
-        return urlencode({'saved_prefs': '1', 'msg': 'Preferências e limites de frequência salvos com sucesso.'})
+        return urlencode({'saved_prefs': '1', 'msg': 'Preferências de cadência e limites semanais salvas com sucesso.'})
 
     elif action == 'create_entry':
         title = data.get('title', '').strip()
@@ -50,12 +50,12 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
             phase=phase,
             notes=notes,
         )
-        return urlencode({'created_entry': entry.id, 'msg': f"Item '{title}' adicionado ao calendário."})
+        return urlencode({'created_entry': entry.id, 'msg': f"Conteúdo '{title}' agendado com sucesso no calendário."})
 
     elif action == 'delete_entry':
         entry_id = data.get('entry_id', '').strip()
         calendar.delete_entry(entry_id)
-        return urlencode({'msg': 'Entrada removida do calendário.'})
+        return urlencode({'msg': 'Item removido do calendário editorial.'})
 
     elif action == 'recommend_time':
         entry_id = data.get('entry_id', '').strip()
@@ -77,7 +77,7 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
         )
         return urlencode({
             'entry_id': entry_id,
-            'msg': f"Horário recomendado ({rec.recommended_time[:16].replace('T', ' ')}) aplicado com sucesso.",
+            'msg': f"Sugestão de horário ({rec.recommended_time[:16].replace('T', ' ')}) aplicada via Creative Director.",
         })
 
     elif action == 'set_time_decision':
@@ -90,7 +90,7 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
             selected_time_iso=selected_time,
             accept_recommendation=accept_rec,
         )
-        mode_txt = 'Recomendação aceita' if accept_rec else 'Horário manual aplicado (Manual sempre vence)'
+        mode_txt = 'Recomendação aceita' if accept_rec else 'Horário manual definido (Manual venceu)'
         return urlencode({'entry_id': entry_id, 'msg': f"Decisão registrada: {mode_txt}."})
 
     elif action == 'publish_or_schedule':
@@ -119,7 +119,7 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
         )
         return urlencode({
             'published_id': post_id,
-            'msg': f"Publicação/agendamento concluído com sucesso (ID: {post_id}). Confirmação explícita registrada.",
+            'msg': f"Publicação/agendamento no Instagram processado com sucesso (ID: {post_id}). Confirmação explícita registrada.",
         })
 
     raise ValueError(f'Ação de calendário desconhecida: {action}')
@@ -136,9 +136,8 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     msg = query.get('msg', [''])[0] if isinstance(query.get('msg'), list) else query.get('msg', '')
     err = query.get('error', [''])[0] if isinstance(query.get('error'), list) else query.get('error', '')
 
-    html = '<p class="eyebrow">Planejamento Editorial & Instagram Controlado</p>'
-    html += '<h1>Calendário Editorial</h1>'
-    html += '<p class="intro">Organize o ritmo da sua marca, diversidade de pilares e publique no Instagram com governança, recomendação em camadas e confirmação explícita.</p>'
+    html = '<h1>Calendário Editorial</h1>'
+    html += '<p class="intro">Controle o ritmo da marca, diversifique pilares temáticos e planeje publicações no Instagram com curadoria assistida do Creative Director e validação humana.</p>'
 
     if msg:
         html += f'<p role="status" class="notice">{escape(msg)}</p>'
@@ -157,10 +156,10 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             <p style="margin:4px 0">Status: <strong class="badge {'status-active' if account.connection_status == 'mock' else 'status-inactive'}">{status_label}</strong> · Cota de Publicação: <strong>{account.rate_limit_remaining}/{account.rate_limit_total} posts / 24h</strong></p>
         </div>
         <div>
-            <span class="badge" style="background:var(--soft);color:var(--ink)">Modo Mock Ativo</span>
+            <span class="badge" style="background:var(--surface-input);color:var(--ink)">Modo Mock Ativo</span>
         </div>
     </div>
-    <div style="margin-top:14px;padding:12px;background:var(--paper);border-radius:4px;font-size:13px;color:var(--muted);line-height:1.6">
+    <div style="margin-top:14px;padding:12px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm);font-size:13px;color:var(--muted);line-height:1.6">
         <strong>Permissões Meta Documentadas:</strong> <code>{', '.join(account.permissions)}</code><br>
         <strong>Formatos Suportados:</strong> Feed (1:1, 4:5; máx 8 MB), Stories (9:16; máx 4 MB). Agendamento oficial: entre 15min e 75 dias.<br>
         <em>Ambiente de desenvolvimento seguro: nenhuma chamada de rede externa é disparada sem autorização explícita (Seção 70).</em>
@@ -173,51 +172,57 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     html += f'''<div class="panel" style="margin-bottom:24px">
     <span class="tag">Ritmo & Governança Editorial</span>
     <h2>Frequência e Restrições de Saturação</h2>
-    <p>O usuário define limites e preferências. O Creative Director otimiza dentro das restrições e avisa quando detectar sobreposição.</p>
+    <p style="color:var(--muted-blue);font-size:14px;max-width:70ch">O Creative Director otimiza as datas dentro dos limites definidos abaixo e alerta imediatamente ao detectar sobreposição temática ou excesso de postagens.</p>
     
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:16px 0">
-        <div style="padding:14px;background:var(--paper);border-radius:4px">
+        <div style="padding:14px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm)">
             <span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--muted)">Limite Semanal</span>
-            <h3 style="margin:6px 0;font-size:22px">{prefs.max_posts_per_week} posts/semana</h3>
-            <span style="font-size:12px;color:var(--muted)">Máximo permitido na semana</span>
+            <h3 style="margin:6px 0;font-size:20px">{prefs.max_posts_per_week} posts/semana</h3>
+            <span style="font-size:12px;color:var(--muted)">Capacidade máxima de postagens por semana</span>
         </div>
-        <div style="padding:14px;background:var(--paper);border-radius:4px">
+        <div style="padding:14px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm)">
             <span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--muted)">Intervalo Mínimo</span>
-            <h3 style="margin:6px 0;font-size:22px">{prefs.min_hours_between_posts} horas</h3>
-            <span style="font-size:12px;color:var(--muted)">Entre publicações consecutivas</span>
+            <h3 style="margin:6px 0;font-size:20px">{prefs.min_hours_between_posts} horas</h3>
+            <span style="font-size:12px;color:var(--muted)">Espaçamento de respiro entre postagens</span>
         </div>
-        <div style="padding:14px;background:var(--paper);border-radius:4px">
+        <div style="padding:14px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm)">
             <span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--muted)">Teto por Pilar</span>
-            <h3 style="margin:6px 0;font-size:22px">{prefs.saturation_threshold_per_pillar_per_week} posts/semana</h3>
-            <span style="font-size:12px;color:var(--muted)">Evita fadiga temática</span>
+            <h3 style="margin:6px 0;font-size:20px">{prefs.saturation_threshold_per_pillar_per_week} posts/semana</h3>
+            <span style="font-size:12px;color:var(--muted)">Limite temático para prevenir saturação</span>
         </div>
-        <div style="padding:14px;background:var(--paper);border-radius:4px">
+        <div style="padding:14px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm)">
             <span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--muted)">Dias Preferidos</span>
-            <h3 style="margin:6px 0;font-size:22px">{', '.join(prefs.preferred_days).upper()}</h3>
-            <span style="font-size:12px;color:var(--muted)">Melhores dias no Brasil</span>
+            <h3 style="margin:6px 0;font-size:20px">{', '.join(prefs.preferred_days).upper()}</h3>
+            <span style="font-size:12px;color:var(--muted)">Dias prioritários para agendamento</span>
         </div>
     </div>
 
     <details style="margin-top:16px">
-        <summary style="font-size:14px;font-weight:600;color:var(--ink)">Ajustar Limites e Preferências</summary>
-        <form method="post" action="/api/calendar/save_preferences" style="margin-top:16px;display:grid;gap:12px">
+        <summary style="font-size:14px;font-weight:600;color:var(--ink);cursor:pointer">Configurar Limites Semanais e Dias Preferidos</summary>
+        <form method="post" action="/api/calendar/save_preferences" style="margin-top:16px;display:grid;gap:14px;max-width:600px">
             <div class="form-group">
-                <label for="max_posts_per_week">Máximo de posts por semana</label>
+                <label for="max_posts_per_week" style="display:block;font-weight:500;margin-bottom:4px">Máximo de posts por semana</label>
+                <span class="hint" style="display:block;margin-bottom:6px">Ex: 4 posts para manter cadência regular sem sobrecarga</span>
                 <input type="number" id="max_posts_per_week" name="max_posts_per_week" min="1" max="14" value="{prefs.max_posts_per_week}" required>
             </div>
             <div class="form-group">
-                <label for="min_hours_between_posts">Intervalo mínimo entre posts (horas)</label>
+                <label for="min_hours_between_posts" style="display:block;font-weight:500;margin-bottom:4px">Intervalo mínimo entre posts (horas)</label>
+                <span class="hint" style="display:block;margin-bottom:6px">Ex: 24h para espaçar postagens e evitar canibalização de alcance</span>
                 <input type="number" id="min_hours_between_posts" name="min_hours_between_posts" min="1" max="168" value="{prefs.min_hours_between_posts}" required>
             </div>
             <div class="form-group">
-                <label for="saturation_threshold_per_pillar_per_week">Teto de saturação por pilar (posts/semana)</label>
+                <label for="saturation_threshold_per_pillar_per_week" style="display:block;font-weight:500;margin-bottom:4px">Teto de saturação por pilar (posts/semana)</label>
+                <span class="hint" style="display:block;margin-bottom:6px">Máximo de repetições da mesma categoria na mesma semana</span>
                 <input type="number" id="saturation_threshold_per_pillar_per_week" name="saturation_threshold_per_pillar_per_week" min="1" max="7" value="{prefs.saturation_threshold_per_pillar_per_week}" required>
             </div>
             <div class="form-group">
-                <label for="preferred_days">Dias preferidos (separados por vírgula: seg,ter,qua,qui,sex,sab,dom)</label>
+                <label for="preferred_days" style="display:block;font-weight:500;margin-bottom:4px">Dias preferidos de publicação</label>
+                <span class="hint" style="display:block;margin-bottom:6px">Siglas separadas por vírgula (ex: seg, qua, sex, dom)</span>
                 <input type="text" id="preferred_days" name="preferred_days" value="{escape(','.join(prefs.preferred_days))}" required>
             </div>
-            <button type="submit" class="button">Salvar Limites</button>
+            <div>
+                <button type="submit" class="button">Salvar Preferências de Cadência</button>
+            </div>
         </form>
     </details>
     </div>'''
@@ -225,44 +230,63 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     # -------------------------------------------------------------------------
     # Lista de Entradas do Calendário (Seções 39, 41, 42, 79)
     # -------------------------------------------------------------------------
-    html += '<div class="panel" style="margin-bottom:24px;max-width:900px">'
+    html += '<div class="panel" style="margin-bottom:24px;max-width:900px" role="region" aria-label="Grade do Calendário">'
     html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">'
     html += f'<div><span class="tag">Grade Editorial</span><h2>Itens Planejados ({len(entries)})</h2></div>'
     html += '</div>'
 
     if not entries:
-        html += '<p style="margin:20px 0;color:var(--muted)">Nenhum item planejado no calendário ainda. Adicione uma entrada abaixo ou importe de uma campanha aprovada.</p>'
+        html += f'''<div style="text-align:center;padding:36px 20px;border:1px dashed var(--hairline-cool);border-radius:var(--radius-sm);background:var(--surface-input);margin-top:16px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <path d="M10 14h4"></path>
+                <path d="M12 12v4"></path>
+            </svg>
+            <h3 style="font-size:16px;margin:0 0 6px;color:var(--ink)">Nenhum item agendado na grade</h3>
+            <p style="margin:0 0 16px;color:var(--muted-blue);font-size:13px;max-width:52ch;display:inline-block">Seu calendário editorial está livre no momento. Planeje uma nova peça usando o formulário abaixo ou importe posts aprovados a partir de campanhas.</p>
+            <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+                <a href="#novo-planejamento" class="button" style="font-size:12px;padding:8px 14px;text-decoration:none">Planejar Novo Item Abaixo</a>
+                <a href="/conteudo" class="button button-secondary" style="font-size:12px;padding:8px 14px;text-decoration:none">Ver Campanhas em /conteudo</a>
+            </div>
+        </div>'''
     else:
-        html += '<div style="display:grid;gap:20px;margin-top:20px">'
+        html += '<div style="display:grid;gap:16px;margin-top:16px">'
         for entry in entries:
             # Badges
             status_cls = 'status-active' if entry.status in ('published', 'scheduled') else 'status-inactive'
             pillar_badges = {
-                'lancamento': '#2d4a3e',
-                'educativo': '#2c4755',
-                'institucional': '#3a3d40',
-                'bastidores': '#5a3d28',
-                'engajamento': '#4a2c4e',
-                'lifestyle': '#3d522b',
+                'produtos': 'background:var(--surface-input);color:var(--ink)',
+                'lifestyle': 'background:var(--surface-input);color:var(--ink)',
+                'marca': 'background:var(--surface-input);color:var(--ink)',
+                'educativo': 'background:var(--surface-input);color:var(--ink)',
+                'relacionamento': 'background:var(--surface-input);color:var(--ink)',
+                'comercial': 'background:var(--surface-input);color:var(--ink)',
+                'lancamento': 'background:var(--surface-input);color:var(--ink)',
+                'institucional': 'background:var(--surface-input);color:var(--ink)',
+                'bastidores': 'background:var(--surface-input);color:var(--ink)',
+                'engajamento': 'background:var(--surface-input);color:var(--ink)',
             }
-            pillar_color = pillar_badges.get(entry.pillar, '#273b32')
+            pillar_style = pillar_badges.get(entry.pillar, 'background:var(--surface-input);color:var(--ink)')
 
-            html += f'''<div style="border:1px solid var(--line);border-radius:4px;padding:20px;background:var(--white)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-                <div>
-                    <span class="badge" style="background:{pillar_color};color:#fff;margin-right:6px">{escape(entry.pillar.upper())}</span>
-                    <span class="badge" style="background:var(--soft);color:var(--ink);margin-right:6px">{escape(entry.content_type.upper())}</span>
-                    <span class="badge {status_cls}">{escape(entry.status.upper())}</span>
-                    {f'<span class="badge" style="background:#5a2323;color:#fff">PRIORIDADE {escape(entry.priority.upper())}</span>' if entry.priority in ('high', 'critical') else ''}
-                    {f'<span class="badge" style="background:#e8f0fe;color:#1a73e8">{escape(entry.seasonal_tag or "")} · {escape(entry.phase or "")}</span>' if entry.seasonal_tag else ''}
-                    <h3 style="margin:10px 0 4px;font-size:18px">{escape(entry.title)}</h3>
-                    {f'<p style="margin:0 0 8px;font-size:13px;color:var(--muted)">{escape(entry.notes)}</p>' if entry.notes else ''}
-                </div>
-                <div style="text-align:right">
-                    <span style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600">Agendado para:</span><br>
-                    <strong style="font-size:15px">{escape(entry.scheduled_for[:16].replace('T', ' ') if entry.scheduled_for else 'Não definido')}</strong>
-                </div>
-            </div>'''
+            html += f'''<div class="card" style="padding:16px;border:1px solid var(--hairline);border-radius:var(--radius-sm);background:var(--canvas)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+                    <div>
+                        <span class="badge" style="{pillar_style};margin-right:6px">{escape(entry.pillar.upper())}</span>
+                        <span class="badge" style="background:var(--surface-input);color:var(--ink);margin-right:6px">{escape(entry.content_type.upper())}</span>
+                        <span class="badge {status_cls}">{escape(entry.status.upper())}</span>
+                        {f'<span class="badge" style="background:var(--surface-input);color:var(--color-primary);margin-left:6px">PRIORIDADE {escape(entry.priority.upper())}</span>' if entry.priority in ('high', 'critical') else ''}
+                        {f'<span class="badge" style="background:var(--surface-input);color:var(--muted-blue);margin-left:6px">{escape(entry.seasonal_tag or "")} · {escape(entry.phase or "")}</span>' if entry.seasonal_tag else ''}
+                        <h3 style="margin:10px 0 4px;font-size:16px">{escape(entry.title)}</h3>
+                        {f'<p style="margin:0 0 8px;font-size:13px;color:var(--muted-blue)">{escape(entry.notes)}</p>' if entry.notes else ''}
+                    </div>
+                    <div style="text-align:right">
+                        <span style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600">Data e Horário:</span><br>
+                        <strong style="font-size:14px">{escape(entry.scheduled_for[:16].replace('T', ' ') if entry.scheduled_for else 'Aguardando agendamento')}</strong>
+                    </div>
+                </div>'''
 
             # Recomendações em Camadas (Seções 41 e 42)
             if entry.data_basis:
@@ -276,13 +300,13 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
                 confidence_pct = int(basis.get('confidence', 0.5) * 100)
                 accepted_txt = 'Aceito pelo usuário' if entry.time_accepted else 'Horário manual definido (Manual venceu)'
 
-                html += f'''<div class="recommendation-box" style="margin:14px 0;background:var(--paper);border-left:3px solid var(--ink)">
+                html += f'''<div class="recommendation-box" style="margin:14px 0;background:var(--surface-input);border:1px solid var(--hairline-cool)">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                        <strong>Recomendação Inteligente do Creative Director (Seções 41 e 42):</strong>
+                        <strong style="color:var(--ink)">Recomendação Inteligente do Creative Director:</strong>
                         <span class="badge" style="background:var(--soft);color:var(--ink)">{confidence_pct}% Confiança</span>
                     </div>
                     <p style="margin:6px 0;font-size:13px"><strong>{escape(layer_label)}</strong> · Fonte: <em>{escape(basis.get('source', ''))}</em></p>
-                    <p style="margin:6px 0;font-size:13px;color:var(--muted)">{escape(basis.get('reasoning', ''))}</p>
+                    <p style="margin:6px 0;font-size:13px;color:var(--muted-blue)">{escape(basis.get('reasoning', ''))}</p>
                     <p style="margin:4px 0;font-size:12px;color:var(--muted)"><em>⚠️ {escape(basis.get('disclaimer', ''))}</em></p>
                     <div style="margin-top:8px;font-size:12px">
                         Sugerido: <code>{escape(entry.recommended_time[:16].replace('T', ' ') if entry.recommended_time else '—')}</code> · 
@@ -296,45 +320,48 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             # Botão Recomendar Horário
             html += f'''<form method="post" action="/api/calendar/recommend_time" style="display:inline;margin:0">
                 <input type="hidden" name="entry_id" value="{entry.id}">
-                <button type="submit" class="button button-secondary" style="margin:0;padding:8px 14px;font-size:13px">Recomendar Horário (CD)</button>
+                <button type="submit" class="button button-secondary" style="margin:0;padding:8px 14px;font-size:13px" title="Solicitar cálculo estatístico de melhor horário">Sugerir Melhor Horário (CD)</button>
             </form>'''
 
             # Formulário de Horário Manual ("Manual sempre vence" - Seção 41)
             now_def = entry.scheduled_for or (datetime.now(timezone.utc).isoformat()[:16])
             html += f'''<form method="post" action="/api/calendar/set_time_decision" style="display:flex;align-items:center;gap:6px;margin:0">
                 <input type="hidden" name="entry_id" value="{entry.id}">
-                <input type="datetime-local" name="selected_time" value="{now_def[:16]}" style="padding:6px;max-width:200px;font-size:13px" required>
+                <input type="datetime-local" name="selected_time" value="{now_def[:16]}" aria-label="Definir data e horário manual" style="padding:6px 8px;max-width:200px;font-size:13px" required>
                 <input type="hidden" name="accept_recommendation" value="0">
-                <button type="submit" class="button button-secondary" style="margin:0;padding:8px 14px;font-size:13px">Definir Manual</button>
+                <button type="submit" class="button button-secondary" style="margin:0;padding:8px 14px;font-size:13px">Salvar Horário Manual</button>
             </form>'''
 
             # Remover Item
             html += f'''<form method="post" action="/api/calendar/delete_entry" style="display:inline;margin:0;margin-left:auto">
                 <input type="hidden" name="entry_id" value="{entry.id}">
-                <button type="submit" class="button button-danger" style="margin:0;padding:8px 14px;font-size:13px" onclick="return confirm('Remover item do calendário?')">Remover</button>
+                <button type="submit" class="button button-danger" style="margin:0;padding:8px 14px;font-size:13px" onclick="return confirm('Remover este post planejado do calendário? Esta ação não pode ser desfeita.')">Remover Item</button>
             </form>'''
 
             html += '</div>'
 
             # Caixa de Publicação com Confirmação Explícita (Seção 79)
             if entry.status != 'published':
-                html += f'''<details style="margin-top:16px;padding:12px;background:var(--soft);border-radius:4px">
-                    <summary style="font-size:14px;font-weight:600;color:var(--ink);cursor:pointer">
-                        Publicar ou Agendar no Instagram (Exige Confirmação Explícita)
+                html += f'''<details style="margin-top:16px;padding:12px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm)">
+                    <summary style="font-size:13px;font-weight:600;color:var(--ink);cursor:pointer">
+                        Programar ou Publicar no Instagram (Validação Humana Obrigatória)
                     </summary>
                     <form method="post" action="/api/calendar/publish_or_schedule" style="margin-top:12px;display:grid;gap:10px">
                         <input type="hidden" name="entry_id" value="{entry.id}">
                         <div class="form-group">
-                            <label for="confirmed_by_{entry.id}">Nome do Operador Humano (Obrigatório):</label>
+                            <label for="confirmed_by_{entry.id}" style="display:block;font-size:12px;font-weight:500;margin-bottom:4px">Identificação do Operador Responsável:</label>
+                            <span class="hint" style="display:block;margin-bottom:4px">Registrado para fins de auditoria interna e governança</span>
                             <input type="text" id="confirmed_by_{entry.id}" name="confirmed_by" value="Operador KIROS" required>
                         </div>
                         <div class="check" style="margin:8px 0">
                             <input type="checkbox" id="conf_{entry.id}" name="explicit_confirmation" value="1" required>
-                            <label for="conf_{entry.id}" style="font-size:13px;font-weight:600;color:var(--ink)">
+                            <label for="conf_{entry.id}" style="font-size:13px;font-weight:500;color:var(--ink)">
                                 Confirmo expressamente a publicação/agendamento no Instagram deste conteúdo após conferir versão, fidelidade, copy e dados comerciais (Seção 79).
                             </label>
                         </div>
-                        <button type="submit" class="button" style="margin-top:4px">Confirmar e Disparar Publicação</button>
+                        <div>
+                            <button type="submit" class="button" style="margin-top:4px">Confirmar Agendamento no Instagram</button>
+                        </div>
                     </form>
                 </details>'''
 
@@ -347,72 +374,75 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     # -------------------------------------------------------------------------
     # Formulário para Adicionar Nova Entrada Manual (Seção 39)
     # -------------------------------------------------------------------------
-    html += '''<div class="panel" style="max-width:700px">
+    html += '''<div id="novo-planejamento" class="panel" style="max-width:700px">
     <span class="tag">Novo Planejamento</span>
     <h2>Adicionar Entrada ao Calendário</h2>
+    <p style="color:var(--muted-blue);font-size:13px;margin:4px 0 14px">Cadastre uma nova peça editorial com fuso horário, formato específico e classificação por pilar aromático.</p>
     <form method="post" action="/api/calendar/create_entry" style="display:grid;gap:12px">
         <div class="form-group">
-            <label for="title">Título do Conteúdo / Post</label>
-            <input type="text" id="title" name="title" placeholder="Ex: Lançamento Difusor Lavanda Real" required>
+            <label for="title" style="display:block;font-weight:500;margin-bottom:4px">Título do Conteúdo / Post</label>
+            <input type="text" id="title" name="title" placeholder="Ex: Lançamento Difusor Lavanda Real (Feed)" required>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
-                <label for="content_type">Formato</label>
+                <label for="content_type" style="display:block;font-weight:500;margin-bottom:4px">Formato</label>
                 <select id="content_type" name="content_type">
                     <option value="feed">Feed (Imagem 1:1 / 4:5)</option>
                     <option value="carousel">Carrossel (2 a 10 slides)</option>
                     <option value="stories">Stories (9:16)</option>
-                    <option value="reels">Reels</option>
+                    <option value="reels">Reels (Vídeo vertical)</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="pillar">Pilar Editorial</label>
+                <label for="pillar" style="display:block;font-weight:500;margin-bottom:4px">Pilar Editorial</label>
                 <select id="pillar" name="pillar">
-                    <option value="institucional">Institucional</option>
-                    <option value="lancamento">Lançamento</option>
-                    <option value="educativo">Educativo</option>
-                    <option value="bastidores">Bastidores</option>
-                    <option value="engajamento">Engajamento</option>
-                    <option value="lifestyle">Lifestyle</option>
+                    <option value="institucional">Institucional (Conceito e essência da marca)</option>
+                    <option value="lancamento">Lançamento (Novas fragrâncias e coleções)</option>
+                    <option value="educativo">Educativo (Notas olfativas e rituais de uso)</option>
+                    <option value="bastidores">Bastidores (Processo artesanal e atelier)</option>
+                    <option value="engajamento">Engajamento (Comunidade, enquetes e perguntas)</option>
+                    <option value="lifestyle">Lifestyle (Decoração, bem-estar e aconchego)</option>
                 </select>
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
-                <label for="priority">Prioridade</label>
+                <label for="priority" style="display:block;font-weight:500;margin-bottom:4px">Prioridade</label>
                 <select id="priority" name="priority">
-                    <option value="low">Baixa</option>
-                    <option value="medium" selected>Média</option>
-                    <option value="high">Alta</option>
-                    <option value="critical">Crítica (Data prioritária)</option>
+                    <option value="low">Baixa (Flexível na grade)</option>
+                    <option value="medium" selected>Média (Cadência normal)</option>
+                    <option value="high">Alta (Data comemorativa ou marco)</option>
+                    <option value="critical">Crítica (Data prioritária com fuso reservado)</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="scheduled_for">Data e Horário Inicial (com Fuso)</label>
+                <label for="scheduled_for" style="display:block;font-weight:500;margin-bottom:4px">Data e Horário Pretendido</label>
                 <input type="datetime-local" id="scheduled_for" name="scheduled_for">
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
-                <label for="seasonal_tag">Tag Sazonal (Opcional)</label>
+                <label for="seasonal_tag" style="display:block;font-weight:500;margin-bottom:4px">Tag Sazonal (Opcional)</label>
                 <input type="text" id="seasonal_tag" name="seasonal_tag" placeholder="Ex: dia_das_maes, primavera">
             </div>
             <div class="form-group">
-                <label for="phase">Fase Sazonal</label>
+                <label for="phase" style="display:block;font-weight:500;margin-bottom:4px">Fase Sazonal</label>
                 <select id="phase" name="phase">
-                    <option value="none">Nenhuma</option>
-                    <option value="warm_up">1. Warm-up</option>
-                    <option value="consideracao">2. Consideração</option>
-                    <option value="conversao">3. Conversão</option>
-                    <option value="last_call">4. Last Call</option>
+                    <option value="none">Nenhuma (Conteúdo contínuo / Evergreen)</option>
+                    <option value="warm_up">1. Aquecimento (Warm-up / Antecipação)</option>
+                    <option value="consideracao">2. Consideração (Apresentação dos benefícios)</option>
+                    <option value="conversao">3. Conversão (Disponibilidade e compra)</option>
+                    <option value="last_call">4. Encerramento (Last Call / Últimos dias)</option>
                 </select>
             </div>
         </div>
         <div class="form-group">
-            <label for="notes">Notas Estratégicas</label>
-            <textarea id="notes" name="notes" rows="2" placeholder="Observações para o Creative Director"></textarea>
+            <label for="notes" style="display:block;font-weight:500;margin-bottom:4px">Notas Estratégicas e Contexto</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Observações e direcionamentos para o Creative Director"></textarea>
         </div>
-        <button type="submit" class="button">Adicionar ao Calendário</button>
+        <div>
+            <button type="submit" class="button">Salvar Entrada no Calendário</button>
+        </div>
     </form>
     </div>'''
 

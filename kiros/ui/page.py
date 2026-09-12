@@ -77,7 +77,7 @@ def render_page(app, section, saved=False, query=None):
     <title>{title} · KIROS Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css"></head>
     <body><a class="skip" href="#main">Pular para o conteúdo</a>
     <aside><a class="wordmark" href="/inicio" aria-label="KIROS Studio, início">KIROS<span>STUDIO</span></a>
@@ -85,7 +85,7 @@ def render_page(app, section, saved=False, query=None):
     <p class="aside-note">Aromas para casa.<br>Presença com intenção.</p></aside>
     <div class="workspace"><header><span>{name}</span>
     <form class="header-command-bar" method="post" action="/api/command">
-    <input id="head-cmd" type="text" name="command" placeholder="Command Bar (ex: 'Abra a última campanha')" required>
+    <input id="head-cmd" type="text" name="command" placeholder="Command Bar (ex: 'Abra a última campanha')" aria-label="Buscar comandos ou navegar" required>
     <button type="submit">Executar</button></form>
     <span class="mode">Simulação local</span></header>
     <main id="main" tabindex="-1">{content}</main><footer>KIROS Aromas <span>Sorocaba · SP</span></footer></div></body></html>'''

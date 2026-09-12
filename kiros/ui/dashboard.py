@@ -31,9 +31,9 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     out += '<p class="eyebrow">Visão Geral do Estúdio · KIROS V1</p>'
     out += '<h1>Dashboard Contextual</h1>'
     out += '<p class="intro">Intenção antes da criação. Seus dados operacionais, direção criativa e aprendizados integrados em uma superfície contínua.</p>'
-    out += '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">'
-    out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a>'
-    out += '<a class="button button-secondary" href="/ideias">Banco de Ideias</a>'
+    out += '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:8px;">'
+    out += '<a class="button button-primary" href="/criar" style="margin:0 16px 8px 0;">Criar Nova Campanha <span aria-hidden="true">+</span></a>'
+    out += '<a class="button button-secondary" href="/ideias" style="margin:0 0 8px 0;">Banco de Ideias</a>'
     out += '</div>'
     out += '</div>'
 

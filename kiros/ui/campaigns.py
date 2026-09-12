@@ -652,7 +652,7 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
     if is_approved:
         appr_by = escape(data.get('approved_by') or 'Usuário')
         html.append(f'''
-        <div class="notice" style="border-left:4px solid var(--ink);margin-top:12px;">
+        <div class="notice" style="border:1px solid var(--hairline);background:var(--surface-input);margin-top:12px;">
             <strong>✓ Plano v{plan_ver} Aprovado</strong> por <em>{appr_by}</em>.
             Orçamento reservado para execução.
         </div>
@@ -797,7 +797,7 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
                 if job.status == 'failed' and job.diagnostic:
                     d = job.diagnostic
                     html.append(f'''
-                    <div class="notice warning" style="margin-top:10px;border-left:4px solid #a84832;">
+                    <div class="notice warning" style="margin-top:10px;border:1px solid var(--hairline-cool);background:var(--surface-input);">
                         <strong>Diagnóstico de Falha (Seção 69):</strong><br>
                         <strong>Provedor:</strong> {escape(d.provider)} | <strong>Etapa:</strong> {escape(d.step)}<br>
                         <strong>Causa Provável:</strong> {escape(d.probable_cause)}<br>
@@ -809,7 +809,7 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
                 # Seção 68: Reconciliação de Resultado Incerto
                 if job.status == 'uncertain':
                     html.append(f'''
-                    <div class="notice warning" style="margin-top:10px;border-left:4px solid #d48806;">
+                    <div class="notice warning" style="margin-top:10px;border:1px solid var(--hairline-cool);background:var(--surface-input);">
                         <strong>Resultado Incerto (Seção 68):</strong> Tempo limite atingido. Requisição não foi cobrada novamente.<br>
                         <form method="post" action="/api/campaigns/reconcile_job" class="inline-form" style="margin-top:8px;">
                             <input type="hidden" name="campaign_id" value="{cid}">
@@ -907,7 +907,7 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
         for chk in slide_checks:
             if not chk.passed:
                 html.append(f'''
-                <div style="margin-top:10px;background:#fef7e0;border-left:4px solid #b06000;padding:12px;border-radius:4px;font-size:13px;">
+                <div style="margin-top:10px;background:var(--surface-input);border:1px solid var(--hairline-cool);padding:12px;border-radius:var(--radius-sm);font-size:13px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <strong>⚠️ Alerta de Fidelidade de Produto ({chk.formatted_score})</strong>
                         <span class="tag">Threshold: {chk.threshold:.0f} · Modo: {chk.mode.upper()}</span>
@@ -1157,14 +1157,14 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
     overuse_banner = ''
     if overuse_info and overuse_info['is_overused']:
         overuse_banner = f'''
-        <div class="notice warning" style="margin-top:12px;border-left:4px solid #b06000;">
+        <div class="notice warning" style="margin-top:12px;border:1px solid var(--hairline-cool);background:var(--surface-input);">
             <strong>⚠️ Alerta de Sobreuso de Template (Seção 30 e 32):</strong><br>
             {escape(overuse_info['warning'])}
         </div>
         '''
 
     html = f'''
-    <div class="panel" style="margin-top:16px;border:2px solid #273b32;background:#fcfbf9;padding:20px;border-radius:6px;max-width:100%;">
+    <div class="panel" style="margin-top:16px;border:1px solid var(--hairline);background:var(--canvas);padding:20px;border-radius:var(--radius-sm);max-width:100%;">
         <div class="card-header" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;">
             <div>
                 <span class="tag">Editor Visual Semântico · Seções 28, 29, 30</span>
@@ -1172,7 +1172,7 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                 <p class="hint" style="margin:2px 0 0 0;">Não delega texto exato, logo ou posicionamento ao gerador de imagens. Sem alucinações de LLM.</p>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <span class="badge" style="background:#273b32;color:#fff;">Formato {fmt} ({w}×{h})</span>
+                <span class="badge" style="background:var(--surface-input);color:var(--ink);">Formato {fmt} ({w}×{h})</span>
                 <a href="/conteudo?campaign_id={cid}" class="button-secondary" style="font-size:11px;padding:4px 8px;text-decoration:none;">Fechar Editor ✕</a>
             </div>
         </div>
@@ -1227,7 +1227,7 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                 {overuse_banner}
 
                 <!-- Garantia de Isolamento da Product Bible -->
-                <div style="margin-top:14px;padding:10px 14px;background:#e8f0fe;border-left:4px solid #1a73e8;border-radius:4px;font-size:12px;">
+                <div style="margin-top:14px;padding:10px 14px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm);font-size:12px;">
                     <strong>🛡️ Garantia de Isolamento (M07-A03):</strong><br>
                     A edição de layout opera estritamente no nível da composição e nunca altera a Product Bible oficial automaticamente (Seção 29). Bloqueio validado no servidor.
                 </div>
@@ -1242,8 +1242,8 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                     <input type="hidden" name="slide_id" value="{s_id}">
 
                     <!-- Painel Verde (Livre) -->
-                    <div style="background:#edf7ed;border-left:4px solid #2e7d32;padding:12px;border-radius:4px;margin-bottom:14px;">
-                        <strong style="color:#1b5e20;">🟢 Verde · Livre (Sem restrições)</strong>
+                    <div style="background:var(--surface-input);border:1px solid var(--hairline);padding:12px;border-radius:var(--radius-sm);margin-bottom:14px;">
+                        <strong style="color:var(--ink);">🟢 Verde · Livre (Sem restrições)</strong>
                         <p class="hint" style="margin:2px 0 8px 0;">Posição, escala, enquadramento e iluminação podem ser alterados livremente.</p>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <div>
@@ -1274,8 +1274,8 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                     </div>
 
                     <!-- Painel Amarelo (Protected) -->
-                    <div style="background:#fff9db;border-left:4px solid #f59f00;padding:12px;border-radius:4px;margin-bottom:14px;">
-                        <strong style="color:#e67700;">🟡 Amarelo · Protected (Exige confirmação)</strong>
+                    <div style="background:var(--surface-input);border:1px solid var(--hairline);padding:12px;border-radius:var(--radius-sm);margin-bottom:14px;">
+                        <strong style="color:var(--ink);">🟡 Amarelo · Protected (Exige confirmação)</strong>
                         <p class="hint" style="margin:2px 0 8px 0;">Textos exatos, cores e tipografia exigem confirmação explícita.</p>
                         <div style="display:grid;gap:8px;">
                             <div>
@@ -1311,7 +1311,7 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                                 </div>
                             </div>
                             <div style="margin-top:4px;">
-                                <label class="check" style="font-size:11px;color:#b06000;font-weight:600;">
+                                <label class="check" style="font-size:11px;color:var(--ink);font-weight:600;">
                                     <input type="checkbox" name="confirm_protected" value="1">
                                     Confirmar explicitamente alteração de atributos protegidos (amarelo)
                                 </label>
@@ -1320,8 +1320,8 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                     </div>
 
                     <!-- Painel Vermelho (Critical) -->
-                    <div style="background:#ffe3e3;border-left:4px solid #e03131;padding:12px;border-radius:4px;margin-bottom:14px;">
-                        <strong style="color:#c92a2a;">🔴 Vermelho · Critical (Bloqueado por padrão)</strong>
+                    <div style="background:var(--surface-input);border:1px solid var(--hairline);padding:12px;border-radius:var(--radius-sm);margin-bottom:14px;">
+                        <strong style="color:var(--ink);">🔴 Vermelho · Critical (Bloqueado por padrão)</strong>
                         <p class="hint" style="margin:2px 0 8px 0;">Logotipo oficial e regras de integridade. Exige unlock formal auditado.</p>
                         <div style="display:grid;gap:8px;">
                             <div>
@@ -1331,7 +1331,7 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
                                 </label>
                             </div>
                             <div>
-                                <label class="check" style="font-size:11px;color:#8a2e1d;font-weight:600;">
+                                <label class="check" style="font-size:11px;color:var(--ink);font-weight:600;">
                                     <input type="checkbox" name="unlock_critical" value="1">
                                     Autorizar Desbloqueio de Atributo Crítico (exceção formal)
                                 </label>
@@ -1547,8 +1547,8 @@ def render_slide_copy_and_audit(app: Application, cid: str, s: Dict[str, Any], q
                     </div>
 
                     <!-- Governança de Preço e Site (Seção 37) -->
-                    <div style="background:#fff3e0;border-left:4px solid #f57c00;padding:10px;border-radius:4px;margin-top:12px;">
-                        <strong style="color:#b26a00;">Preço e Página de Destino (Seção 37):</strong>
+                    <div style="background:var(--surface-input);border:1px solid var(--hairline-cool);padding:10px;border-radius:var(--radius-sm);margin-top:12px;">
+                        <strong style="color:var(--ink);">Preço e Página de Destino (Seção 37):</strong>
                         <p class="hint" style="margin:2px 0 6px 0;">Não mostrar preço por padrão. Nunca inventar dados comerciais.</p>
                         <div style="margin-bottom:8px;">
                             <label class="check" style="font-size:12px;">
