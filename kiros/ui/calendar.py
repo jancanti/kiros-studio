@@ -152,7 +152,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
             <span class="tag">Conexão Oficial Instagram (Meta Graph API v20.0+)</span>
-            <h2 style="margin:6px 0">Conta: @{escape(account.username or 'kiros.aromas')}</h2>
+            <h2 style="margin:6px 0">Conta: @{escape(account.username or 'usekiros')}</h2>
             <p style="margin:4px 0">Status: <strong class="badge {'status-active' if account.connection_status == 'mock' else 'status-inactive'}">{status_label}</strong> · Cota de Publicação: <strong>{account.rate_limit_remaining}/{account.rate_limit_total} posts / 24h</strong></p>
         </div>
         <div>

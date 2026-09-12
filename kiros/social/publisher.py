@@ -78,7 +78,7 @@ class InstagramPublisher(SocialPublisher):
                 status = AccountStatus(
                     id='default',
                     account_id='mock_ig_kiros_business_12345',
-                    username='kiros.aromas',
+                    username='usekiros',
                     account_type='business',
                     connection_status='mock' if self.mock_mode else 'unvalidated',
                     permissions=list(INSTAGRAM_PERMISSIONS),

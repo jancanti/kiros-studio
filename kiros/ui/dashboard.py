@@ -29,11 +29,10 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # Coluna Esquerda: Editorial (Geist Display + Inter + CTA)
     out += '<div class="hero-editorial">'
     out += '<p class="eyebrow">Visão Geral do Estúdio · KIROS V1</p>'
-    out += '<h1>Dashboard Contextual</h1>'
-    out += '<p class="intro">Intenção antes da criação. Seus dados operacionais, direção criativa e aprendizados integrados em uma superfície contínua.</p>'
+    out += '<p class="intro">Esteira KIROS para Instagram (@usekiros): Hub de Ideias, Cadastro de Produtos, Aprovação Visual e Agendamento Simplificado.</p>'
     out += '<div class="hero-actions">'
     out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a> '
-    out += '<a class="button button-secondary" href="/ideias">Banco de Ideias</a>'
+    out += '<a class="button button-secondary" href="/ideias">Hub de Ideias</a>'
     out += '</div>'
     out += '</div>'
 
