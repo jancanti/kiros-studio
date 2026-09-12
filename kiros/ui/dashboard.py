@@ -25,9 +25,44 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     criacao = data['criacao']
     aprendizados = data['aprendizados']
 
-    out = '<p class="eyebrow">Visão geral do estúdio</p>'
+    out = '<div class="hero-split">'
+    # Coluna Esquerda: Editorial (Geist Display + Inter + CTA)
+    out += '<div class="hero-editorial">'
+    out += '<p class="eyebrow">Visão Geral do Estúdio · KIROS V1</p>'
     out += '<h1>Dashboard Contextual</h1>'
-    out += '<p class="intro">Intenção antes da criação. Seus dados operacionais e estratégicos integrados em um só lugar.</p>'
+    out += '<p class="intro">Intenção antes da criação. Seus dados operacionais, direção criativa e aprendizados integrados em uma superfície contínua.</p>'
+    out += '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">'
+    out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a>'
+    out += '<a class="button button-secondary" href="/ideias">Banco de Ideias</a>'
+    out += '</div>'
+    out += '</div>'
+
+    # Coluna Direita: Architectural Gradient Slab (3-stop Copy.ai Gradient)
+    out += '<div class="gradient-panel">'
+    out += '<div>'
+    out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+    out += '<span class="tag" style="color:rgba(255,255,255,0.85);letter-spacing:1.5px;">ESTÚDIO &amp; FILA</span>'
+    out += f'<span style="font-size:12px;background:rgba(255,255,255,0.18);padding:3px 10px;border-radius:4px;font-weight:500;">{e(hoje["mode"])}</span>'
+    out += '</div>'
+    out += f'<h3 style="font-size:22px;margin:8px 0 6px;">Status: {e(hoje["queue_status"])}</h3>'
+    out += '<p style="font-size:13px;margin:0 0 16px;">Ambiente determinístico local com orquestração contínua.</p>'
+    out += '</div>'
+
+    out += '<div class="hero-stats">'
+    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{hoje["completed_jobs"]}</div><div class="hero-stat-label">Jobs Concluídos</div></div>'
+    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{len(criacao["recent_campaigns"])}</div><div class="hero-stat-label">Campanhas</div></div>'
+    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{calendario["scheduled_count"]}</div><div class="hero-stat-label">Agendados</div></div>'
+    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{aprendizados["approved_prompts_count"]}</div><div class="hero-stat-label">Prompts Ativos</div></div>'
+    out += '</div>'
+
+    out += '<div style="margin-top:20px;display:flex;justify-content:flex-end;">'
+    if hoje['queue_paused']:
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button-secondary" style="height:38px;min-height:38px;padding:8px 16px;border:0;color:#171717;background:#ffffff;font-size:13px;">Retomar Fila</button></form>'
+    else:
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary" style="height:38px;min-height:38px;padding:8px 16px;background:rgba(255,255,255,0.15);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:13px;">Pausar Fila</button></form>'
+    out += '</div>'
+    out += '</div>'
+    out += '</div>'
 
     if query.get('notice'):
         out += f'<p class="notice" role="status">{e(query["notice"][0])}</p>'
@@ -47,7 +82,7 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     if hoje['queue_paused']:
         out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Retome a geração"><button type="submit">Retomar fila</button></form>'
     else:
-        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="secondary">Pausar fila</button></form>'
+        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar fila</button></form>'
     out += '</section>'
 
     # 2. Bloco: Oportunidade
@@ -78,7 +113,7 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
         out += '</ul>'
     else:
         out += '<p>Nenhuma publicação agendada nos próximos dias.</p>'
-    out += '<a class="button secondary" href="/calendario">Abrir calendário editorial <span aria-hidden="true">→</span></a>'
+    out += '<a class="button button-secondary" href="/calendario">Abrir calendário editorial <span aria-hidden="true">→</span></a>'
     out += '</section>'
 
     # 5. Bloco: Criação
@@ -113,7 +148,7 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
             <form method="post" action="/api/learning/proposals/reject" style="display:inline-block;">
                 <input type="hidden" name="proposal_id" value="{e(prop["id"])}">
                 <input type="hidden" name="reviewer" value="Diretor de Criação">
-                <button type="submit" class="secondary">Rejeitar</button>
+                <button type="submit" class="button-secondary">Rejeitar</button>
             </form></div>'''
     elif aprendizados['recent_learnings']:
         out += '<h3>Últimas correções locais registradas:</h3><ul class="dashboard-list">'
