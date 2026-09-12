@@ -104,3 +104,4 @@ python3 -m unittest discover -s tests -v
 python3 scripts/build.py
 ```
 Gera o pacote `dist/kiros-studio.zip` contendo os 76 arquivos da aplicação.
+
