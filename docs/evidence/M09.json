@@ -1,33 +1,69 @@
 {
   "milestone": "M09",
-  "summary": "",
+  "summary": "Calendário editorial inteligente e publicação controlada no Instagram implementados e validados. O calendário organiza conteúdo, pilares e sazonalidade respeitando limites de frequência, prioridades e saturação de temas. O Creative Director recomenda os melhores dias e horários com base em dados em camadas (KIROS -> Setor -> Plataforma geral), garantindo que a escolha manual sempre vença. O SocialPublisher implementa o fluxo operacional oficial da Meta Graph API (container -> polling -> publish), limites de 25 posts/24h, agendamento de 15min a 75 dias e formatos homologados. A auditoria pré-publicação verifica 7 dimensões essenciais e recusa categoricamente qualquer publicação sem confirmação humana explícita. O modo mock e bloqueio de rede pelo gateway foram integralmente comprovados.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Nenhuma chamada de rede externa real ou publicação em conta ao vivo do Instagram foi executada: ambiente operando em modo mock seguro com isolamento pelo ExternalGateway.",
+    "Publicações reais em contas profissionais da Meta dependem de autorização explícita do usuário e credenciais do aplicativo Meta em M12."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M09-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/calendar/models.py",
+        "kiros/calendar/service.py",
+        "kiros/calendar/__init__.py",
+        "kiros/migrations/010_calendar_and_instagram.sql",
+        "kiros/ui/calendar.py",
+        "tests/test_calendar_service.py",
+        "docs/evidence/M09-desktop.png",
+        "docs/evidence/M09-mobile.png"
+      ],
+      "verification": "test_create_and_organize_calendar_entries_with_pillars_and_priorities e test_seasonal_priority_dates_kept_as_drafts_without_campaign_approval comprovam que o calendário organiza conteúdo, pilares (lançamento, educativo, etc.) e prioridades, mantendo datas prioritárias sazonais como rascunhos sem aprovação prévia. test_frequency_limits_and_saturation_detection e test_add_campaign_to_calendar_requires_full_approval comprovam detecção de sobreposição de posts, saturação de pilares por semana e exigência de aprovação formal de campanha antes de oficializar entradas no calendário. As evidências visuais M09-desktop.png e M09-mobile.png comprovam a renderização da grade editorial com pilares coloridos, cards de ritmo e limites."
     },
     "M09-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/calendar/models.py",
+        "kiros/calendar/service.py",
+        "tests/test_calendar_service.py",
+        "tests/test_calendar_http.py"
+      ],
+      "verification": "test_recommend_publish_time_layers_and_confidence comprova a arquitetura de 3 camadas (KIROS, Setor, Plataforma Geral), fontes, níveis de confiança calibrados e disclaimer anti-certeza ('Nunca apresentar estimativa como certeza'). test_manual_selected_time_always_wins_and_records_all_five_fields e test_recommend_time_and_manual_decision_http comprovam o registro estrito dos 5 campos obrigatórios (recommended_time, selected_time, accepted, data_basis, later_performance) e garantem que a decisão manual do usuário sempre prevalece sobre a IA."
     },
     "M09-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/social/models.py",
+        "kiros/social/publisher.py",
+        "kiros/social/__init__.py",
+        "docs/INTEGRATIONS.md",
+        "tests/test_social_publisher.py"
+      ],
+      "verification": "test_account_permissions_and_publishing_limits_documented e test_supported_formats_and_aspect_ratios comprovam a conformidade com a documentação oficial da Meta Instagram Graph API v20.0+, cobrindo criação de container de mídia, polling e publicação, além de documentar as permissões oficiais exigidas (instagram_basic, instagram_content_publish, pages_show_list, pages_read_engagement), a cota máxima de 25 posts/24h e as especificações de formato para feed (1:1, 4:5; até 8 MB) e Stories (9:16; até 4 MB)."
     },
     "M09-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/social/audit.py",
+        "kiros/social/__init__.py",
+        "tests/test_social_publisher.py",
+        "tests/test_calendar_http.py"
+      ],
+      "verification": "test_audit_blocks_modified_version_after_approval comprova que a auditoria verifica a versão aprovada da campanha e bloqueia categoricamente qualquer tentativa de publicação caso a campanha tenha sido modificada após a aprovação sem nova submissão. test_audit_blocks_forbidden_emojis_and_ai_cliches valida a ausência de emojis, hashtags automáticas e clichês de IA na legenda. test_publish_refusal_without_explicit_confirmation e test_publish_with_explicit_confirmation_and_refusal_without comprovam a imposição da Seção 79: publicação exige confirmação explícita de operador humano e comandos ambíguos não autorizam disparo."
     },
     "M09-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/social/publisher.py",
+        "tests/test_social_publisher.py"
+      ],
+      "verification": "test_scheduling_requires_timezone_aware_datetime e test_scheduling_limits_enforced comprovam rejeição estrita de naive datetimes sem timezone e validação da janela oficial de agendamento (15min a 75 dias no futuro). test_idempotency_prevents_duplicate_publishing comprova reconciliação com chave de idempotência impedindo publicações duplicadas (Seção 68). test_service_unavailable_503_and_structured_error e test_rate_limit_429_handling comprovam a simulação e tratamento estruturado de erros com identificação de provider, etapa, causa provável e sugestão de correção sem retry infinito (Seção 69)."
     },
     "M09-A06": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/infrastructure/security.py",
+        "kiros/social/publisher.py",
+        "docs/INTEGRATIONS.md",
+        "tests/test_social_publisher.py"
+      ],
+      "verification": "test_mock_mode_gateway_blocks_live_network e test_mock_mode_marks_simulated_and_never_leaks_secrets comprovam que o ExternalGateway bloqueia qualquer conexão de rede no modo mock (KIROS_PROVIDER_MODE=mock e KIROS_ALLOW_PUBLISH=0). Os resultados simulados são explicitamente identificados com provider='mock' e simulated=True, contas externas permanecem com status 'mock' ou 'unvalidated', e segredos de autenticação são mascarados como [REDACTED], nunca sendo expostos em logs nem retornados ao frontend."
     }
   }
 }

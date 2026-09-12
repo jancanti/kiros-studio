@@ -89,6 +89,12 @@ def make_server(data_dir, port=8765):
                     return self.respond(400, 'Informe slide_id, sequence_id ou campaign_id')
                 except Exception as exc:
                     return self.respond(404, str(exc))
+            if path == '/api/calendar/entries':
+                try:
+                    entries = [e.to_dict() for e in app.calendar.list_entries()]
+                    return self.respond(200, json.dumps(entries, ensure_ascii=False), 'application/json')
+                except Exception as exc:
+                    return self.respond(500, str(exc))
             section = path.strip('/') or 'inicio'
             if section not in dict(NAVIGATION):
                 return self.respond(404, 'Página não encontrada')
@@ -180,6 +186,21 @@ def make_server(data_dir, port=8765):
                     return self.respond(303, '', location='/conteudo?' + query_str)
                 except (ValueError, UnicodeError, PermissionError, Exception) as exc:
                     return self.respond(303, '', location='/conteudo?' + urlencode({'error': str(exc)}))
+            if self.path.startswith('/api/calendar/'):
+                from kiros.ui.calendar import dispatch_calendar_action
+                action = self.path.rsplit('/', 1)[-1]
+                if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+                    return self.respond(415, 'Formato não permitido')
+                try:
+                    size = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < size <= 64000:
+                        raise ValueError('Tamanho de requisição inválido.')
+                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=50)
+                    data = {k: v[0] for k, v in parsed.items()}
+                    query_str = dispatch_calendar_action(app, action, data)
+                    return self.respond(303, '', location='/calendario?' + query_str)
+                except (ValueError, UnicodeError, PermissionError, Exception) as exc:
+                    return self.respond(303, '', location='/calendario?' + urlencode({'error': str(exc)}))
             if self.path != '/api/preferences':
                 return self.respond(404, 'Operação não encontrada')
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':

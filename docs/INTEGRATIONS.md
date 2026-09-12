@@ -70,3 +70,47 @@ indisponibilidade (503) e timeout. ExternalGateway bloqueia qualquer egress no m
 Nenhuma chamada externa real, cobrança em cartão ou consumo de cotas pagas foi executado.
 Toda a validação em ambiente local utilizou fixtures determinísticas e recusa central do gateway.
 Segredos de autenticação nunca são registrados em logs nem retornados ao frontend.
+
+M09 (2026-09-12): Calendário editorial inteligente e publicação controlada no Instagram
+implementados segundo a documentação oficial vigente da Meta (Instagram Content Publishing API /
+Graph API v20.0+). Operações cobrem criação de container de mídia, polling de status de
+transcodificação, agendamento de post, checagem de cota de 25 posts/24h e auditoria pré-publicação
+em 7 dimensões com bloqueio por falta de confirmação explícita (Seção 79).
+
+### Documentação oficial do Instagram / Meta consultada em 2026-09-12:
+
+1. **Instagram Content Publishing API (Meta Graph API v20.0+)**:
+   - URL oficial: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/content-publishing
+   - Endpoints oficiais verificados:
+     - Criação de container: `POST https://graph.facebook.com/v20.0/{ig-user-id}/media`
+     - Consulta de status de container: `GET https://graph.facebook.com/v20.0/{creation-id}?fields=status_code,status`
+     - Publicação do container: `POST https://graph.facebook.com/v20.0/{ig-user-id}/media_publish`
+     - Consulta de limites de cota: `GET https://graph.facebook.com/v20.0/{ig-user-id}/content_publishing_limit`
+   - Requisitos de Conta:
+     - Conta Instagram Professional (Business ou Creator) vinculada a uma Página do Facebook com acesso de administrador.
+   - Permissões Meta necessárias:
+     - `instagram_basic`: leitura básica do perfil profissional e identificador de conta.
+     - `instagram_content_publish`: criação de containers e publicação de posts no feed, carrossel e Stories.
+     - `pages_show_list`: listagem das páginas administradas pelo usuário para resolução do ID do Instagram.
+     - `pages_read_engagement`: leitura de engajamento para fins de métricas operacionais.
+   - Formatos e especificações técnicas suportadas:
+     - Imagens de Feed: proporções 1:1 (quadrado), 4:5 (retrato vertical) ou 1.91:1 (paisagem); largura entre 320px e 1440px; tamanho máx 8 MB; formatos JPEG e PNG.
+     - Imagens de Stories: proporção vertical 9:16 (1080x1920); tamanho máx 4 MB; formatos JPEG e PNG.
+     - Carrosséis: entre 2 e 10 mídias com a mesma proporção.
+   - Restrições e limitações operacionais da API oficial:
+     - Limite de 25 posts por período móvel de 24 horas por conta.
+     - Agendamento suportado oficialmente: mínimo 15 minutos e máximo 75 dias no futuro.
+     - Ativos devem estar acessíveis publicamente via URL HTTPS válida durante o processamento.
+     - A API não permite edição de legenda ou substituição de mídia após a publicação realizada.
+
+| Integração M09 | Implementação | Contrato/fixture | Ao vivo | Pendência |
+|---|---|---|---|---|
+| Instagram Content Publishing | InstagramPublisher (`POST /media`, `GET /status`, `POST /media_publish`) | Fluxo operacional completo, agendamento, timezone-aware, reconciliação idempotente contra duplicidade e simulação de erro 503/429 | não testado | credenciais reais de App Meta e autorização explícita do usuário em M12 |
+| Auditoria Pré-Publicação | PublicationAuditor (versão, fidelidade, copy, direitos, formatos, comercial e confirmação) | 7 dimensões validadas; recusa obrigatória sem confirmação humana explícita (Seção 79) | local determinístico | — |
+| Calendário Inteligente | EditorialCalendarService (ritmo, pilares, saturação e datas prioritárias) | Frequência semanal, diversidade de pilares e rascunhos antecipados de datas sazonais sem oficialização sem aprovação | local determinístico | — |
+| Recomendação de Horário | recommend_best_time com camadas (KIROS -> Setor -> Geral) | Três camadas de dados, nível de confiança, base explicada e prioridade irrevogável da escolha manual ("manual sempre vence") | local determinístico | — |
+
+Nenhum post real foi disparado para contas ao vivo durante o desenvolvimento.
+Toda a validação em ambiente local utilizou fixtures determinísticas e recusa central do gateway.
+Segredos de autenticação nunca são registrados em logs nem retornados ao frontend.
+

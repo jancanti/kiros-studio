@@ -428,7 +428,7 @@
       "depends_on": [
         "M08"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         39,
         40,
@@ -463,7 +463,10 @@
           "text": "Acesso real pendente é registrado como não validado; não publicar conteúdo real durante desenvolvimento nem simular sucesso de uma publicação real."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M09/452a6eb9c74f4e099754eab3b65c0d0f/checkpoint.json",
+        "at": "2026-09-12T18:10:27.923999+00:00"
+      },
       "blocker": null
     },
     {

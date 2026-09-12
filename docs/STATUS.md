@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M09 — Calendário e Instagram controlado
+Atual: M10 — Diversidade, tendências e experimentos
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -15,7 +15,7 @@ Atual: M09 — Calendário e Instagram controlado
 | M06 — Fidelidade, ativos e versões | completed | docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/checkpoint.json |
 | M07 — Layout determinístico e editor | completed | docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/checkpoint.json |
 | M08 — Copy, legendas e Stories | completed | docs/checkpoints/M08/207a0f2187ef49aaa429fec826853ede/checkpoint.json |
-| M09 — Calendário e Instagram controlado | pending | — |
+| M09 — Calendário e Instagram controlado | completed | docs/checkpoints/M09/452a6eb9c74f4e099754eab3b65c0d0f/checkpoint.json |
 | M10 — Diversidade, tendências e experimentos | pending | — |
 | M11 — Aprendizado, busca e experiência integrada | pending | — |
 | M12 — Backup e aceite completo da V1 | pending | — |

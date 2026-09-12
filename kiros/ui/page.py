@@ -33,6 +33,9 @@ def render_page(app, section, saved=False, query=None):
     elif section == 'criar':
         from kiros.ui.creator import render_creator
         content = render_creator(app, query or {})
+    elif section == 'calendario':
+        from kiros.ui.calendar import render_calendar
+        content = render_calendar(app, query or {})
     elif section == 'conteudo':
         from kiros.ui.campaigns import render_campaigns_hub
         content = render_campaigns_hub(app, query or {})

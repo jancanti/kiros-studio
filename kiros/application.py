@@ -19,6 +19,8 @@ from kiros.execution.worker import ExecutionWorker
 from kiros.fidelity import ProductFidelityService
 from kiros.layout import LayoutEngine, LayoutEditor, TemplateLibrary
 from kiros.content import CopyEngine, StoriesEngine, PrePublishAuditor
+from kiros.calendar import EditorialCalendarService
+from kiros.social import InstagramPublisher, PublicationAuditor
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -65,6 +67,23 @@ class Application:
             copy_engine=self.copy_engine,
             stories_engine=self.stories_engine,
             pre_publish_auditor=self.pre_publish_auditor,
+            library=self.library,
+        )
+        self.publication_auditor = PublicationAuditor(
+            campaigns=self.campaigns,
+            library=self.library,
+            pre_publish_auditor=self.pre_publish_auditor,
+            fidelity_service=self.fidelity_service,
+        )
+        self.publisher = InstagramPublisher(
+            database=self.database,
+            gateway=self.gateway,
+            auditor=self.publication_auditor,
+            mock_mode=(self.policy.mode == 'mock'),
+        )
+        self.calendar = EditorialCalendarService(
+            database=self.database,
+            campaigns=self.campaigns,
             library=self.library,
         )
 

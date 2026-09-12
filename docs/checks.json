@@ -278,7 +278,37 @@
       "timeout_seconds": 60
     }
   ],
-  "M09": [],
+  "M09": [
+    {
+      "name": "Testes M09 de Calendário, Frequência, Recomendação, SocialPublisher, Auditoria e HTTP",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "Build local com migração 010 e módulos de calendário e social M09",
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício de processos",
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "M10": [],
   "M11": [],
   "M12": []
