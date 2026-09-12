@@ -101,6 +101,24 @@ def make_server(data_dir, port=8765):
                 types = query.get('type', None)
                 results = [r.to_dict() for r in app.search.search(q, entity_types=types)]
                 return self.respond(200, json.dumps(results, ensure_ascii=False), 'application/json')
+            if path == '/api/backup/download':
+                query = parse_qs(urlsplit(self.path).query)
+                name = query.get('name', [''])[0]
+                if not name or '/' in name or '\\' in name or not name.endswith('.zip'):
+                    return self.respond(400, 'Nome de backup inválido')
+                target = app.backup.backups_dir / name
+                if not target.exists():
+                    return self.respond(404, 'Backup não encontrado')
+                with open(target, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', f'attachment; filename="{name}"')
+                self.send_header('Content-Length', str(len(content)))
+                self.send_header('Cache-Control', 'no-store')
+                self.end_headers()
+                self.wfile.write(content)
+                return
             section = path.strip('/') or 'inicio'
             if section not in dict(NAVIGATION):
                 return self.respond(404, 'Página não encontrada')
@@ -280,6 +298,12 @@ def make_server(data_dir, port=8765):
                     return self.respond(404, 'Ação desconhecida')
                 except Exception as exc:
                     return self.respond(303, '', location='/biblioteca?' + urlencode({'tab': 'prompts', 'error': str(exc)}))
+            if self.path == '/api/backup/create':
+                try:
+                    bpath = app.backup.create_backup()
+                    return self.respond(303, '', location='/configuracoes?' + urlencode({'backup_created': bpath.name}))
+                except Exception as exc:
+                    return self.respond(500, f'Erro ao gerar backup: {exc}')
             if self.path != '/api/preferences':
                 return self.respond(404, 'Operação não encontrada')
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':

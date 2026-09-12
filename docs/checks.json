@@ -343,5 +343,21 @@
       "timeout_seconds": 60
     }
   ],
-  "M12": []
+  "M12": [
+    {
+      "name": "M12: Suíte completa de testes unitários e de integração",
+      "argv": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"],
+      "timeout_seconds": 180
+    },
+    {
+      "name": "M12: Build local de distribuição",
+      "argv": ["python3", "scripts/build.py"],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "M12: Smoke HTTP e persistência",
+      "argv": ["python3", "scripts/smoke.py"],
+      "timeout_seconds": 60
+    }
+  ]
 }

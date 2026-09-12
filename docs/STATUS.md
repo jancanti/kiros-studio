@@ -18,7 +18,9 @@ Atual: M12 — Backup e aceite completo da V1
 | M09 — Calendário e Instagram controlado | completed | docs/checkpoints/M09/452a6eb9c74f4e099754eab3b65c0d0f/checkpoint.json |
 | M10 — Diversidade, tendências e experimentos | completed | docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/checkpoint.json |
 | M11 — Aprendizado, busca e experiência integrada | completed | docs/checkpoints/M11/e404a349ef584e03a2791937acb6082d/checkpoint.json |
-| M12 — Backup e aceite completo da V1 | pending | — |
+| M12 — Backup e aceite completo da V1 | blocked | — |
+
+Bloqueio: Validação real ao vivo pendente: autorização de custos com APIs pagas e credenciais de produção para Meta Instagram e Image Providers não concedidas. Prontidão local da V1 com mocks 100% concluída e testada.
 
 Próxima ação: diga `continue` no Codex aberto nesta pasta. Uma execução termina no checkpoint.
 Conclusões com mocks não comprovam integração real; consulte docs/INTEGRATIONS.md.

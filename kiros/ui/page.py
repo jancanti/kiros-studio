@@ -36,9 +36,11 @@ def render_page(app, section, saved=False, query=None):
         content = render_campaigns_hub(app, query or {})
     elif section == 'configuracoes':
         from kiros.ui.providers import render_providers_panel
-        content = '<p class="eyebrow">Preferências locais e Provedores</p><h1>Configurações</h1>'
+        content = '<p class="eyebrow">Preferências locais, Backup e Provedores</p><h1>Configurações</h1>'
         if saved:
             content += '<p role="status" class="notice">Nome do espaço salvo neste dispositivo.</p>'
+        if query and query.get('backup_created'):
+            content += f'<p role="status" class="notice">Backup gerado com sucesso: {query["backup_created"][0]}</p>'
         content += f'''<div class="panel"><h2>Seu espaço</h2>
         <p>Este nome identifica o espaço local. A identidade oficial da marca é preservada.</p>
         <form method="post" action="/api/preferences">
@@ -47,6 +49,23 @@ def render_page(app, section, saved=False, query=None):
         <button type="submit">Salvar nome</button></form></div>
         <div class="note"><h2>Simulação local</h2>
         <p>Nenhuma IA externa está conectada. Geração e publicação reais exigem configuração explícita e autorização.</p></div>'''
+
+        # Painel de Backup & Restauração (Seção 71 e M12-A01)
+        backups = app.backup.list_backups()
+        content += '''<div class="panel"><h2>Backup e Restauração (Seção 71)</h2>
+        <p>O backup gera um snapshot atômico do SQLite, Brand Bible, Product Bible, campanhas, assets e configurações. <strong>O histórico nunca é apagado automaticamente.</strong></p>
+        <form method="post" action="/api/backup/create"><button type="submit">Gerar Novo Backup Agora</button></form>'''
+        if backups:
+            content += '<h3>Backups disponíveis neste dispositivo</h3><div class="table-scroll"><table><thead><tr><th>Arquivo</th><th>Data</th><th>Tamanho</th><th>Arquivos</th><th>Ações</th></tr></thead><tbody>'
+            for b in backups:
+                sz_kb = b['size_bytes'] / 1024
+                date_str = b['created_at'][:19] if b['created_at'] else b['modified_at'][:19]
+                content += f'<tr><td><strong>{b["name"]}</strong></td><td>{date_str}</td><td>{sz_kb:.1f} KB</td><td>{b["files_count"]}</td><td><a href="/api/backup/download?name={b["name"]}">Baixar ZIP</a></td></tr>'
+            content += '</tbody></table></div>'
+        else:
+            content += '<p class="aside-note">Nenhum backup gerado ainda neste dispositivo.</p>'
+        content += '</div>'
+
         content += render_providers_panel(app, query or {})
     else:
         content = f'''<p class="eyebrow">KIROS Studio</p><h1>{title}</h1>

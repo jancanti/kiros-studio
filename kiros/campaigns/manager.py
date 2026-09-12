@@ -987,10 +987,16 @@ class CampaignManager:
             briefing = json.loads(camp_row['briefing_json']) if camp_row else {}
             products = json.loads(camp_row['products_json']) if camp_row else []
             first_prod = products[0] if products else {}
+            if isinstance(first_prod, dict):
+                p_name = first_prod.get('name', 'Vela Aromática')
+            elif isinstance(first_prod, str):
+                p_name = first_prod
+            else:
+                p_name = 'Vela Aromática'
 
             ctx = {
-                'product_name': first_prod.get('name', 'Vela Aromática'),
-                'fragrance': first_prod.get('name', 'Alecrim & Algodão'),
+                'product_name': p_name,
+                'fragrance': p_name,
                 'visual_tone': briefing.get('visual_tone', ''),
             }
 

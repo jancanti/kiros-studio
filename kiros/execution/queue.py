@@ -394,7 +394,8 @@ class ExecutionQueue:
                     if camp_row and camp_row['products_json']:
                         prods = json.loads(camp_row['products_json'])
                         if prods and isinstance(prods, list) and len(prods) > 0:
-                            prod_id = prods[0].get('product_id')
+                            p0 = prods[0]
+                            prod_id = p0.get('product_id') if isinstance(p0, dict) else str(p0)
                             if prod_id:
                                 self.fidelity_service.check_fidelity(
                                     campaign_id=campaign_id,

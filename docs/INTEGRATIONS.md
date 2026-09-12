@@ -131,3 +131,57 @@ em 7 dimensões com bloqueio por falta de confirmação explícita (Seção 79).
 Nenhum post real foi disparado para contas ao vivo durante o desenvolvimento.
 Toda a validação em ambiente local utilizou fixtures determinísticas e recusa central do gateway.
 Segredos de autenticação nunca são registrados em logs nem retornados ao frontend.
+
+---
+
+## M12 (2026-09-12): Backup, Ciclo Completo e Aceite da V1
+
+O encerramento da V1 valida o ciclo de vida ponta a ponta da ideia ao aprendizado e consolida a governança de dados e prontidão operacional:
+
+1. **Backup e Restauração (Seção 71)**:
+   - `BackupService` (`kiros/backup.py`) realiza backup consistente de SQLite (`sqlite3.backup`) e arquivos (Brand Bible, Product Bible, campanhas, assets e configurações protegidas).
+   - Manifesto criptográfico SHA-256 e contagem de entidades incluídos em `manifest.json`.
+   - Restauração validada sem sobrescrever ou apagar a base ativa original.
+   - Histórico preservado integralmente (`policy.auto_delete_history: false`).
+
+2. **Ciclo de Vida Ponta a Ponta (M12-A02)**:
+   - Executado e testado com sucesso em `tests/test_end_to_end_v1_pipeline.py`:
+     1. Ideia (Banco de Ideias com 6 pilares oficiais)
+     2. Campanha (Briefing e estratégia)
+     3. Storyboard (Slides e formatos 4:5 / 9:16)
+     4. Geração Mock (Fila com worker e idempotência)
+     5. Fidelidade (Checagem de 8 dimensões e versionamento)
+     6. Layout (Composição matemática SVG, tipografia Rubik, proporção de logo)
+     7. Copy (Redação na voz brasileira, sem clichês/emojis)
+     8. Auditoria (7 dimensões com bloqueio por falta de operador)
+     9. Publicação Mock (Calendário inteligente e disparo com operador explícito)
+     10. Medição (Diversidade e saturação em Insights)
+     11. Aprendizado (Correção local, proposta e memória permanente)
+
+3. **Matriz de Prontidão da V1 (M12-A05 e M12-A06)**:
+
+| Integração / Subsistema | Implementado | Testado com Fixtures/Mock | Testado ao Vivo | Status de Prontidão |
+|---|---|---|---|---|
+| **SQLite + Migrações (001-012)** | Sim | Sim (224 testes) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Filesystem Local** | Sim | Sim (Testes + Smoke) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Backup & Restore (Seção 71)** | Sim | Sim (`test_backup.py`) | Sim (`data/backups/`) | **Pronto Localmente** |
+| **Creative Director & Ideias** | Sim | Sim (`test_ideas.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Brand Bible & Product Bible** | Sim | Sim (`test_library.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Motor de Imagem Gemini** | Sim | Sim (`test_providers.py`) | Não | **Bloqueado para Ao Vivo** (Sem credenciais/custo autorizados) |
+| **Motor de Imagem OpenAI** | Sim | Sim (`test_providers.py`) | Não | **Bloqueado para Ao Vivo** (Sem credenciais/custo autorizados) |
+| **Motor de Imagem Firefly** | Sim | Sim (`test_providers.py`) | Não | **Bloqueado para Ao Vivo** (Sem credenciais/custo autorizados) |
+| **Fila & Worker de Execução** | Sim | Sim (`test_execution.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Product Fidelity Service** | Sim | Sim (`test_fidelity.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Layout Engine (SVG)** | Sim | Sim (`test_layout_engine.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Copy & Stories Engines** | Sim | Sim (`test_copy_engine.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Auditoria Pré-Publicação** | Sim | Sim (`test_pre_publish_audit.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Instagram Content Publishing** | Sim | Sim (`test_social_publisher.py`) | Não | **Bloqueado para Ao Vivo** (Sem autorização de publicação real) |
+| **Calendário Editorial** | Sim | Sim (`test_calendar_service.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Insights & Saturação** | Sim | Sim (`test_insights.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Aprendizado & Memória** | Sim | Sim (`test_learning_and_prompts.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+| **Busca Global & Command Bar** | Sim | Sim (`test_command_bar.py`) | Sim (Ambiente Local) | **Pronto Localmente** |
+
+> **Nota de Separação de Prontidão (M12-A06)**:
+> A V1 está **100% pronta e aprovada para execução em ambiente local com mocks determinísticos**. 
+> Para operação real ao vivo com provedores externos (Google Gemini, OpenAI, Adobe Firefly) e publicação na Meta Instagram Graph API, é exigida autorização explícita do usuário, fornecimento de credenciais válidas e aprovação de custos reais. Portanto, `real_readiness` permanece categoricamente `false`.
+

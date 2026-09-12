@@ -26,6 +26,7 @@ from kiros.learning import LearningService, PromptLibrary
 from kiros.search import GlobalSearchService
 from kiros.command_bar import CommandBarService
 from kiros.dashboard import DashboardService
+from kiros.backup import BackupService
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -36,6 +37,7 @@ NAVIGATION = (
 
 class Application:
     def __init__(self, data_dir: Path):
+        self.data_dir = Path(data_dir)
         self.policy = Policy.from_env()
         self.gateway = ExternalGateway(self.policy)
         self.database = SQLiteDatabase(data_dir / 'studio.sqlite3')
@@ -113,6 +115,7 @@ class Application:
             learning=self.learning,
             prompt_library=self.prompt_library,
         )
+        self.backup = BackupService(self.data_dir, self.database, self.storage)
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

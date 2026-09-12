@@ -563,7 +563,7 @@
       "depends_on": [
         "M11"
       ],
-      "status": "pending",
+      "status": "blocked",
       "sections": [
         71,
         81,
@@ -599,7 +599,7 @@
         }
       ],
       "checkpoint": null,
-      "blocker": null
+      "blocker": "Validação real ao vivo pendente: autorização de custos com APIs pagas e credenciais de produção para Meta Instagram e Image Providers não concedidas. Prontidão local da V1 com mocks 100% concluída e testada."
     }
   ]
 }

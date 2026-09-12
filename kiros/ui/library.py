@@ -238,7 +238,8 @@ def render_library(app, section, query):
             if templates:
                 out += '<div class="reference-grid">'
                 for t in templates:
-                    out += f'<article class="panel"><h3>{e(t.name)}</h3><p>Família: <strong>{e(t.family)}</strong> · Status: <strong>{e(t.status)}</strong></p><p>{e(t.description)}</p></article>'
+                    formats = ', '.join(t.supported_formats) if t.supported_formats else '4:5, 9:16'
+                    out += f'<article class="panel"><h3>{e(t.name)}</h3><p>Família: <strong>{e(t.family)}</strong> · Status: <strong>{e(t.status)}</strong></p><p>Formatos: {e(formats)} · Usos: {t.usage_count}</p></article>'
                 out += '</div>'
             else:
                 out += '<p>Nenhum template cadastrado.</p>'

@@ -1,33 +1,55 @@
 {
   "milestone": "M12",
-  "summary": "",
+  "summary": "Implementação e validação da Milestone M12 (Backup e aceite completo da V1) cobrindo as Seções 71, 81, 82, 84 e 86 da especificação: serviço atômico de backup e restauração consistente de SQLite e filesystem com hash SHA-256 e contagem de entidades sem apagar base original (Seção 71); pipeline de ciclo de vida completo da V1 em 11 etapas ponta a ponta (ideia -> campanha -> storyboard -> geração mock -> fidelidade -> layout SVG -> copy brasileira -> auditoria pré-publicação -> publicação mock -> medição -> aprendizado permanente) validado com sucesso; matriz de aceite mapeando formalmente os 11 domínios da Seção 81, os 8 grupos de testes da Seção 82 e os 28 critérios da Seção 84 (Definition of Done); execução com 100% de aprovação de 224 testes automatizados, script de build e smoke test; documentação completa de operação, recuperação e prontidão com distinção inequívoca entre prontidão local (100% pronta) e prontidão real ao vivo (bloqueada até autorização e credenciais de produção).",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Ambiente de desenvolvimento local determinístico com recusa estrita de egress e simulação mock autorizada; chaves de produção (Google Gemini, OpenAI, Adobe Firefly) e publicação real na Meta Graph API não foram executadas ao vivo por ausência de autorização de gastos reais e credenciais."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M12-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/backup.py",
+        "tests/test_backup.py",
+        "kiros/ui/page.py",
+        "docs/RECOVERY.md"
+      ],
+      "verification": "Comprovado em tests/test_backup.py e docs/RECOVERY.md: BackupService realiza backup consistente e atômico do SQLite via sqlite3.backup() e de todos os diretórios de ativos e bibliotecas com manifesto SHA-256 e contagens de entidades; restauração extrai em destino isolado sem apagar a base ativa original e sem deleção de histórico (auto_delete_history: false)."
     },
     "M12-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "tests/test_end_to_end_v1_pipeline.py",
+        "kiros/application.py"
+      ],
+      "verification": "Comprovado em tests/test_end_to_end_v1_pipeline.py: fluxo completo da V1 executado da ideia ao aprendizado em 11 etapas interligadas (Ideia -> Campanha -> Storyboard -> Fila com worker -> Fidelidade -> Layout SVG -> Copy -> Auditoria Pré-Publicação -> Publicação com operador -> Medição em Insights -> Aprendizado e Memória Permanente) aprovado integralmente sem erros."
     },
     "M12-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "docs/V1_ACCEPTANCE_MATRIX.md"
+      ],
+      "verification": "Comprovado em docs/V1_ACCEPTANCE_MATRIX.md: todos os itens da Seção 81 (Marca, Produtos, Referências, Providers, Campanhas, Imagens, Layout, Conteúdo, Calendário, Histórico, Inteligência) e os 28 critérios da Seção 84 mapeados a arquivos de código e testes automatizados, além de todos os grupos de testes da Seção 82 mapeados a comandos executados."
     },
     "M12-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "scripts/build.py",
+        "scripts/smoke.py",
+        "docs/checks.json"
+      ],
+      "verification": "Comprovado pela execução com sucesso de scripts/build.py (pacote dist/kiros-studio.zip gerado), scripts/smoke.py (8 rotas testadas, integridade de SQLite e arquivos após reinício) e execução completa de 224 testes unitários e de integração sem nenhuma falha ou erro crítico pendente."
     },
     "M12-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "docs/RECOVERY.md",
+        "docs/INTEGRATIONS.md"
+      ],
+      "verification": "Comprovado em docs/RECOVERY.md e docs/INTEGRATIONS.md: instruções detalhadas de inicialização, realização de backup, restauração segura contingencial e matriz consolidada de integrações classificadas como implementadas, testadas com fixtures locais ou bloqueadas para execução ao vivo."
     },
     "M12-A06": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "docs/INTEGRATIONS.md",
+        "docs/V1_ACCEPTANCE_MATRIX.md"
+      ],
+      "verification": "Comprovado em docs/INTEGRATIONS.md e docs/evidence/M12.json: separação clara e documentada entre prontidão local (100% pronta e testada) e prontidão real ao vivo; devido à ausência de autorização de gastos reais com APIs e publicação externa no Instagram, o status real_readiness permanece explicitamente false e o bloqueio é registrado conforme a regra da especificação."
     }
   }
 }
