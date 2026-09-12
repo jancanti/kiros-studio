@@ -215,3 +215,29 @@ th{font-weight:600;font-family:var(--font-body)}
   .dashboard-grid{grid-template-columns:1fr}
 }
 
+/* Creative Director Studio Workbench */
+.creator-workbench{display:grid;grid-template-columns:1.55fr 1fr;gap:28px;align-items:start;margin-top:20px}
+.creator-primary-col{display:flex;flex-direction:column;gap:24px}
+.creator-sidebar-col{display:flex;flex-direction:column;gap:24px}
+.briefing-canvas{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:28px}
+.quick-chips-container{margin:14px 0 18px}
+.quick-chips-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted-blue);margin-bottom:8px;display:block}
+.quick-chips{display:flex;flex-wrap:wrap;gap:8px}
+.quick-chip{background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-family:var(--font-body);color:var(--ink);cursor:pointer;text-decoration:none;transition:all 0.15s ease}
+.quick-chip:hover{background:var(--canvas);border-color:var(--primary);color:var(--primary)}
+.briefing-result-card{background:var(--canvas);border:1px solid var(--hairline);border-left:4px solid var(--primary);border-radius:var(--radius-sm);padding:24px}
+.briefing-meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0;background:var(--surface-input);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--hairline-cool)}
+.briefing-meta-item{font-size:13px;line-height:1.5}
+.briefing-meta-item strong{display:block;font-size:11px;text-transform:uppercase;color:var(--muted-blue);letter-spacing:0.5px;margin-bottom:2px}
+.pillar-mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.pillar-mini-card{background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.seasonal-item-card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;transition:border-color 0.15s ease}
+.seasonal-item-card:hover{border-color:var(--hairline-soft)}
+.adjacent-discovery-card{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px}
+.adjacent-discovery-card h4{font-size:14px;margin:0 0 8px;color:var(--ink)}
+.adjacent-discovery-card p{font-size:12px;line-height:1.5;margin:4px 0;color:var(--muted-blue)}
+
+@media(max-width:960px){
+  .creator-workbench{grid-template-columns:1fr}
+}
+
