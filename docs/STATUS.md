@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M08 — Copy, legendas e Stories
+Atual: M09 — Calendário e Instagram controlado
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -14,7 +14,7 @@ Atual: M08 — Copy, legendas e Stories
 | M05 — Fila, execução e recuperação | completed | docs/checkpoints/M05/c344c530409f4c1a83eaf142eb61e4ff/checkpoint.json |
 | M06 — Fidelidade, ativos e versões | completed | docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/checkpoint.json |
 | M07 — Layout determinístico e editor | completed | docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/checkpoint.json |
-| M08 — Copy, legendas e Stories | pending | — |
+| M08 — Copy, legendas e Stories | completed | docs/checkpoints/M08/207a0f2187ef49aaa429fec826853ede/checkpoint.json |
 | M09 — Calendário e Instagram controlado | pending | — |
 | M10 — Diversidade, tendências e experimentos | pending | — |
 | M11 — Aprendizado, busca e experiência integrada | pending | — |

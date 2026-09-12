@@ -1,29 +1,75 @@
 {
   "milestone": "M08",
-  "summary": "",
+  "summary": "Implementação completa de Copy, Legendas, Stories e Governança Editorial Pré-Publicação (Seções 34, 35, 36, 37 e 38). Motor de redação alinhado à voz da KIROS (humana, leve, relaxada, brasileira, elegante sem rigidez), operando nos 4 modos canônicos (automatic, suggestions com 3 variações temáticas, user_provided e ai_plus_user com preservação estrita da contribuição e termos do operador). Banimento absoluto de emojis editoriais e hashtags automáticas. CTA opcional e contextual, sem fórmulas forçadas de engajamento artificial. Governança estrita de dados comerciais: nunca inventar preço, estoque, disponibilidade ou promoção; preço oculto por padrão, exigindo dado numérico real da Product Bible, justificativa estratégica documentada e aprovação explícita de operador. Planejador de Stories independentes e derivados com narrativa própria em 4 frames sequenciais estruturados (gancho visual, detalhe sensorial, momento de interação e fechamento com link na bio) e interações contextuais justificadas, rejeitando mero redimensionamento do feed. Sistema automatizado de checklist de auditoria pré-publicação bloqueando não conformidades antes de qualquer publicação ou agendamento.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Operação em modo mock local determinístico; nenhuma chamada de API de publicação externa do Instagram ou LLM externa paga foi executada.",
+    "Na V1, não há integração profunda com catálogo de e-commerce ou website além da URL de destino configurada e da priorização do link da bio.",
+    "Os Stories gerados fornecem planejamento narrativo, prompts verticais 9:16 e stickers de interação estruturados, sem publicação direta para a API do Instagram nesta etapa."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M08-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/content/models.py",
+        "kiros/content/copy_engine.py",
+        "kiros/campaigns/manager.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_copy_and_voice.py",
+        "tests/test_content_http.py",
+        "docs/evidence/M08-desktop.png",
+        "docs/evidence/M08-mobile.png"
+      ],
+      "verification": "test_caption_modes_and_preserves_user_contribution, test_slide_copy_update_and_ui_rendering_over_http e test_caption_suggestions_generation_over_http comprovam operação nos modos automatic, suggestions (gerando 3 variações: Sensorial, Rotina e Minimalista), user_provided (preservando o texto integral do usuário) e ai_plus_user (refinando suavemente sem alterar termos fundamentais do operador), respeitando a voz brasileira da marca."
     },
     "M08-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/content/models.py",
+        "kiros/content/copy_engine.py",
+        "kiros/content/audit.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_copy_and_voice.py",
+        "tests/test_pre_publish_audit.py"
+      ],
+      "verification": "test_no_automatic_hashtags_and_no_editorial_emojis, test_cta_optional_contextual_and_bans_artificial_formulas, test_price_hidden_by_default_and_requires_justification_and_approval e test_audit_detects_prohibited_emojis_and_blocks_publication comprovam banimento absoluto de hashtags automáticas e emojis em textos editoriais, CTA contextual opcional sem fórmulas artificiais (rejeitando 'comente EU QUERO') e exigência de justificativa e aprovação explícita para exibição de preço real."
     },
     "M08-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/content/models.py",
+        "kiros/content/copy_engine.py",
+        "kiros/campaigns/manager.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_copy_and_voice.py",
+        "tests/test_content_http.py"
+      ],
+      "verification": "test_never_invent_price_stock_promotion_or_availability, test_price_governance_rejection_and_approval_over_http e validação na Product Bible comprovam que o sistema bloqueia tentativas de inventar estoque, promoções ou preços; preço só pode ser exibido se existir dado real na Product Bible; priorização do link da bio e URL de destino sem integração profunda de website."
     },
     "M08-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/content/models.py",
+        "kiros/content/stories_engine.py",
+        "kiros/migrations/009_copy_and_stories.sql",
+        "kiros/campaigns/manager.py",
+        "kiros/ui/campaigns.py",
+        "tests/test_stories_engine.py",
+        "tests/test_content_http.py",
+        "docs/evidence/M08-desktop.png",
+        "docs/evidence/M08-mobile.png"
+      ],
+      "verification": "test_independent_story_sequence_planning, test_derived_from_campaign_story_planning_not_just_feed_resize, test_rejection_of_single_frame_feed_resize, test_contextual_interactions_require_justification e test_story_sequence_planning_over_http comprovam planejamento narrativo de sequências de 3 a 5 frames com papéis estruturados (hook, sensory_detail, interaction, closing), rejeição de mero espelhamento/redimensionamento do feed e exigência de justificativa contextual para interações."
     },
     "M08-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/content/audit.py",
+        "kiros/content/models.py",
+        "kiros/campaigns/manager.py",
+        "kiros/__main__.py",
+        "tests/test_pre_publish_audit.py",
+        "tests/test_content_http.py",
+        "docs/evidence/M08-desktop.png",
+        "docs/evidence/M08-mobile.png"
+      ],
+      "verification": "test_audit_detects_prohibited_emojis_and_blocks_publication, test_audit_detects_automatic_hashtags_and_blocks_publication, test_audit_detects_ai_cliches_and_blocks_publication, test_audit_detects_commercial_fabrication_and_missing_price_approval, test_audit_story_sequence_compliance_and_rejections e test_pre_publish_audit_endpoint_over_http comprovam checklist rigoroso de auditoria pré-publicação cobrindo dados ausentes, emojis, hashtags, clichês, dados comerciais, conformidade de Stories e bloqueio de publicação."
     }
   }
 }

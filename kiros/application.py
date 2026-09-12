@@ -18,6 +18,7 @@ from kiros.execution.worker import ExecutionWorker
 
 from kiros.fidelity import ProductFidelityService
 from kiros.layout import LayoutEngine, LayoutEditor, TemplateLibrary
+from kiros.content import CopyEngine, StoriesEngine, PrePublishAuditor
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -50,6 +51,9 @@ class Application:
         self.layout_engine = LayoutEngine()
         self.template_library = TemplateLibrary(self.database)
         self.layout_editor = LayoutEditor(self.database, self.layout_engine, self.library)
+        self.copy_engine = CopyEngine()
+        self.stories_engine = StoriesEngine()
+        self.pre_publish_auditor = PrePublishAuditor(self.copy_engine, self.stories_engine)
         self.campaigns = CampaignManager(
             self.database,
             self.cost_manager,
@@ -58,6 +62,10 @@ class Application:
             fidelity_service=self.fidelity_service,
             layout_editor=self.layout_editor,
             template_library=self.template_library,
+            copy_engine=self.copy_engine,
+            stories_engine=self.stories_engine,
+            pre_publish_auditor=self.pre_publish_auditor,
+            library=self.library,
         )
 
     def status(self):

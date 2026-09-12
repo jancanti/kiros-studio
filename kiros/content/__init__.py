@@ -1,0 +1,50 @@
+"""Módulo de Copy, Legendas, Stories e Auditoria Pré-Publicação (Seções 34-38)."""
+from kiros.content.models import (
+    CaptionContent,
+    StoryFrame,
+    StorySequence,
+    AuditCheckItem,
+    PrePublishAuditResult,
+    ContentDomainError,
+    CommercialDataFabricationError,
+    PriceApprovalRequiredError,
+    MissingProductPriceError,
+    PrePublishAuditBlockedError,
+    InvalidCaptionModeError,
+    ProhibitedContentError,
+    VALID_CAPTION_MODES,
+    VALID_CTA_MODES,
+    VALID_STORY_TYPES,
+    VALID_NARRATIVE_ROLES,
+    VALID_INTERACTION_TYPES,
+    PROHIBITED_AI_CLICHES,
+    PROHIBITED_CTA_FORMULAS,
+)
+from kiros.content.copy_engine import CopyEngine
+from kiros.content.stories_engine import StoriesEngine
+from kiros.content.audit import PrePublishAuditor
+
+__all__ = [
+    'CaptionContent',
+    'StoryFrame',
+    'StorySequence',
+    'AuditCheckItem',
+    'PrePublishAuditResult',
+    'ContentDomainError',
+    'CommercialDataFabricationError',
+    'PriceApprovalRequiredError',
+    'MissingProductPriceError',
+    'PrePublishAuditBlockedError',
+    'InvalidCaptionModeError',
+    'ProhibitedContentError',
+    'VALID_CAPTION_MODES',
+    'VALID_CTA_MODES',
+    'VALID_STORY_TYPES',
+    'VALID_NARRATIVE_ROLES',
+    'VALID_INTERACTION_TYPES',
+    'PROHIBITED_AI_CLICHES',
+    'PROHIBITED_CTA_FORMULAS',
+    'CopyEngine',
+    'StoriesEngine',
+    'PrePublishAuditor',
+]

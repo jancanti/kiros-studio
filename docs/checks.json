@@ -247,7 +247,37 @@
       "timeout_seconds": 60
     }
   ],
-  "M08": [],
+  "M08": [
+    {
+      "name": "Testes M08 de Copy, Voz, Legendas, Stories, Auditoria e HTTP",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "Build local com migração e módulo de conteúdo M08",
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício de processos",
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "M09": [],
   "M10": [],
   "M11": [],

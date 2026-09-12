@@ -21,6 +21,18 @@ from kiros.core.contracts import Provenance
 from kiros.cost import CostManager
 from kiros.infrastructure.local import SQLiteDatabase
 from kiros.providers.router import ImageEngineRouter
+from kiros.content import (
+    CaptionContent,
+    StorySequence,
+    StoryFrame,
+    PrePublishAuditResult,
+    CopyEngine,
+    StoriesEngine,
+    PrePublishAuditor,
+    VALID_CAPTION_MODES,
+    VALID_CTA_MODES,
+    VALID_STORY_TYPES,
+)
 
 
 class CampaignManager:
@@ -35,6 +47,10 @@ class CampaignManager:
         fidelity_service: Optional[Any] = None,
         layout_editor: Optional[Any] = None,
         template_library: Optional[Any] = None,
+        copy_engine: Optional[Any] = None,
+        stories_engine: Optional[Any] = None,
+        pre_publish_auditor: Optional[Any] = None,
+        library: Optional[Any] = None,
     ):
         self.db = db
         self.cost_manager = cost_manager
@@ -43,6 +59,10 @@ class CampaignManager:
         self.fidelity_service = fidelity_service
         self.layout_editor = layout_editor
         self.template_library = template_library
+        self.copy_engine = copy_engine or CopyEngine()
+        self.stories_engine = stories_engine or StoriesEngine()
+        self.pre_publish_auditor = pre_publish_auditor or PrePublishAuditor(self.copy_engine, self.stories_engine)
+        self.library = library
         if self.queue is None and self.cost_manager is not None:
             from kiros.execution.queue import ExecutionQueue
             self.queue = ExecutionQueue(self.db, self.cost_manager, fidelity_service=self.fidelity_service)
@@ -146,6 +166,13 @@ class CampaignManager:
                 target_format='4:5',
                 default_headline=clean_title,
             )
+
+        # Cria cópia/legenda padrão para o slide (Seções 34-37 e M08)
+        self.get_or_create_slide_copy(
+            campaign_id=campaign_id,
+            slide_id=slide_id,
+            initial_caption=caption_draft,
+        )
 
         return slide_id
 
@@ -882,5 +909,519 @@ class CampaignManager:
         if not layout:
             raise ValueError(f"Layout '{layout_id}' não encontrado.")
         return self.layout_editor.engine.export_layout_data(layout)
+
+    # -------------------------------------------------------------
+    # Seções 34, 35, 36, 37: Copy, Legendas, Voz e Governança de Preço
+    # -------------------------------------------------------------
+
+    def get_product_for_slide(self, slide_id: str) -> Dict[str, Any]:
+        """Recupera dados oficiais do produto associado ao slide (da Product Bible / campanha)."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            s_row = conn.execute('SELECT campaign_id FROM storyboard_slides WHERE id=?', (slide_id,)).fetchone()
+            if not s_row:
+                return {}
+            c_row = conn.execute('SELECT products_json FROM campaigns WHERE id=?', (s_row['campaign_id'],)).fetchone()
+            if not c_row:
+                return {}
+            prods = json.loads(c_row['products_json'])
+            if not prods:
+                return {}
+            first_prod = prods[0]
+            prod_id = first_prod.get('product_id') or first_prod.get('id')
+
+            # Tenta buscar versão oficial da Product Bible se existir
+            if prod_id:
+                pb_row = conn.execute(
+                    'SELECT content FROM bible_versions WHERE kind=? AND owner=? AND approved_at IS NOT NULL ORDER BY version DESC LIMIT 1',
+                    ('product', prod_id),
+                ).fetchone()
+                if pb_row:
+                    try:
+                        pb_data = json.loads(pb_row['content'])
+                        merged = dict(first_prod)
+                        merged.update(pb_data)
+                        return merged
+                    except Exception:
+                        pass
+            return first_prod
+
+    def get_or_create_slide_copy(
+        self,
+        campaign_id: str,
+        slide_id: str,
+        initial_caption: str = '',
+    ) -> CaptionContent:
+        """Recupera ou inicializa a cópia/legenda associada ao slide (Seções 34-37)."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT * FROM slide_copies WHERE slide_id=?', (slide_id,)).fetchone()
+            if row:
+                return CaptionContent(
+                    id=row['id'],
+                    campaign_id=row['campaign_id'],
+                    slide_id=row['slide_id'],
+                    mode=row['mode'],
+                    text=row['text'],
+                    user_draft=row['user_draft'],
+                    suggestions=json.loads(row['suggestions_json']),
+                    tone=row['tone'],
+                    seo_terms=json.loads(row['seo_terms_json']),
+                    cta_mode=row['cta_mode'],
+                    cta_text=row['cta_text'],
+                    cta_intent=row['cta_intent'],
+                    destination_url=row['destination_url'],
+                    show_price=bool(row['show_price']),
+                    price_value=row['price_value'],
+                    price_justification=row['price_justification'],
+                    price_approved_by=row['price_approved_by'],
+                    price_approved_at=row['price_approved_at'],
+                    status=row['status'],
+                    created_at=row['created_at'],
+                    updated_at=row['updated_at'],
+                )
+
+            copy_id = f"copy-{uuid.uuid4().hex[:12]}"
+            now = self._now()
+            camp_row = conn.execute('SELECT briefing_json, products_json FROM campaigns WHERE id=?', (campaign_id,)).fetchone()
+            briefing = json.loads(camp_row['briefing_json']) if camp_row else {}
+            products = json.loads(camp_row['products_json']) if camp_row else []
+            first_prod = products[0] if products else {}
+
+            ctx = {
+                'product_name': first_prod.get('name', 'Vela Aromática'),
+                'fragrance': first_prod.get('name', 'Alecrim & Algodão'),
+                'visual_tone': briefing.get('visual_tone', ''),
+            }
+
+            mode = 'user_provided' if initial_caption.strip() else 'automatic'
+            user_draft = initial_caption.strip() if mode == 'user_provided' else ''
+            text = initial_caption.strip() if mode == 'user_provided' else self.copy_engine.generate_automatic_caption(ctx)
+            suggestions = self.copy_engine.generate_caption_suggestions(ctx)
+
+            conn.execute(
+                '''INSERT INTO slide_copies (
+                    id, campaign_id, slide_id, mode, text, user_draft, suggestions_json, tone,
+                    seo_terms_json, cta_mode, cta_text, cta_intent, destination_url, show_price,
+                    price_value, price_justification, price_approved_by, price_approved_at, status,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (
+                    copy_id, campaign_id, slide_id, mode, text, user_draft,
+                    json.dumps(suggestions, ensure_ascii=False), 'leve, relaxado, brasileiro',
+                    json.dumps(['vela aromática', 'cera vegetal'], ensure_ascii=False),
+                    'none', '', None, '', 0, None, None, None, None, 'draft', now, now
+                ),
+            )
+
+            return CaptionContent(
+                id=copy_id,
+                campaign_id=campaign_id,
+                slide_id=slide_id,
+                mode=mode,
+                text=text,
+                user_draft=user_draft,
+                suggestions=suggestions,
+                tone='leve, relaxado, brasileiro',
+                seo_terms=['vela aromática', 'cera vegetal'],
+                cta_mode='none',
+                cta_text='',
+                cta_intent=None,
+                destination_url='',
+                show_price=False,
+                price_value=None,
+                price_justification=None,
+                price_approved_by=None,
+                price_approved_at=None,
+                status='draft',
+                created_at=now,
+                updated_at=now,
+            )
+
+    def get_slide_copy(self, slide_id: str) -> Optional[CaptionContent]:
+        """Recupera a cópia associada ao slide."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT * FROM slide_copies WHERE slide_id=?', (slide_id,)).fetchone()
+            if not row:
+                return None
+            return CaptionContent(
+                id=row['id'],
+                campaign_id=row['campaign_id'],
+                slide_id=row['slide_id'],
+                mode=row['mode'],
+                text=row['text'],
+                user_draft=row['user_draft'],
+                suggestions=json.loads(row['suggestions_json']),
+                tone=row['tone'],
+                seo_terms=json.loads(row['seo_terms_json']),
+                cta_mode=row['cta_mode'],
+                cta_text=row['cta_text'],
+                cta_intent=row['cta_intent'],
+                destination_url=row['destination_url'],
+                show_price=bool(row['show_price']),
+                price_value=row['price_value'],
+                price_justification=row['price_justification'],
+                price_approved_by=row['price_approved_by'],
+                price_approved_at=row['price_approved_at'],
+                status=row['status'],
+                created_at=row['created_at'],
+                updated_at=row['updated_at'],
+            )
+
+    def generate_caption_suggestions_for_slide(self, slide_id: str) -> List[Dict[str, str]]:
+        """Gera novas sugestões criativas de legenda para o slide (Seção 35)."""
+        current_copy = self.get_slide_copy(slide_id)
+        if not current_copy:
+            raise ValueError(f"Cópia para o slide '{slide_id}' não encontrada.")
+        prod = self.get_product_for_slide(slide_id)
+        ctx = {
+            'product_name': prod.get('name', 'Vela Aromática'),
+            'fragrance': prod.get('name', 'Alecrim & Algodão'),
+        }
+        suggestions = self.copy_engine.generate_caption_suggestions(ctx)
+        with sqlite3.connect(self.db.path) as conn:
+            conn.execute(
+                'UPDATE slide_copies SET suggestions_json=?, updated_at=? WHERE slide_id=?',
+                (json.dumps(suggestions, ensure_ascii=False), self._now(), slide_id),
+            )
+        return suggestions
+
+    def update_slide_copy(
+        self,
+        slide_id: str,
+        mode: str,
+        text: Optional[str] = None,
+        user_draft: Optional[str] = None,
+        cta_mode: Optional[str] = None,
+        cta_text: Optional[str] = None,
+        cta_intent: Optional[str] = None,
+        destination_url: Optional[str] = None,
+        show_price: Optional[bool] = None,
+        price_justification: Optional[str] = None,
+        price_approved_by: Optional[str] = None,
+    ) -> CaptionContent:
+        """Atualiza a copy do slide com governança estrita de voz, modos e preço (Seções 34-37)."""
+        current_copy = self.get_slide_copy(slide_id)
+        if not current_copy:
+            raise ValueError(f"Cópia para o slide '{slide_id}' não encontrada.")
+
+        prod = self.get_product_for_slide(slide_id)
+        ctx = {
+            'product_name': prod.get('name', 'Vela Aromática'),
+            'fragrance': prod.get('name', 'Alecrim & Algodão'),
+        }
+
+        # 1. Determina modo e texto da legenda
+        new_mode = mode if mode in VALID_CAPTION_MODES else current_copy.mode
+        new_draft = user_draft if user_draft is not None else current_copy.user_draft
+
+        if new_mode == 'user_provided':
+            final_text = new_draft if new_draft.strip() else (text or current_copy.text)
+        elif new_mode == 'ai_plus_user':
+            final_text = self.copy_engine.refine_user_copy(new_draft or text or current_copy.text, ctx)
+        elif new_mode == 'automatic':
+            final_text = text if text and text != current_copy.text else self.copy_engine.generate_automatic_caption(ctx)
+        elif new_mode == 'suggestions':
+            final_text = text or current_copy.text
+        else:
+            final_text = text or current_copy.text
+
+        # 2. CTA contextual
+        new_cta_mode = cta_mode if cta_mode in VALID_CTA_MODES else current_copy.cta_mode
+        new_cta_intent = cta_intent if cta_intent is not None else current_copy.cta_intent
+        if new_cta_mode == 'manual':
+            new_cta_text = cta_text or ''
+        elif new_cta_mode in ('automatic', 'intent_based'):
+            new_cta_text = self.copy_engine.generate_cta(new_cta_mode, intent=new_cta_intent)
+        elif new_cta_mode == 'none':
+            new_cta_text = ''
+        else:
+            new_cta_text = cta_text or current_copy.cta_text
+
+        # 3. URL de Destino
+        new_dest_url = destination_url if destination_url is not None else current_copy.destination_url
+
+        # 4. Governança de Preço (Seção 37)
+        new_show_price = show_price if show_price is not None else current_copy.show_price
+        new_price_val = current_copy.price_value
+        new_price_just = price_justification if price_justification is not None else current_copy.price_justification
+        new_price_appr = price_approved_by if price_approved_by is not None else current_copy.price_approved_by
+        new_price_at = current_copy.price_approved_at
+
+        if new_show_price:
+            valid, formatted_price = self.copy_engine.validate_and_format_price(
+                show_price=True,
+                product_data=prod,
+                justification=new_price_just,
+                approved_by=new_price_appr,
+            )
+            new_price_val = formatted_price
+            if not new_price_at:
+                new_price_at = self._now()
+        else:
+            new_show_price = False
+            new_price_val = None
+
+        now = self._now()
+        with sqlite3.connect(self.db.path) as conn:
+            conn.execute(
+                '''UPDATE slide_copies SET
+                    mode=?, text=?, user_draft=?, cta_mode=?, cta_text=?, cta_intent=?,
+                    destination_url=?, show_price=?, price_value=?, price_justification=?,
+                    price_approved_by=?, price_approved_at=?, updated_at=?
+                   WHERE slide_id=?''',
+                (
+                    new_mode, final_text, new_draft, new_cta_mode, new_cta_text, new_cta_intent,
+                    new_dest_url, int(new_show_price), new_price_val, new_price_just,
+                    new_price_appr, new_price_at, now, slide_id
+                ),
+            )
+
+        return self.get_slide_copy(slide_id)
+
+    def approve_price_display(
+        self,
+        slide_id: str,
+        justification: str,
+        approver: str,
+    ) -> CaptionContent:
+        """Aprova explicitamente a exibição de preço para um slide (Seção 37)."""
+        return self.update_slide_copy(
+            slide_id=slide_id,
+            mode='automatic',
+            show_price=True,
+            price_justification=justification,
+            price_approved_by=approver,
+        )
+
+    # -------------------------------------------------------------
+    # Seção 38: Stories e Planejamento de Sequência Próprio
+    # -------------------------------------------------------------
+
+    def create_story_sequence(
+        self,
+        title: str,
+        story_type: str = 'independent',
+        objective: str = '',
+        campaign_id: Optional[str] = None,
+    ) -> StorySequence:
+        """Planeja e persiste uma sequência narrativa completa de Stories (Seção 38)."""
+        ctx = {'campaign_id': campaign_id}
+        if campaign_id:
+            with sqlite3.connect(self.db.path) as conn:
+                conn.row_factory = sqlite3.Row
+                c_row = conn.execute('SELECT products_json, briefing_json FROM campaigns WHERE id=?', (campaign_id,)).fetchone()
+                if c_row:
+                    prods = json.loads(c_row['products_json'])
+                    if prods:
+                        ctx['product_name'] = prods[0].get('name')
+                        ctx['fragrance'] = prods[0].get('name')
+                    briefing = json.loads(c_row['briefing_json'])
+                    ctx['visual_tone'] = briefing.get('visual_tone')
+
+        seq = self.stories_engine.plan_sequence(
+            title=title,
+            story_type=story_type,
+            objective=objective,
+            campaign_context=ctx,
+        )
+
+        now = self._now()
+        with sqlite3.connect(self.db.path) as conn:
+            conn.execute(
+                '''INSERT INTO story_sequences (id, campaign_id, title, story_type, objective, status, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                (seq.id, seq.campaign_id, seq.title, seq.story_type, seq.objective, seq.status, now, now),
+            )
+            for f in seq.frames:
+                conn.execute(
+                    '''INSERT INTO story_frames (
+                        id, sequence_id, frame_order, narrative_role, title, overlay_text, visual_prompt,
+                        interaction_type, interaction_data_json, interaction_justification, caption_draft,
+                        created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (
+                        f.id, f.sequence_id, f.frame_order, f.narrative_role, f.title, f.overlay_text,
+                        f.visual_prompt, f.interaction_type, json.dumps(f.interaction_data, ensure_ascii=False),
+                        f.interaction_justification, f.caption_draft, now, now
+                    ),
+                )
+
+        return self.get_story_sequence(seq.id)
+
+    def get_story_sequence(self, sequence_id: str) -> Optional[StorySequence]:
+        """Recupera sequência de Stories com seus frames."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            s_row = conn.execute('SELECT * FROM story_sequences WHERE id=?', (sequence_id,)).fetchone()
+            if not s_row:
+                return None
+            f_rows = conn.execute(
+                'SELECT * FROM story_frames WHERE sequence_id=? ORDER BY frame_order ASC',
+                (sequence_id,),
+            ).fetchall()
+            frames = [
+                StoryFrame(
+                    id=f['id'],
+                    sequence_id=f['sequence_id'],
+                    frame_order=int(f['frame_order']),
+                    narrative_role=f['narrative_role'],
+                    title=f['title'],
+                    overlay_text=f['overlay_text'],
+                    visual_prompt=f['visual_prompt'],
+                    interaction_type=f['interaction_type'],
+                    interaction_data=json.loads(f['interaction_data_json']),
+                    interaction_justification=f['interaction_justification'],
+                    caption_draft=f['caption_draft'],
+                    created_at=f['created_at'],
+                    updated_at=f['updated_at'],
+                )
+                for f in f_rows
+            ]
+            return StorySequence(
+                id=s_row['id'],
+                campaign_id=s_row['campaign_id'],
+                title=s_row['title'],
+                story_type=s_row['story_type'],
+                objective=s_row['objective'],
+                frames=frames,
+                status=s_row['status'],
+                created_at=s_row['created_at'],
+                updated_at=s_row['updated_at'],
+            )
+
+    def list_story_sequences(self, campaign_id: Optional[str] = None) -> List[StorySequence]:
+        """Lista sequências de Stories cadastradas."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            if campaign_id:
+                rows = conn.execute(
+                    'SELECT id FROM story_sequences WHERE campaign_id=? ORDER BY created_at DESC',
+                    (campaign_id,),
+                ).fetchall()
+            else:
+                rows = conn.execute('SELECT id FROM story_sequences ORDER BY created_at DESC').fetchall()
+            return [self.get_story_sequence(r['id']) for r in rows if self.get_story_sequence(r['id'])]
+
+    def add_story_frame(
+        self,
+        sequence_id: str,
+        narrative_role: str,
+        title: str,
+        overlay_text: str,
+        visual_prompt: str,
+        interaction_type: str = 'none',
+        interaction_data: Optional[Dict[str, Any]] = None,
+        interaction_justification: str = '',
+        caption_draft: str = '',
+    ) -> StoryFrame:
+        """Adiciona um frame à sequência de Stories mantendo a ordenação narrativa."""
+        with sqlite3.connect(self.db.path) as conn:
+            order_row = conn.execute(
+                'SELECT COALESCE(MAX(frame_order), 0) + 1 FROM story_frames WHERE sequence_id=?',
+                (sequence_id,),
+            ).fetchone()
+            order = int(order_row[0])
+            frame_id = f"frame-{uuid.uuid4().hex[:12]}"
+            now = self._now()
+            conn.execute(
+                '''INSERT INTO story_frames (
+                    id, sequence_id, frame_order, narrative_role, title, overlay_text, visual_prompt,
+                    interaction_type, interaction_data_json, interaction_justification, caption_draft,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (
+                    frame_id, sequence_id, order, narrative_role, title, overlay_text, visual_prompt,
+                    interaction_type, json.dumps(interaction_data or {}, ensure_ascii=False),
+                    interaction_justification, caption_draft, now, now
+                ),
+            )
+        seq = self.get_story_sequence(sequence_id)
+        for f in seq.frames:
+            if f.id == frame_id:
+                return f
+        raise RuntimeError("Falha ao recuperar frame recém-criado.")
+
+    # -------------------------------------------------------------
+    # Auditoria Pré-Publicação (Seções 34-38 e M08-A05)
+    # -------------------------------------------------------------
+
+    def audit_slide_pre_publish(self, slide_id: str, operator: str = 'Operador KIROS') -> PrePublishAuditResult:
+        """Executa e registra auditoria pré-publicação para o conteúdo do slide."""
+        copy_obj = self.get_slide_copy(slide_id)
+        if not copy_obj:
+            raise ValueError(f"Cópia para o slide '{slide_id}' não encontrada.")
+        prod = self.get_product_for_slide(slide_id)
+        audit_res = self.pre_publish_auditor.audit_caption(copy_obj, product_data=prod, operator=operator)
+
+        # Registra em pre_publish_audits
+        now = self._now()
+        audit_id = f"audit-{uuid.uuid4().hex[:12]}"
+        with sqlite3.connect(self.db.path) as conn:
+            conn.execute(
+                '''INSERT INTO pre_publish_audits (id, target_type, target_id, is_ready, checks_json, blocked_reasons_json, operator, created_at)
+                   VALUES (?, 'slide_copy', ?, ?, ?, ?, ?, ?)''',
+                (
+                    audit_id, slide_id, int(audit_res.is_ready),
+                    json.dumps([c.to_dict() for c in audit_res.checks], ensure_ascii=False),
+                    json.dumps(audit_res.blocked_reasons, ensure_ascii=False),
+                    operator, now
+                ),
+            )
+        return audit_res
+
+    def audit_story_sequence_pre_publish(self, sequence_id: str, operator: str = 'Operador KIROS') -> PrePublishAuditResult:
+        """Executa e registra auditoria pré-publicação para uma sequência de Stories."""
+        seq = self.get_story_sequence(sequence_id)
+        if not seq:
+            raise ValueError(f"Sequência de Stories '{sequence_id}' não encontrada.")
+        audit_res = self.pre_publish_auditor.audit_story_sequence(seq, operator=operator)
+
+        now = self._now()
+        audit_id = f"audit-{uuid.uuid4().hex[:12]}"
+        with sqlite3.connect(self.db.path) as conn:
+            conn.execute(
+                '''INSERT INTO pre_publish_audits (id, target_type, target_id, is_ready, checks_json, blocked_reasons_json, operator, created_at)
+                   VALUES (?, 'story_sequence', ?, ?, ?, ?, ?, ?)''',
+                (
+                    audit_id, sequence_id, int(audit_res.is_ready),
+                    json.dumps([c.to_dict() for c in audit_res.checks], ensure_ascii=False),
+                    json.dumps(audit_res.blocked_reasons, ensure_ascii=False),
+                    operator, now
+                ),
+            )
+        return audit_res
+
+    def audit_campaign_pre_publish(self, campaign_id: str, operator: str = 'Operador KIROS') -> Dict[str, Any]:
+        """Audita todos os slides e stories vinculados à campanha antes da publicação."""
+        camp = self.get_campaign(campaign_id)
+        slide_audits = []
+        is_campaign_ready = True
+        all_blocked_reasons = []
+
+        for s in camp.slides:
+            s_audit = self.audit_slide_pre_publish(s.id, operator=operator)
+            slide_audits.append(s_audit)
+            if not s_audit.is_ready:
+                is_campaign_ready = False
+                all_blocked_reasons.extend(s_audit.blocked_reasons)
+
+        stories = self.list_story_sequences(campaign_id=campaign_id)
+        story_audits = []
+        for st in stories:
+            st_audit = self.audit_story_sequence_pre_publish(st.id, operator=operator)
+            story_audits.append(st_audit)
+            if not st_audit.is_ready:
+                is_campaign_ready = False
+                all_blocked_reasons.extend(st_audit.blocked_reasons)
+
+        return {
+            'campaign_id': campaign_id,
+            'is_ready': is_campaign_ready,
+            'slide_audits': [a.to_dict() for a in slide_audits],
+            'story_audits': [a.to_dict() for a in story_audits],
+            'blocked_reasons': all_blocked_reasons,
+        }
 
 

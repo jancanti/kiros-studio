@@ -1,0 +1,15 @@
+[
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "exit_code": 1,
+    "log": "docs/checkpoints/M08/ff00acbc447c43b092712f7a9cb4ac18/check-1.log"
+  }
+]

@@ -385,7 +385,7 @@
       "depends_on": [
         "M07"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         34,
         35,
@@ -416,7 +416,10 @@
           "text": "Testes cobrem dados ausentes, modos de legenda, CTA, preço e Stories; conteúdo entra na auditoria pré-publicação."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M08/207a0f2187ef49aaa429fec826853ede/checkpoint.json",
+        "at": "2026-09-12T17:34:30.767612+00:00"
+      },
       "blocker": null
     },
     {

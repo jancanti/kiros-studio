@@ -303,6 +303,96 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
         app.layout_editor.approve_layout(lid, approved_by=approver)
         return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f"Composição de layout aprovada por {approver}."})
 
+    elif action == 'update_slide_copy':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        mode = data.get('mode', 'automatic').strip()
+        text = data.get('text', '').strip()
+        user_draft = data.get('user_draft', '').strip()
+        cta_mode = data.get('cta_mode', 'none').strip()
+        cta_text = data.get('cta_text', '').strip()
+        cta_intent = data.get('cta_intent', '').strip() or None
+        destination_url = data.get('destination_url', '').strip()
+        show_price = data.get('show_price', '').strip() in ('1', 'true', 'on')
+        price_justification = data.get('price_justification', '').strip() or None
+        price_approved_by = data.get('price_approved_by', '').strip() or None
+
+        mgr.update_slide_copy(
+            slide_id=slide_id,
+            mode=mode,
+            text=text if text else None,
+            user_draft=user_draft,
+            cta_mode=cta_mode,
+            cta_text=cta_text,
+            cta_intent=cta_intent,
+            destination_url=destination_url,
+            show_price=show_price,
+            price_justification=price_justification,
+            price_approved_by=price_approved_by,
+        )
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': 'Copy e legenda atualizadas com governança de voz e preço.'})
+
+    elif action == 'suggest_captions':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        mgr.generate_caption_suggestions_for_slide(slide_id)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': '3 novas opções de legenda geradas (Sensorial, Rotina, Minimalista).'})
+
+    elif action == 'approve_price_display':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        justification = data.get('price_justification', '').strip()
+        approver = data.get('price_approved_by', 'Diretoria Comercial').strip()
+        mgr.approve_price_display(slide_id, justification=justification, approver=approver)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f'Exibição de preço aprovada com sucesso por {approver}.'})
+
+    elif action == 'create_story_sequence':
+        cid = data.get('campaign_id', '').strip()
+        title = data.get('title', 'Sequência de Stories').strip()
+        stype = data.get('story_type', 'derived_from_campaign').strip()
+        obj = data.get('objective', '').strip()
+        seq = mgr.create_story_sequence(title=title, story_type=stype, objective=obj, campaign_id=cid)
+        return urlencode({'campaign_id': cid, 'msg': f"Sequência de Stories '{seq.title}' planejada com {len(seq.frames)} frames narrativos próprios."})
+
+    elif action == 'add_story_frame':
+        cid = data.get('campaign_id', '').strip()
+        seq_id = data.get('sequence_id', '').strip()
+        role = data.get('narrative_role', 'context').strip()
+        title = data.get('title', '').strip()
+        overlay = data.get('overlay_text', '').strip()
+        prompt = data.get('visual_prompt', '').strip()
+        itype = data.get('interaction_type', 'none').strip()
+        ijust = data.get('interaction_justification', '').strip()
+        caption = data.get('caption_draft', '').strip()
+        mgr.add_story_frame(
+            sequence_id=seq_id,
+            narrative_role=role,
+            title=title,
+            overlay_text=overlay,
+            visual_prompt=prompt,
+            interaction_type=itype,
+            interaction_justification=ijust,
+            caption_draft=caption,
+        )
+        return urlencode({'campaign_id': cid, 'msg': 'Frame adicionado à sequência de Stories.'})
+
+    elif action == 'audit_pre_publish':
+        cid = data.get('campaign_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        seq_id = data.get('sequence_id', '').strip()
+        if slide_id:
+            res = mgr.audit_slide_pre_publish(slide_id)
+            status_msg = "Aprovado para publicação!" if res.is_ready else f"Bloqueado na auditoria ({len(res.blocked_reasons)} pendências)."
+            return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f"Auditoria do slide: {status_msg}"})
+        elif seq_id:
+            res = mgr.audit_story_sequence_pre_publish(seq_id)
+            status_msg = "Aprovado para publicação!" if res.is_ready else f"Bloqueado na auditoria ({len(res.blocked_reasons)} pendências)."
+            return urlencode({'campaign_id': cid, 'msg': f"Auditoria dos Stories: {status_msg}"})
+        else:
+            res = mgr.audit_campaign_pre_publish(cid)
+            status_msg = "Campanha aprovada para publicação!" if res['is_ready'] else f"Campanha possui itens bloqueados ({len(res['blocked_reasons'])} pendências)."
+            return urlencode({'campaign_id': cid, 'msg': f"Auditoria geral da campanha: {status_msg}"})
+
     raise ValueError(f"Ação desconhecida: {action}")
 
 
@@ -889,6 +979,9 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
             </div>
 
             { render_slide_layout_editor(app, cid, s, slide_layout, query) if is_editor_open else "" }
+
+            <!-- Seções 34-37: Copy, Legenda e Auditoria Pré-Publicação do Slide -->
+            { render_slide_copy_and_audit(app, cid, s, query) }
         </div>
         ''')
 
@@ -989,6 +1082,12 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
             ''')
         html.append('</div>')
     html.append('</div></div>')
+
+    # Seção 38: Planejador de Stories (Sequência Narrativa Própria)
+    html.append(render_stories_planner(app, cid, query))
+
+    # M08-A05: Auditoria Geral Pré-Publicação da Campanha
+    html.append(render_campaign_pre_publish_card(app, cid, query))
 
     return '\n'.join(html)
 
@@ -1307,4 +1406,313 @@ def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], la
     </div>
     '''
     return html
+
+
+def render_slide_copy_and_audit(app: Application, cid: str, s: Dict[str, Any], query: Optional[Dict[str, Any]] = None) -> str:
+    """Renderiza painel de Copy, Legendas e Auditoria Pré-Publicação do Slide (Seções 34-37)."""
+    s_id = escape(s['id'])
+    copy_obj = app.campaigns.get_or_create_slide_copy(cid, s['id'], initial_caption=s.get('caption_draft', ''))
+    prod = app.campaigns.get_product_for_slide(s['id'])
+    has_real_price = bool(prod.get('price') or prod.get('preco') or prod.get('valor') or (prod.get('attributes') and (prod['attributes'].get('price') or prod['attributes'].get('preco'))))
+    real_price_val = prod.get('price') or prod.get('preco') or prod.get('valor') or ''
+
+    # Executa auditoria do slide
+    audit_res = app.campaigns.audit_slide_pre_publish(s['id'])
+
+    # Cards de sugestões
+    suggestions_html = ''
+    if copy_obj.suggestions:
+        cards = []
+        for i, sug in enumerate(copy_obj.suggestions):
+            s_title = escape(sug.get('title', f'Sugestão {i+1}'))
+            s_text = escape(sug.get('text', ''))
+            cards.append(f'''
+            <div style="background:#fff;border:1px solid var(--line);border-radius:4px;padding:10px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <strong style="font-size:12px;">{s_title}</strong>
+                    <form method="post" action="/api/campaigns/update_slide_copy" style="margin:0;">
+                        <input type="hidden" name="campaign_id" value="{cid}">
+                        <input type="hidden" name="slide_id" value="{s_id}">
+                        <input type="hidden" name="mode" value="suggestions">
+                        <input type="hidden" name="text" value="{s_text}">
+                        <button type="submit" class="button-secondary" style="font-size:10px;padding:3px 8px;margin:0;">Usar Esta</button>
+                    </form>
+                </div>
+                <p style="font-size:12px;margin:6px 0 0 0;color:#333;">{s_text}</p>
+            </div>
+            ''')
+        suggestions_html = ''.join(cards)
+
+    # Checklist de auditoria
+    audit_items_html = []
+    for c in audit_res.checks:
+        badge_cls = 'badge-success' if c.status == 'passed' else ('status-active' if c.status == 'warning' else 'badge-danger')
+        status_label = '✓ Aprovado' if c.status == 'passed' else ('⚠ Alerta' if c.status == 'warning' else '✗ Bloqueado')
+        audit_items_html.append(f'''
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;font-size:11px;">
+            <div>
+                <strong>{escape(c.title)}</strong><br>
+                <span style="color:#555;">{escape(c.message)}</span>
+                { f"<br><em style='color:#1a73e8;'>Sugestão: {escape(c.fix_suggestion)}</em>" if c.fix_suggestion else "" }
+            </div>
+            <span class="badge {badge_cls}" style="white-space:nowrap;margin-left:8px;">{status_label}</span>
+        </div>
+        ''')
+    checklist_rendered = ''.join(audit_items_html)
+
+    # Seção de governança de preço
+    price_info_html = ''
+    if has_real_price:
+        price_info_html = f'''
+        <p class="hint" style="margin:4px 0 0 0;color:#137333;">
+            ✓ Preço real oficial no catálogo: <strong>R$ {escape(str(real_price_val))}</strong>
+        </p>
+        '''
+    else:
+        price_info_html = '''
+        <p class="hint" style="margin:4px 0 0 0;color:#c5221f;">
+            ⚠️ Produto sem preço na Product Bible oficial. Nunca inventar preço (Seções 35 e 37). O toggle de preço será bloqueado se acionado sem dado real.
+        </p>
+        '''
+
+    audit_badge = '<span class="badge badge-success">✓ Aprovado na Auditoria</span>' if audit_res.is_ready else f'<span class="badge badge-danger">✗ Bloqueado na Auditoria ({len(audit_res.blocked_reasons)} pendências)</span>'
+
+    return f'''
+    <div style="margin-top:14px;background:#fcfbf9;border:1px solid #dcd7ce;border-radius:6px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px;">
+            <div>
+                <span class="tag">Copy, Legenda &amp; Voz · Seções 34-37</span>
+                <h4 style="margin:4px 0 0 0;font-size:16px;">Legenda &amp; Governança Editorial · {escape(s['title'])}</h4>
+                <p class="hint" style="margin:2px 0 0 0;">Voz brasileira, leve, relaxada e sem rigidez. Sem emojis ou hashtags automáticas.</p>
+            </div>
+            <div>
+                {audit_badge}
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <!-- Coluna 1: Edição e Modos de Legenda -->
+            <div>
+                <form method="post" action="/api/campaigns/update_slide_copy">
+                    <input type="hidden" name="campaign_id" value="{cid}">
+                    <input type="hidden" name="slide_id" value="{s_id}">
+
+                    <div class="form-group">
+                        <label>Modo de Legenda (Seção 35):</label>
+                        <select name="mode" style="font-size:12px;padding:6px;">
+                            <option value="automatic" {"selected" if copy_obj.mode == "automatic" else ""}>automatic (Geração automática alinhada à marca)</option>
+                            <option value="suggestions" {"selected" if copy_obj.mode == "suggestions" else ""}>suggestions (Escolha entre 3 sugestões temáticas)</option>
+                            <option value="user_provided" {"selected" if copy_obj.mode == "user_provided" else ""}>user_provided (Texto integral fornecido pelo usuário)</option>
+                            <option value="ai_plus_user" {"selected" if copy_obj.mode == "ai_plus_user" else ""}>ai_plus_user (IA refina preservando termos do usuário)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Texto da Legenda Atual:</label>
+                        <textarea name="text" rows="4" style="font-size:12px;padding:8px;width:100%;font-family:inherit;" required>{escape(copy_obj.text)}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rascunho / Contribuição do Usuário (para user_provided ou ai_plus_user):</label>
+                        <textarea name="user_draft" rows="2" style="font-size:12px;padding:8px;width:100%;font-family:inherit;" placeholder="Digite suas ideias ou rascunho de texto aqui...">{escape(copy_obj.user_draft)}</textarea>
+                        <span class="hint">Preservado integralmente sem mutações arbitrárias (M08-A01).</span>
+                    </div>
+
+                    <!-- CTA Opcional Contextual (Seção 36) -->
+                    <div style="background:var(--paper);padding:10px;border-radius:4px;margin-top:10px;">
+                        <strong>CTA Opcional &amp; Contextual (Seção 36):</strong>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+                            <div>
+                                <label style="font-size:11px;">Modo do CTA</label>
+                                <select name="cta_mode" style="font-size:11px;padding:4px;">
+                                    <option value="none" {"selected" if copy_obj.cta_mode == "none" else ""}>Nenhum (Opcional)</option>
+                                    <option value="automatic" {"selected" if copy_obj.cta_mode == "automatic" else ""}>Automático</option>
+                                    <option value="intent_based" {"selected" if copy_obj.cta_mode == "intent_based" else ""}>Baseado em Intenção</option>
+                                    <option value="manual" {"selected" if copy_obj.cta_mode == "manual" else ""}>Manual</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Intenção do CTA</label>
+                                <select name="cta_intent" style="font-size:11px;padding:4px;">
+                                    <option value="descoberta" {"selected" if copy_obj.cta_intent == "descoberta" else ""}>Conhecer Coleção</option>
+                                    <option value="aroma" {"selected" if copy_obj.cta_intent == "aroma" else ""}>Escolher Aroma</option>
+                                    <option value="presente" {"selected" if copy_obj.cta_intent == "presente" else ""}>Presentear / Casa</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top:6px;">
+                            <label style="font-size:11px;">Texto Manual do CTA (se modo manual):</label>
+                            <input name="cta_text" value="{escape(copy_obj.cta_text)}" style="font-size:11px;padding:4px;" placeholder="Ex: Disponível no link da bio.">
+                        </div>
+                    </div>
+
+                    <!-- Governança de Preço e Site (Seção 37) -->
+                    <div style="background:#fff3e0;border-left:4px solid #f57c00;padding:10px;border-radius:4px;margin-top:12px;">
+                        <strong style="color:#b26a00;">Preço e Página de Destino (Seção 37):</strong>
+                        <p class="hint" style="margin:2px 0 6px 0;">Não mostrar preço por padrão. Nunca inventar dados comerciais.</p>
+                        <div style="margin-bottom:8px;">
+                            <label class="check" style="font-size:12px;">
+                                <input type="checkbox" name="show_price" value="1" {"checked" if copy_obj.show_price else ""}>
+                                Exibir Preço nesta Peça (Requer Justificativa e Aprovação)
+                            </label>
+                            {price_info_html}
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Justificativa Estratégica (Obrigatória se ativo):</label>
+                                <input name="price_justification" value="{escape(copy_obj.price_justification or '')}" style="font-size:11px;padding:4px;" placeholder="Ex: Transparência em lançamento">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Aprovador do Preço (Obrigatório se ativo):</label>
+                                <input name="price_approved_by" value="{escape(copy_obj.price_approved_by or '')}" style="font-size:11px;padding:4px;" placeholder="Ex: Diretoria Comercial">
+                            </div>
+                        </div>
+                        <div style="margin-top:6px;">
+                            <label style="font-size:11px;">URL de Destino / Link da Bio:</label>
+                            <input name="destination_url" value="{escape(copy_obj.destination_url or '')}" style="font-size:11px;padding:4px;" placeholder="Ex: https://instagram.com/kiros.sp">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button" style="font-size:12px;padding:7px 14px;margin-top:14px;width:100%;">Salvar Legenda e Configurações</button>
+                </form>
+            </div>
+
+            <!-- Coluna 2: Sugestões Criativas e Auditoria Pré-Publicação -->
+            <div>
+                <!-- Sugestões Temáticas -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong>Sugestões Criativas (Seção 35):</strong>
+                    <form method="post" action="/api/campaigns/suggest_captions" style="margin:0;">
+                        <input type="hidden" name="campaign_id" value="{cid}">
+                        <input type="hidden" name="slide_id" value="{s_id}">
+                        <button type="submit" class="button-secondary" style="font-size:10px;padding:3px 8px;margin:0;">Gerar Novas ⟳</button>
+                    </form>
+                </div>
+                {suggestions_html}
+
+                <!-- Auditoria Pré-Publicação (M08-A05) -->
+                <div style="margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <strong style="font-size:12px;">Auditoria Pré-Publicação (M08-A05):</strong>
+                        <form method="post" action="/api/campaigns/audit_pre_publish" style="margin:0;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="slide_id" value="{s_id}">
+                            <button type="submit" class="button-secondary" style="font-size:10px;padding:3px 8px;margin:0;">Reauditar 🔍</button>
+                        </form>
+                    </div>
+                    {checklist_rendered}
+                </div>
+            </div>
+        </div>
+    </div>
+    '''
+
+
+def render_stories_planner(app: Application, cid: str, query: Optional[Dict[str, Any]] = None) -> str:
+    """Renderiza o Planejador Estruturado de Stories com Sequência Própria (Seção 38)."""
+    sequences = app.campaigns.list_story_sequences(campaign_id=cid)
+    
+    seq_cards = []
+    for seq in sequences:
+        frames_html = []
+        for f in seq.frames:
+            role_tag = f"<span class='tag'>{escape(f.narrative_role.upper())}</span>"
+            inter_tag = f"<span class='badge'>Interação: {escape(f.interaction_type)}</span>" if f.interaction_type != 'none' else ""
+            frames_html.append(f'''
+            <div style="background:#fff;border:1px solid var(--line);border-radius:4px;padding:10px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <strong style="font-size:12px;">Frame {f.frame_order}: {escape(f.title)}</strong>
+                    <div>{role_tag} {inter_tag}</div>
+                </div>
+                <p style="font-size:12px;margin:4px 0;font-style:italic;">"{escape(f.overlay_text)}"</p>
+                <p class="hint" style="font-size:11px;margin:2px 0;"><strong>Prompt 9:16:</strong> {escape(f.visual_prompt)}</p>
+                { f"<p class='hint' style='color:#1a73e8;margin:2px 0;'><strong>Justificativa da Interação:</strong> {escape(f.interaction_justification)}</p>" if f.interaction_justification else "" }
+            </div>
+            ''')
+
+        audit_res = app.campaigns.audit_story_sequence_pre_publish(seq.id)
+        audit_badge = '<span class="badge badge-success">✓ Stories Aprovados</span>' if audit_res.is_ready else f'<span class="badge badge-danger">✗ Bloqueado na Auditoria ({len(audit_res.blocked_reasons)})</span>'
+
+        seq_cards.append(f'''
+        <div style="background:#fcfbf9;border:1px solid #dcd7ce;border-radius:6px;padding:16px;margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px;">
+                <div>
+                    <span class="tag">Sequência de Stories · {escape(seq.story_type)}</span>
+                    <h4 style="margin:4px 0 0 0;font-size:16px;">{escape(seq.title)} ({len(seq.frames)} frames narrativos)</h4>
+                    <p class="hint" style="margin:2px 0 0 0;">Objetivo: {escape(seq.objective)}</p>
+                </div>
+                <div>{audit_badge}</div>
+            </div>
+            {''.join(frames_html)}
+        </div>
+        ''')
+
+    sequences_content = ''.join(seq_cards) if seq_cards else '<p class="hint">Nenhuma sequência de Stories planejada para esta campanha ainda.</p>'
+
+    return f'''
+    <div class="panel" style="margin-top:24px;">
+        <span class="tag">Stories · Seção 38</span>
+        <h2>Planejador de Stories (Sequência Narrativa Própria)</h2>
+        <p class="hint">Stories são conteúdo próprio, não mero redimensionamento do feed. Planejamento de 3 a 5 frames com gancho, contexto e interações contextuais autênticas.</p>
+
+        <!-- Formulário para Criar Nova Sequência -->
+        <details class="revision" style="margin-top:12px;">
+            <summary>+ Planejar Nova Sequência de Stories</summary>
+            <form method="post" action="/api/campaigns/create_story_sequence" class="form-grid" style="margin-top:10px;">
+                <input type="hidden" name="campaign_id" value="{cid}">
+                <div class="form-group">
+                    <label>Título da Sequência</label>
+                    <input name="title" placeholder="Ex: Bastidores e Ritual da Manhã" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Story</label>
+                    <select name="story_type">
+                        <option value="derived_from_campaign" selected>derived_from_campaign (Desdobramento Narrativo da Campanha)</option>
+                        <option value="independent">independent (História Independente)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Objetivo da Sequência</label>
+                    <input name="objective" placeholder="Ex: Engajamento sensorial e apresentação de rotinas">
+                </div>
+                <button type="submit" class="button">Gerar Planejamento de Sequência (4 Frames)</button>
+            </form>
+        </details>
+
+        {sequences_content}
+    </div>
+    '''
+
+
+def render_campaign_pre_publish_card(app: Application, cid: str, query: Optional[Dict[str, Any]] = None) -> str:
+    """Card de Auditoria Geral Pré-Publicação da Campanha (M08-A05)."""
+    audit = app.campaigns.audit_campaign_pre_publish(cid)
+    status_badge = '<span class="badge badge-success">✓ Campanha Pronta para Publicação</span>' if audit['is_ready'] else f'<span class="badge badge-danger">✗ Publicação Bloqueada ({len(audit["blocked_reasons"])} pendências)</span>'
+
+    issues_html = ''
+    if audit['blocked_reasons']:
+        items = ''.join(f'<li>{escape(r)}</li>' for r in audit['blocked_reasons'])
+        issues_html = f'''
+        <div class="notice warning" style="margin-top:10px;">
+            <strong>Pendências Bloqueantes de Pré-Publicação:</strong>
+            <ul style="margin:6px 0 0 16px;padding:0;">{items}</ul>
+        </div>
+        '''
+
+    return f'''
+    <div class="panel" style="margin-top:24px;border:2px solid {'#137333' if audit['is_ready'] else '#b06000'};">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div>
+                <span class="tag">Governança Editorial &amp; Pré-Publicação · Seções 34-38, 79</span>
+                <h3 style="margin:4px 0 0 0;">Checklist de Auditoria Geral Pré-Publicação</h3>
+                <p class="hint" style="margin:2px 0 0 0;">Verificação obrigatória antes de qualquer agendamento ou publicação oficial.</p>
+            </div>
+            <div>
+                {status_badge}
+            </div>
+        </div>
+        {issues_html}
+    </div>
+    '''
+
 
