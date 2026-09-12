@@ -27,7 +27,7 @@ def make_server(data_dir, port=8765):
             self.send_header('Content-Type', kind)
             self.send_header('Content-Length', str(len(data)))
             self.send_header('Cache-Control', 'no-store')
-            self.send_header('Content-Security-Policy', "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+            self.send_header('Content-Security-Policy', "default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', 'no-referrer')
             if location:
