@@ -68,3 +68,4 @@ O estúdio é organizado em 8 rotas operacionais integradas:
 ## Accessibility & Inclusion
 
 Interface web com conformidade de contraste, suporte integral à navegação por teclado (`.skip` para pular para o conteúdo principal), foco visível em todos os formulários e botões, e estruturação semântica com tags `aria-current` e labels explícitos.
+

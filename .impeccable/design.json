@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-12T21:48:30Z",
+  "title": "Design System: KIROS Studio",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Electric Indigo", "canonical": "#693edf", "tonalRamp": ["#160838", "#230d5a", "#3b0d96", "#4514a6", "#4f1bb7", "#693edf", "#9c7df0", "#e8e1fb"] },
+      "ink": { "role": "neutral", "displayName": "Graphite Ink", "canonical": "#171717", "tonalRamp": ["#000000", "#171717", "#222222", "#364045", "#566b76", "#5d5d5d", "#8c8c8c", "#e0e0e0"] },
+      "canvas": { "role": "neutral", "displayName": "Pure Canvas", "canonical": "#ffffff", "tonalRamp": ["#d8d8d8", "#e0e0e0", "#e4edf1", "#f0f4f6", "#f6fafb", "#fafcfc", "#fefefe", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines and main page titles (Geist 600)." },
+      "body": { "displayName": "Body", "purpose": "Operational paragraphs, briefs and running text (Inter 400)." }
+    },
+    "shadows": [
+      { "name": "none", "value": "none", "purpose": "Flat-by-default surfaces without shadows." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for button hover and state transitions." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "700px" },
+      { "name": "tablet", "value": "960px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Botão principal de ação do estúdio (altura 47px, raio 4px).",
+      "html": "<button class=\"ds-btn-primary\">Criar Nova Campanha</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; background: #693edf; color: #ffffff; padding: 12px 16px; min-height: 47px; border: 0; border-radius: 4px; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s ease; } .ds-btn-primary:hover { background: #3b0d96; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Botão secundário plano com borda fina (altura 47px, raio 4px).",
+      "html": "<button class=\"ds-btn-secondary\">Banco de Ideias</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; background: #ffffff; color: #171717; border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px 16px; min-height: 47px; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; } .ds-btn-secondary:hover { background: #f6fafb; border-color: #ccd9e0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "Campo de entrada plano e preciso (altura 42px, cantos de 0px).",
+      "html": "<input class=\"ds-text-input\" placeholder=\"Digite um comando ou texto...\" />",
+      "css": ".ds-text-input { width: 100%; max-width: 440px; height: 42px; padding: 0 18px; border: 1px solid #e4edf1; border-radius: 0px; background: #f6fafb; color: #171717; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; outline: none; } .ds-text-input:focus { border-color: #693edf; box-shadow: 0 0 0 2px rgba(105, 62, 223, 0.2); }"
+    },
+    {
+      "name": "Feature Card",
+      "kind": "card",
+      "refersTo": "feature-card",
+      "description": "Cartão editorial plano com contorno de 1px.",
+      "html": "<div class=\"ds-card\"><span class=\"ds-tag\">PRODUTO</span><h3>Velas Aromáticas</h3><p>Essências botânicas puras em recipientes de vidro fosco.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 4px; padding: 20px 24px; font-family: 'Inter', system-ui, sans-serif; } .ds-card h3 { font-family: 'Geist', system-ui, sans-serif; font-size: 18px; font-weight: 600; margin: 8px 0; color: #171717; } .ds-card p { font-size: 14px; color: #566b76; margin: 0; line-height: 1.5; } .ds-tag { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #566b76; letter-spacing: 1px; }"
+    },
+    {
+      "name": "Gradient Panel",
+      "kind": "card",
+      "refersTo": "gradient-panel",
+      "description": "Laje arquitetural de métricas com gradiente Copy.ai em 3 paradas.",
+      "html": "<div class=\"ds-gradient-panel\"><span class=\"ds-grad-tag\">ESTÚDIO &amp; FILA</span><h3>Status Operacional</h3><p>Ambiente determinístico com controle contínuo.</p></div>",
+      "css": ".ds-gradient-panel { background: linear-gradient(180deg, #29007a 0%, #4514a6 50%, #693edf 100%); color: #ffffff; border-radius: 4px; padding: 24px; font-family: 'Inter', system-ui, sans-serif; } .ds-gradient-panel h3 { font-family: 'Geist', system-ui, sans-serif; font-size: 20px; font-weight: 600; margin: 6px 0; color: #ffffff; } .ds-gradient-panel p { font-size: 13px; color: rgba(255,255,255,0.85); margin: 0; } .ds-grad-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.8); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Olfactory Atelier",
+    "overview": "O KIROS Studio expressa a fusão entre a precisão arquitetural contemporânea e a calma sensorial botânica de um ateliê de alta perfumaria.",
+    "keyCharacteristics": [
+      "Brand Voltage em Reserva Estrita: O roxo elétrico (#693edf) restrito a 5% da tela.",
+      "Divisão Tipográfica Bipolar: Geist para títulos e Inter para corpo de texto.",
+      "Escala de Raios Binária (4px): Bordas com raio de 4px universal e 0px em inputs.",
+      "Profundidade por Linhas e Tonalidades: Ausência de sombras pesadas com limites em 1px."
+    ],
+    "rules": [
+      { "name": "The Reserve Voltage Rule", "body": "O roxo elétrico (#693edf) nunca deve cobrir mais de 5% da superfície visual da tela.", "section": "colors" },
+      { "name": "The Two-Tier Separation Rule", "body": "A família Geist nunca é utilizada abaixo de 18px, e a família Inter nunca sobe acima de 16px.", "section": "typography" },
+      { "name": "The Zero-Shadow Rule", "body": "Elementos em repouso não possuem box-shadow. Superfícies se distinguem por linhas de 1px e preenchimentos tonais sutis.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do manter todos os cantos em 4px, exceto inputs planos (0px).",
+      "Do reservar o roxo #693edf estritamente para o botão de ação principal ou foco ativo.",
+      "Do usar títulos em Geist com peso 600 e corpo de texto em Inter com peso 400.",
+      "Do utilizar divisores sutis de 1px (#e0e0e0) em vez de sombras para separar seções.",
+      "Do manter a altura dos botões primários em 47px e campos de texto em 42px."
+    ],
+    "donts": [
+      "Don't aplicar box-shadow difuso em cards ou botões.",
+      "Don't usar preto puro #000000 em textos; use a escada de grafite (#171717, #566b76).",
+      "Don't usar a fonte Geist em tamanhos de corpo menores que 18px.",
+      "Don't criar paletas de botões multicoloridas aleatórias.",
+      "Don't pintar seções inteiras com fundos roxos sólidos."
+    ]
+  }
+}
