@@ -67,7 +67,7 @@ class FoundationTests(unittest.TestCase):
             self.assertEqual(SQLiteDatabase(path).get_preference('workspace_name'), 'KIROS teste')
             with sqlite3.connect(path) as db:
                 self.assertEqual({r[0] for r in db.execute('SELECT version FROM schema_migrations')},
-                                 {'001_preferences.sql', '002_library.sql', '003_providers_and_costs.sql', '004_creative_director_and_ideas.sql', '005_campaigns_storyboard_and_approval.sql', '006_execution_queue_and_monitoring.sql', '007_fidelity_and_versioning.sql'})
+                                 {'001_preferences.sql', '002_library.sql', '003_providers_and_costs.sql', '004_creative_director_and_ideas.sql', '005_campaigns_storyboard_and_approval.sql', '006_execution_queue_and_monitoring.sql', '007_fidelity_and_versioning.sql', '008_layout_and_templates.sql'})
                 self.assertEqual(db.execute('SELECT source, reference FROM preferences').fetchone(), ('user', 'test.input'))
                 self.assertNotIn('BLOB', db.execute("SELECT sql FROM sqlite_master WHERE name='preferences'").fetchone()[0])
 

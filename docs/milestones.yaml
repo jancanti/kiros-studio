@@ -344,7 +344,7 @@
       "depends_on": [
         "M06"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         28,
         29,
@@ -373,7 +373,10 @@
           "text": "Testes verificam proporções, texto, logo e proteção; revisão visual em ambos formatos comprova legibilidade e ausência de cortes."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/checkpoint.json",
+        "at": "2026-09-12T17:13:06.438833+00:00"
+      },
       "blocker": null
     },
     {

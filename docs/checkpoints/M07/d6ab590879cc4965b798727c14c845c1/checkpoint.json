@@ -1,0 +1,127 @@
+{
+  "at": "2026-09-12T17:13:06.438833+00:00",
+  "report": {
+    "milestone": "M07",
+    "summary": "Implementação completa de layout determinístico e editor visual semântico (Seções 28, 29 e 30). Suporte a formatos 4:5 (1080x1350) e 9:16 (1080x1920) com cálculo geométrico rigoroso de proporções, safe areas (topo 150px, rodapé 250px em 9:16; margens 60px em 4:5), 5 elementos semânticos isolados (headline, image, logo, CTA, decorative), quebra determinística de linhas e exportação/renderização SVG standalone sem chamada a LLM. Editor com níveis de proteção verde (livre: posição, escala, enquadramento, iluminação), amarelo (protegido: texto exato, tipografia, cores com confirmação) e vermelho (crítico: trava de logo e proporção de aspecto com desbloqueio explícito, justificativa e operador auditados), garantia estrita de isolamento da Product Bible oficial no domínio e HTTP. Biblioteca de templates com estados (active, archived, experimental), 4 famílias visuais canônicas (editorial_minimalist, lifestyle_natural, split_balanced, bold_modern), gating de autorização para experimentais, detecção de sobreuso (>3 slides ou >30% da campanha) e salvamento de composições aprovadas como novos templates reutilizáveis.",
+    "critical_errors": [],
+    "limitations": [
+      "Operação de exportação e preview visual em SVG e JSON determinísticos; nenhuma geração raster por GPU/headless canvas foi adicionada além de SVG nativo e screenshots de navegador.",
+      "A biblioteca de templates possui templates canônicos iniciais seeded e suporte a templates customizados salvos a partir de composições aprovadas; bibliotecas externas e marketplaces ficam fora do escopo V1.",
+      "O editor visual atual opera via formulário web estruturado e preview SVG com guias de safe areas em tempo real com controle semântico fino por atributo."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M07-A01": {
+        "files": [
+          "kiros/layout/models.py",
+          "kiros/layout/engine.py",
+          "kiros/__main__.py",
+          "tests/test_layout_engine.py",
+          "tests/test_layout_http.py",
+          "docs/evidence/M07-layout-4x5.svg",
+          "docs/evidence/M07-layout-9x16.svg"
+        ],
+        "verification": "test_dimensions_and_aspect_ratios, test_exact_text_rendering_no_llm, test_svg_structure_and_safe_areas e test_layout_svg_and_export_endpoints comprovam renderização e exportação em 4:5 (1080x1350) e 9:16 (1080x1920) de texto exato, logo travado, tipografia e os 5 elementos semânticos estruturados (headline, image, logo, cta, decorative) de forma 100% determinística sem chamadas a LLM."
+      },
+      "M07-A02": {
+        "files": [
+          "kiros/layout/models.py",
+          "kiros/layout/editor.py",
+          "kiros/ui/campaigns.py",
+          "kiros/__main__.py",
+          "tests/test_layout_editor.py",
+          "tests/test_layout_http.py",
+          "docs/evidence/M07-desktop.png",
+          "docs/evidence/M07-mobile.png"
+        ],
+        "verification": "test_green_free_attribute_updates, test_yellow_protected_attribute_requires_confirmation, test_red_critical_attribute_requires_explicit_unlock_and_audit e test_editor_protection_levels_over_http comprovam alteração livre de atributos verdes (posição x/y, escala, enquadramento, iluminação), exigência de confirmação explícita para amarelos (texto, fontes, cores) e exigência de unlock explícito com justificativa e operador auditados em banco para vermelhos (logo_locked, aspect_ratio), registrando histórico de auditoria."
+      },
+      "M07-A03": {
+        "files": [
+          "kiros/layout/editor.py",
+          "kiros/library.py",
+          "kiros/ui/campaigns.py",
+          "kiros/__main__.py",
+          "tests/test_layout_editor.py",
+          "tests/test_layout_http.py"
+        ],
+        "verification": "test_product_bible_strictly_isolated_from_layout_mutation e test_product_bible_strictly_isolated_from_layout_mutation_over_http comprovam que nenhuma edição, atualização ou aprovação de layout altera a Product Bible oficial; os dados canônicos do produto permanecem idênticos antes e após mutações tanto no domínio quanto via endpoints HTTP."
+      },
+      "M07-A04": {
+        "files": [
+          "kiros/migrations/008_layout_and_templates.sql",
+          "kiros/layout/templates.py",
+          "kiros/layout/models.py",
+          "kiros/ui/campaigns.py",
+          "kiros/__main__.py",
+          "tests/test_layout_templates.py",
+          "tests/test_layout_http.py"
+        ],
+        "verification": "test_template_families_and_seed_templates, test_experimental_template_requires_authorization, test_overuse_detection_triggers_warning, test_save_approved_composition_as_template e test_archived_template_cannot_be_applied comprovam suporte a templates nos estados active/archived/experimental, 4 famílias de layout, bloqueio de experimentais sem flag expressa, alerta de sobreuso (>3 slides) e persistência de composições aprovadas como novos templates."
+      },
+      "M07-A05": {
+        "files": [
+          "tests/test_layout_engine.py",
+          "tests/test_layout_editor.py",
+          "tests/test_layout_templates.py",
+          "tests/test_layout_http.py",
+          "docs/evidence/M07-layout-4x5.svg",
+          "docs/evidence/M07-layout-9x16.svg",
+          "docs/evidence/M07-desktop.png",
+          "docs/evidence/M07-mobile.png"
+        ],
+        "verification": "test_dimensions_and_aspect_ratios, test_safe_areas_and_bounds_checking, test_text_wrapping_deterministic_and_no_overflow e a suíte completa de 137 testes unitários/integração validam matematicamente proporções, texto, logo e proteções. As evidências M07-layout-4x5.svg, M07-layout-9x16.svg, M07-desktop.png e M07-mobile.png comprovam legibilidade tipográfica, respeito a safe areas e ausência de cortes visuais nos dois formatos suportados."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M07/d6ab590879cc4965b798727c14c845c1/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/evidence/M07-desktop.png": "77ba99c7920bd5463181e944231cbe1620bcd7b1caa5fc87119251f11b3bb14c",
+    "docs/evidence/M07-layout-4x5.svg": "2fcebd2a5b71ae401653e7e93e5170d07774a69d6bc13609437bd54d3191298d",
+    "docs/evidence/M07-layout-9x16.svg": "d4b65e7504a75063eaa7381dc72a88f700ed5e236f7536da6418e7f389a7b3dc",
+    "docs/evidence/M07-mobile.png": "b2628338828414bbb7b736847068be9f524119b946461e4f480925b4b5d4381c",
+    "kiros/__main__.py": "b8bfa7f89de4e42ab84bd61acc9d5af6bc914bd9dfb1dcff340283d1621ac734",
+    "kiros/layout/editor.py": "1198491678a6874171e3755d3ce8898f7aa41b6c917988bc9af11f2408e48a21",
+    "kiros/layout/engine.py": "b90479a2ba614ccd6c755bd9c517e95faaedf88e4765ba5490d852b6a3c8d9f4",
+    "kiros/layout/models.py": "5d1b4f4d0bdc9185517983fdd392d5a5d0ae58315516c00e4837f8a1865997a3",
+    "kiros/layout/templates.py": "5a08ba434de74e7ba2856ce20e3affc46a71fe157d307c645da12e6d7c9fa9ac",
+    "kiros/library.py": "489e054346089507f1edc60ae4fe2ee5d73a7fc7ae53f3928f76039dbb42a902",
+    "kiros/migrations/008_layout_and_templates.sql": "e1eec3afa9736ba25b96cf7fef979f35dd03558711df51bd77014f3912a75512",
+    "kiros/ui/campaigns.py": "b11084f2939e17ef4fee0bafb6eb5d802c3e0801041ec8018803681cb67dbaf7",
+    "tests/test_layout_editor.py": "95bdd0489f72dc9c979266a67a6f8a79cfb236e86a0ba8049f748b80ca9e34bc",
+    "tests/test_layout_engine.py": "45f56fa42bb5834620642281a6808995487db6d0f24c5cca7c4ced3debe43814",
+    "tests/test_layout_http.py": "18bc0e276d42fa39f16a03f44280f6b8ce1e0a8489b14838f1c92896b540dd61",
+    "tests/test_layout_templates.py": "9718d141341366b655db786f2e3f127c5313899f58d5665719c068e6480fa0cd"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

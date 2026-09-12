@@ -5,6 +5,7 @@ Quando o usuário disser **continue**, **inicie** ou equivalente, execute uma ú
 1. Leia `docs/CODEX_WORKFLOW.md` e rode `python3 scripts/kiros_flow.py context`.
 2. Leia o arquivo da milestone indicada. Reutilize o estado e código existentes.
 3. Implemente, valide, registre evidências e finalize pelo script de checkpoint. Pare antes da próxima milestone.
+4. Faça commit de tudo que foi implementado, rode o servidor e mostre o link para o usuário conferir.
 
 Fonte de verdade do produto: `docs/kiros-studio-v1-spec.md`. Estado canônico: `docs/milestones.yaml`. STATUS.md é derivado. O YAML usa sintaxe JSON válida em YAML 1.2 para dispensar dependências; mantenha esse formato.
 

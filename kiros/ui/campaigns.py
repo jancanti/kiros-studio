@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from kiros.application import Application
 from kiros.campaigns.models import UnapprovedExecutionError
 from kiros.core.contracts import Provenance
+from kiros.layout import VALID_LAYOUT_FAMILIES, VALID_FRAMINGS, VALID_LIGHTINGS
 
 
 def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]) -> str:
@@ -233,6 +234,74 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
         if slide_id and res.get('suggested_fix'):
             mgr.regenerate_slide(cid, slide_id, new_prompt=res['suggested_fix'])
         return urlencode({'campaign_id': cid, 'msg': 'Correção de fidelidade aprovada e regeneração do slide disparada.'})
+
+    elif action == 'update_layout':
+        cid = data.get('campaign_id', '').strip()
+        lid = data.get('layout_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        confirm_protected = data.get('confirm_protected', '').strip() in ('1', 'true', 'on')
+        unlock_critical = data.get('unlock_critical', '').strip() in ('1', 'true', 'on')
+        audit_reason = data.get('audit_reason', '').strip() or None
+        unlocked_by = data.get('unlocked_by', '').strip() or None
+
+        updates = {}
+        for k in (
+            'position_x', 'position_y', 'scale', 'framing', 'lighting',
+            'headline_text', 'cta_text', 'font_family', 'font_size',
+            'headline_color', 'cta_color', 'decorative_kind', 'decorative_label',
+            'logo_locked', 'logo_aspect_ratio',
+        ):
+            if k in data and data[k].strip() != '':
+                updates[k] = data[k].strip()
+
+        if 'logo_locked' in data:
+            updates['logo_locked'] = data['logo_locked'].strip() in ('1', 'true', 'on')
+
+        layout, msgs = mgr.update_slide_layout(
+            layout_id=lid,
+            updates=updates,
+            confirm_protected=confirm_protected,
+            unlock_critical=unlock_critical,
+            audit_reason=audit_reason,
+            unlocked_by=unlocked_by,
+        )
+        msg_text = 'Layout atualizado com sucesso. ' + ' '.join(msgs)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': msg_text.strip()})
+
+    elif action == 'switch_layout_format':
+        cid = data.get('campaign_id', '').strip()
+        lid = data.get('layout_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        target_fmt = data.get('target_format', '4:5').strip()
+        mgr.switch_slide_layout_format(lid, target_fmt)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f"Formato alterado para '{target_fmt}' com adaptação responsiva determinística."})
+
+    elif action == 'apply_template':
+        cid = data.get('campaign_id', '').strip()
+        lid = data.get('layout_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        template_id = data.get('template_id', '').strip()
+        experimental_auth = data.get('experimental_authorized', '').strip() in ('1', 'true', 'on')
+        mgr.apply_template_to_slide(lid, template_id, experimental_authorized=experimental_auth)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': 'Template de layout aplicado com sucesso.'})
+
+    elif action == 'save_layout_as_template':
+        cid = data.get('campaign_id', '').strip()
+        lid = data.get('layout_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        name = data.get('template_name', '').strip()
+        family = data.get('template_family', 'editorial_minimalist').strip()
+        status = data.get('template_status', 'active').strip()
+        tpl = mgr.save_slide_layout_as_template(lid, name=name, family=family, status=status)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f"Composição salva como novo template '{tpl.name}' ({tpl.status})."})
+
+    elif action == 'approve_layout':
+        cid = data.get('campaign_id', '').strip()
+        lid = data.get('layout_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        approver = data.get('approver', 'Diretoria de Arte').strip()
+        app.layout_editor.approve_layout(lid, approved_by=approver)
+        return urlencode({'campaign_id': cid, 'editor_slide_id': slide_id, 'msg': f"Composição de layout aprovada por {approver}."})
 
     raise ValueError(f"Ação desconhecida: {action}")
 
@@ -690,6 +759,8 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
 
         # Versões preservadas do slide (Seção 52)
         slide_versions = mgr.list_slide_versions(s['id'])
+        slide_layout = mgr.get_slide_layout(s['id'])
+        is_editor_open = bool(query and query.get('editor_slide_id', [''])[0] == s['id'])
 
         html.append(f'''
         <div class="card idea-card">
@@ -806,6 +877,18 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
                     <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Regenerar Somente Este Slide</button>
                 </form>
             </details>
+
+            <!-- Seções 28, 29, 30: Layout Determinístico e Editor Visual Semântico -->
+            <div style="margin-top:12px;padding:10px 14px;background:#f0ede8;border-radius:4px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <strong>Design &amp; Layout:</strong>
+                    <span class="tag">Formato {slide_layout.format}</span>
+                    <span class="badge {'badge-success' if slide_layout.is_approved else 'status-active'}">{'Aprovado' if slide_layout.is_approved else 'Rascunho'}</span>
+                </div>
+                <a href="/conteudo?campaign_id={cid}&editor_slide_id={s_id}" class="button" style="margin:0;padding:6px 12px;font-size:12px;text-decoration:none;background:#273b32;color:#fff;">🎨 {'Editor Aberto' if is_editor_open else 'Abrir Editor de Layout (4:5 / 9:16)'}</a>
+            </div>
+
+            { render_slide_layout_editor(app, cid, s, slide_layout, query) if is_editor_open else "" }
         </div>
         ''')
 
@@ -908,4 +991,320 @@ def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str
     html.append('</div></div>')
 
     return '\n'.join(html)
+
+
+def render_slide_layout_editor(app: Application, cid: str, s: Dict[str, Any], layout: Any, query: Optional[Dict[str, Any]] = None) -> str:
+    """Renderiza o Editor Visual Semântico e Biblioteca de Templates (Seções 28, 29, 30)."""
+    s_id = escape(s['id'])
+    lid = escape(layout.id)
+    fmt = layout.format
+    w, h = app.layout_engine.get_dimensions(fmt)
+    svg_preview = app.layout_engine.render_svg(layout, show_safe_areas=True)
+
+    # Informações de template
+    all_templates = app.template_library.list_templates()
+    current_tpl = app.template_library.get_template(layout.template_id) if layout.template_id else None
+    tpl_name = escape(current_tpl.name) if current_tpl else "Composição Livre"
+
+    # Detecção de sobreuso se template ativo
+    overuse_info = app.template_library.detect_overuse(layout.template_id) if layout.template_id else None
+
+    # Histórico de auditoria de atributos críticos
+    audit_logs = app.layout_editor.list_audit_entries(layout_id=layout.id)
+
+    # Opções de enquadramento
+    framing_options = ''.join(
+        f'<option value="{f}" {"selected" if layout.image.framing == f else ""}>{f.capitalize()}</option>'
+        for f in VALID_FRAMINGS
+    )
+
+    # Opções de iluminação
+    lighting_options = ''.join(
+        f'<option value="{li}" {"selected" if layout.image.lighting == li else ""}>{li.replace("_", " ").capitalize()}</option>'
+        for li in VALID_LIGHTINGS
+    )
+
+    # Opções de famílias de layout
+    family_options = ''.join(
+        f'<option value="{fam}">{fam.replace("_", " ").capitalize()}</option>'
+        for fam in VALID_LAYOUT_FAMILIES
+    )
+
+    # Templates para seleção
+    tpl_options = ''.join(
+        f'<option value="{t.id}" {"selected" if layout.template_id == t.id else ""}>{escape(t.name)} ({t.family} - {t.status})</option>'
+        for t in all_templates
+    )
+
+    # Tabela de auditoria
+    audit_html = ''
+    if audit_logs:
+        audit_rows = ''.join(
+            f'<tr><td><code>{escape(a.attribute_name)}</code></td><td>{escape(a.previous_value)}</td><td><strong>{escape(a.new_value)}</strong></td><td><em>{escape(a.reason)}</em></td><td>{escape(a.operator)}</td><td>{escape(a.created_at[:19])}</td></tr>'
+            for a in audit_logs
+        )
+        audit_html = f'''
+        <div style="margin-top:16px;background:#fff;padding:12px;border:1px solid var(--line);border-radius:4px;">
+            <strong style="color:#8a2e1d;">Registro de Exceções Auditadas (Seção 29):</strong>
+            <div class="table-scroll" style="margin-top:6px;">
+                <table style="font-size:11px;">
+                    <thead><tr><th>Atributo</th><th>Anterior</th><th>Novo</th><th>Justificativa</th><th>Responsável</th><th>Data</th></tr></thead>
+                    <tbody>{audit_rows}</tbody>
+                </table>
+            </div>
+        </div>
+        '''
+
+    overuse_banner = ''
+    if overuse_info and overuse_info['is_overused']:
+        overuse_banner = f'''
+        <div class="notice warning" style="margin-top:12px;border-left:4px solid #b06000;">
+            <strong>⚠️ Alerta de Sobreuso de Template (Seção 30 e 32):</strong><br>
+            {escape(overuse_info['warning'])}
+        </div>
+        '''
+
+    html = f'''
+    <div class="panel" style="margin-top:16px;border:2px solid #273b32;background:#fcfbf9;padding:20px;border-radius:6px;max-width:100%;">
+        <div class="card-header" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;">
+            <div>
+                <span class="tag">Editor Visual Semântico · Seções 28, 29, 30</span>
+                <h3 style="margin:4px 0 0 0;font-size:20px;">Design &amp; Layout Determinístico · {escape(s['title'])}</h3>
+                <p class="hint" style="margin:2px 0 0 0;">Não delega texto exato, logo ou posicionamento ao gerador de imagens. Sem alucinações de LLM.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="badge" style="background:#273b32;color:#fff;">Formato {fmt} ({w}×{h})</span>
+                <a href="/conteudo?campaign_id={cid}" class="button-secondary" style="font-size:11px;padding:4px 8px;text-decoration:none;">Fechar Editor ✕</a>
+            </div>
+        </div>
+
+        <!-- Seletor de Formato: 4:5 vs 9:16 -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;background:var(--paper);padding:10px 14px;border-radius:4px;flex-wrap:wrap;">
+            <strong>Alternar Formato:</strong>
+            <form method="post" action="/api/campaigns/switch_layout_format" style="margin:0;display:inline;">
+                <input type="hidden" name="campaign_id" value="{cid}">
+                <input type="hidden" name="layout_id" value="{lid}">
+                <input type="hidden" name="slide_id" value="{s_id}">
+                <input type="hidden" name="target_format" value="4:5">
+                <button type="submit" class="{'button' if fmt == '4:5' else 'button-secondary'}" style="font-size:11px;padding:5px 12px;margin:0;">Feed 4:5 (1080×1350)</button>
+            </form>
+            <form method="post" action="/api/campaigns/switch_layout_format" style="margin:0;display:inline;">
+                <input type="hidden" name="campaign_id" value="{cid}">
+                <input type="hidden" name="layout_id" value="{lid}">
+                <input type="hidden" name="slide_id" value="{s_id}">
+                <input type="hidden" name="target_format" value="9:16">
+                <button type="submit" class="{'button' if fmt == '9:16' else 'button-secondary'}" style="font-size:11px;padding:5px 12px;margin:0;">Stories 9:16 (1080×1920)</button>
+            </form>
+            <span class="hint" style="margin-left:auto;">Proporção {'0.80' if fmt == '4:5' else '0.5625'} matematicamente verificada.</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            <!-- Coluna Esquerda: Preview SVG e Exportação -->
+            <div>
+                <h4>Preview Determinístico ({fmt})</h4>
+                <div style="max-width:320px;margin:0 auto;border:1px solid var(--line);border-radius:4px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.08);background:#f5efe6;">
+                    {svg_preview}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center;">
+                    <a href="/api/layout/svg?layout_id={lid}" target="_blank" class="button-secondary" style="font-size:11px;padding:5px 10px;text-decoration:none;">Visualizar SVG ↗</a>
+                    <a href="/api/layout/svg?layout_id={lid}&safe_areas=1" target="_blank" class="button-secondary" style="font-size:11px;padding:5px 10px;text-decoration:none;">Safe Areas 📐</a>
+                    <a href="/api/layout/export?layout_id={lid}" target="_blank" class="button-secondary" style="font-size:11px;padding:5px 10px;text-decoration:none;">Dados JSON 📦</a>
+                </div>
+
+                <!-- Aprovação da Composição -->
+                <div style="margin-top:18px;background:var(--paper);padding:12px;border-radius:4px;">
+                    <strong>Aprovação Formal de Layout (Seção 30):</strong>
+                    <form method="post" action="/api/campaigns/approve_layout" style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                        <input type="hidden" name="campaign_id" value="{cid}">
+                        <input type="hidden" name="layout_id" value="{lid}">
+                        <input type="hidden" name="slide_id" value="{s_id}">
+                        <input name="approver" value="{escape(layout.approved_by or 'Diretoria de Arte')}" style="font-size:12px;padding:6px;max-width:180px;" required>
+                        <button type="submit" class="button" style="font-size:11px;padding:6px 12px;margin:0;">Aprovar Layout</button>
+                    </form>
+                    { f"<p class='hint' style='margin:4px 0 0 0;color:#137333;'>Aprovado por {escape(layout.approved_by)} em {escape(layout.approved_at[:19])}</p>" if layout.is_approved else "" }
+                </div>
+
+                <!-- Alerta de Sobreuso se houver -->
+                {overuse_banner}
+
+                <!-- Garantia de Isolamento da Product Bible -->
+                <div style="margin-top:14px;padding:10px 14px;background:#e8f0fe;border-left:4px solid #1a73e8;border-radius:4px;font-size:12px;">
+                    <strong>🛡️ Garantia de Isolamento (M07-A03):</strong><br>
+                    A edição de layout opera estritamente no nível da composição e nunca altera a Product Bible oficial automaticamente (Seção 29). Bloqueio validado no servidor.
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Controles Verde / Amarelo / Vermelho e Templates -->
+            <div>
+                <h4>Controles Semânticos de Layout (Seção 29)</h4>
+                <form method="post" action="/api/campaigns/update_layout" style="margin-top:10px;">
+                    <input type="hidden" name="campaign_id" value="{cid}">
+                    <input type="hidden" name="layout_id" value="{lid}">
+                    <input type="hidden" name="slide_id" value="{s_id}">
+
+                    <!-- Painel Verde (Livre) -->
+                    <div style="background:#edf7ed;border-left:4px solid #2e7d32;padding:12px;border-radius:4px;margin-bottom:14px;">
+                        <strong style="color:#1b5e20;">🟢 Verde · Livre (Sem restrições)</strong>
+                        <p class="hint" style="margin:2px 0 8px 0;">Posição, escala, enquadramento e iluminação podem ser alterados livremente.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Enquadramento:</label>
+                                <select name="framing" style="font-size:12px;padding:4px;">
+                                    {framing_options}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Iluminação:</label>
+                                <select name="lighting" style="font-size:12px;padding:4px;">
+                                    {lighting_options}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Posição Imagem X:</label>
+                                <input type="number" name="position_x" value="{layout.image.position_x}" style="font-size:12px;padding:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Posição Imagem Y:</label>
+                                <input type="number" name="position_y" value="{layout.image.position_y}" style="font-size:12px;padding:4px;">
+                            </div>
+                            <div style="grid-column:span 2;">
+                                <label style="font-size:11px;">Escala do Produto ({layout.image.scale:.2f}x):</label>
+                                <input type="number" step="0.05" min="0.2" max="2.5" name="scale" value="{layout.image.scale}" style="font-size:12px;padding:4px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Painel Amarelo (Protected) -->
+                    <div style="background:#fff9db;border-left:4px solid #f59f00;padding:12px;border-radius:4px;margin-bottom:14px;">
+                        <strong style="color:#e67700;">🟡 Amarelo · Protected (Exige confirmação)</strong>
+                        <p class="hint" style="margin:2px 0 8px 0;">Textos exatos, cores e tipografia exigem confirmação explícita.</p>
+                        <div style="display:grid;gap:8px;">
+                            <div>
+                                <label style="font-size:11px;">Texto da Headline:</label>
+                                <input name="headline_text" value="{escape(layout.headline.text)}" style="font-size:12px;padding:5px;" required>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Texto do CTA:</label>
+                                <input name="cta_text" value="{escape(layout.cta.text)}" style="font-size:12px;padding:5px;" required>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div>
+                                    <label style="font-size:11px;">Tamanho da Fonte:</label>
+                                    <input type="number" name="font_size" value="{layout.headline.font_size}" style="font-size:12px;padding:4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;">Cor da Headline:</label>
+                                    <input name="headline_color" value="{escape(layout.headline.color)}" style="font-size:12px;padding:4px;">
+                                </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div>
+                                    <label style="font-size:11px;">Elemento Decorativo:</label>
+                                    <select name="decorative_kind" style="font-size:12px;padding:4px;">
+                                        <option value="badge" {"selected" if layout.decorative.kind == 'badge' else ""}>Selo / Badge</option>
+                                        <option value="divider" {"selected" if layout.decorative.kind == 'divider' else ""}>Linha Divisória</option>
+                                        <option value="frame" {"selected" if layout.decorative.kind == 'frame' else ""}>Moldura</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;">Rótulo Decorativo:</label>
+                                    <input name="decorative_label" value="{escape(layout.decorative.label)}" style="font-size:12px;padding:4px;">
+                                </div>
+                            </div>
+                            <div style="margin-top:4px;">
+                                <label class="check" style="font-size:11px;color:#b06000;font-weight:600;">
+                                    <input type="checkbox" name="confirm_protected" value="1">
+                                    Confirmar explicitamente alteração de atributos protegidos (amarelo)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Painel Vermelho (Critical) -->
+                    <div style="background:#ffe3e3;border-left:4px solid #e03131;padding:12px;border-radius:4px;margin-bottom:14px;">
+                        <strong style="color:#c92a2a;">🔴 Vermelho · Critical (Bloqueado por padrão)</strong>
+                        <p class="hint" style="margin:2px 0 8px 0;">Logotipo oficial e regras de integridade. Exige unlock formal auditado.</p>
+                        <div style="display:grid;gap:8px;">
+                            <div>
+                                <label class="check" style="font-size:11px;">
+                                    <input type="checkbox" name="logo_locked" value="1" {'checked' if layout.logo.aspect_ratio_locked else ''}>
+                                    Proporção do Logotipo Bloqueada (aspect ratio fixo)
+                                </label>
+                            </div>
+                            <div>
+                                <label class="check" style="font-size:11px;color:#8a2e1d;font-weight:600;">
+                                    <input type="checkbox" name="unlock_critical" value="1">
+                                    Autorizar Desbloqueio de Atributo Crítico (exceção formal)
+                                </label>
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Justificativa da Exceção (auditada):</label>
+                                <input name="audit_reason" placeholder="Motivo documentado da alteração crítica..." style="font-size:11px;padding:4px;">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;">Responsável pelo Unlock:</label>
+                                <input name="unlocked_by" placeholder="Identificação do solicitante..." style="font-size:11px;padding:4px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button" style="font-size:13px;padding:8px 16px;width:100%;">Salvar Ajustes de Layout</button>
+                </form>
+
+                <!-- Biblioteca de Templates (Seção 30) -->
+                <div style="margin-top:18px;background:var(--paper);padding:14px;border-radius:4px;">
+                    <strong>Templates de Layout (Seção 30):</strong>
+                    <form method="post" action="/api/campaigns/apply_template" style="margin-top:8px;">
+                        <input type="hidden" name="campaign_id" value="{cid}">
+                        <input type="hidden" name="layout_id" value="{lid}">
+                        <input type="hidden" name="slide_id" value="{s_id}">
+                        <label style="font-size:11px;">Template Atual: <strong>{tpl_name}</strong></label>
+                        <select name="template_id" style="font-size:12px;padding:5px;">
+                            {tpl_options}
+                        </select>
+                        <div style="margin-top:6px;">
+                            <label class="check" style="font-size:11px;color:#495057;">
+                                <input type="checkbox" name="experimental_authorized" value="1">
+                                Autorizar uso de template experimental (obrigatório para experimental)
+                            </label>
+                        </div>
+                        <button type="submit" class="button-secondary" style="font-size:11px;padding:5px 12px;margin-top:6px;">Aplicar Template Selecionado</button>
+                    </form>
+
+                    <!-- Salvar como Template -->
+                    <details style="margin-top:10px;">
+                        <summary style="font-size:12px;padding:2px 0;">Salvar Composição Atual como Novo Template</summary>
+                        <form method="post" action="/api/campaigns/save_layout_as_template" style="margin-top:8px;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="layout_id" value="{lid}">
+                            <input type="hidden" name="slide_id" value="{s_id}">
+                            <div class="form-group">
+                                <label style="font-size:11px;">Nome do Template</label>
+                                <input name="template_name" placeholder="Ex: Editorial Noturno Âmbar" style="font-size:12px;padding:4px;" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:11px;">Família de Layout</label>
+                                <select name="template_family" style="font-size:12px;padding:4px;">
+                                    {family_options}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:11px;">Estado</label>
+                                <select name="template_status" style="font-size:12px;padding:4px;">
+                                    <option value="active" selected>Active (Aprovado)</option>
+                                    <option value="experimental">Experimental</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="button-secondary" style="font-size:11px;padding:5px 12px;">Salvar como Template</button>
+                        </form>
+                    </details>
+                </div>
+
+                <!-- Histórico de Auditoria -->
+                {audit_html}
+            </div>
+        </div>
+    </div>
+    '''
+    return html
 

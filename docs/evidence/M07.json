@@ -1,29 +1,74 @@
 {
   "milestone": "M07",
-  "summary": "",
+  "summary": "Implementação completa de layout determinístico e editor visual semântico (Seções 28, 29 e 30). Suporte a formatos 4:5 (1080x1350) e 9:16 (1080x1920) com cálculo geométrico rigoroso de proporções, safe areas (topo 150px, rodapé 250px em 9:16; margens 60px em 4:5), 5 elementos semânticos isolados (headline, image, logo, CTA, decorative), quebra determinística de linhas e exportação/renderização SVG standalone sem chamada a LLM. Editor com níveis de proteção verde (livre: posição, escala, enquadramento, iluminação), amarelo (protegido: texto exato, tipografia, cores com confirmação) e vermelho (crítico: trava de logo e proporção de aspecto com desbloqueio explícito, justificativa e operador auditados), garantia estrita de isolamento da Product Bible oficial no domínio e HTTP. Biblioteca de templates com estados (active, archived, experimental), 4 famílias visuais canônicas (editorial_minimalist, lifestyle_natural, split_balanced, bold_modern), gating de autorização para experimentais, detecção de sobreuso (>3 slides ou >30% da campanha) e salvamento de composições aprovadas como novos templates reutilizáveis.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Operação de exportação e preview visual em SVG e JSON determinísticos; nenhuma geração raster por GPU/headless canvas foi adicionada além de SVG nativo e screenshots de navegador.",
+    "A biblioteca de templates possui templates canônicos iniciais seeded e suporte a templates customizados salvos a partir de composições aprovadas; bibliotecas externas e marketplaces ficam fora do escopo V1.",
+    "O editor visual atual opera via formulário web estruturado e preview SVG com guias de safe areas em tempo real com controle semântico fino por atributo."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M07-A01": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/layout/models.py",
+        "kiros/layout/engine.py",
+        "kiros/__main__.py",
+        "tests/test_layout_engine.py",
+        "tests/test_layout_http.py",
+        "docs/evidence/M07-layout-4x5.svg",
+        "docs/evidence/M07-layout-9x16.svg"
+      ],
+      "verification": "test_dimensions_and_aspect_ratios, test_exact_text_rendering_no_llm, test_svg_structure_and_safe_areas e test_layout_svg_and_export_endpoints comprovam renderização e exportação em 4:5 (1080x1350) e 9:16 (1080x1920) de texto exato, logo travado, tipografia e os 5 elementos semânticos estruturados (headline, image, logo, cta, decorative) de forma 100% determinística sem chamadas a LLM."
     },
     "M07-A02": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/layout/models.py",
+        "kiros/layout/editor.py",
+        "kiros/ui/campaigns.py",
+        "kiros/__main__.py",
+        "tests/test_layout_editor.py",
+        "tests/test_layout_http.py",
+        "docs/evidence/M07-desktop.png",
+        "docs/evidence/M07-mobile.png"
+      ],
+      "verification": "test_green_free_attribute_updates, test_yellow_protected_attribute_requires_confirmation, test_red_critical_attribute_requires_explicit_unlock_and_audit e test_editor_protection_levels_over_http comprovam alteração livre de atributos verdes (posição x/y, escala, enquadramento, iluminação), exigência de confirmação explícita para amarelos (texto, fontes, cores) e exigência de unlock explícito com justificativa e operador auditados em banco para vermelhos (logo_locked, aspect_ratio), registrando histórico de auditoria."
     },
     "M07-A03": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/layout/editor.py",
+        "kiros/library.py",
+        "kiros/ui/campaigns.py",
+        "kiros/__main__.py",
+        "tests/test_layout_editor.py",
+        "tests/test_layout_http.py"
+      ],
+      "verification": "test_product_bible_strictly_isolated_from_layout_mutation e test_product_bible_strictly_isolated_from_layout_mutation_over_http comprovam que nenhuma edição, atualização ou aprovação de layout altera a Product Bible oficial; os dados canônicos do produto permanecem idênticos antes e após mutações tanto no domínio quanto via endpoints HTTP."
     },
     "M07-A04": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "kiros/migrations/008_layout_and_templates.sql",
+        "kiros/layout/templates.py",
+        "kiros/layout/models.py",
+        "kiros/ui/campaigns.py",
+        "kiros/__main__.py",
+        "tests/test_layout_templates.py",
+        "tests/test_layout_http.py"
+      ],
+      "verification": "test_template_families_and_seed_templates, test_experimental_template_requires_authorization, test_overuse_detection_triggers_warning, test_save_approved_composition_as_template e test_archived_template_cannot_be_applied comprovam suporte a templates nos estados active/archived/experimental, 4 famílias de layout, bloqueio de experimentais sem flag expressa, alerta de sobreuso (>3 slides) e persistência de composições aprovadas como novos templates."
     },
     "M07-A05": {
-      "files": [],
-      "verification": ""
+      "files": [
+        "tests/test_layout_engine.py",
+        "tests/test_layout_editor.py",
+        "tests/test_layout_templates.py",
+        "tests/test_layout_http.py",
+        "docs/evidence/M07-layout-4x5.svg",
+        "docs/evidence/M07-layout-9x16.svg",
+        "docs/evidence/M07-desktop.png",
+        "docs/evidence/M07-mobile.png"
+      ],
+      "verification": "test_dimensions_and_aspect_ratios, test_safe_areas_and_bounds_checking, test_text_wrapping_deterministic_and_no_overflow e a suíte completa de 137 testes unitários/integração validam matematicamente proporções, texto, logo e proteções. As evidências M07-layout-4x5.svg, M07-layout-9x16.svg, M07-desktop.png e M07-mobile.png comprovam legibilidade tipográfica, respeito a safe areas e ausência de cortes visuais nos dois formatos suportados."
     }
   }
 }

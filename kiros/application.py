@@ -17,6 +17,7 @@ from kiros.execution.queue import ExecutionQueue
 from kiros.execution.worker import ExecutionWorker
 
 from kiros.fidelity import ProductFidelityService
+from kiros.layout import LayoutEngine, LayoutEditor, TemplateLibrary
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -46,8 +47,17 @@ class Application:
             self.database, self.cost_manager, fidelity_service=self.fidelity_service, memory_store=self.memory
         )
         self.worker = ExecutionWorker(self.queue, self.providers, self.storage)
+        self.layout_engine = LayoutEngine()
+        self.template_library = TemplateLibrary(self.database)
+        self.layout_editor = LayoutEditor(self.database, self.layout_engine, self.library)
         self.campaigns = CampaignManager(
-            self.database, self.cost_manager, self.router, self.queue, fidelity_service=self.fidelity_service
+            self.database,
+            self.cost_manager,
+            self.router,
+            self.queue,
+            fidelity_service=self.fidelity_service,
+            layout_editor=self.layout_editor,
+            template_library=self.template_library,
         )
 
     def status(self):

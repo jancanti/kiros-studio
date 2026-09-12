@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Rubik:wght@400;500;600;700&amp;display=swap');
+      .font-headline { font-family: 'Rubik', 'Rubik', sans-serif; }
+      .font-ui { font-family: 'Inter', sans-serif; }
+    </style>
+    <linearGradient id="lightGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fff9f2" stop-opacity="0.22"/><stop offset="100%" stop-color="#141815" stop-opacity="0.45"/></linearGradient>
+    <clipPath id="imageClip">
+      <rect x="0" y="0" width="1080" height="1350"/>
+    </clipPath>
+  </defs>
+
+  <!-- 1. Camada de Imagem de Fundo e Textura Fotográfica -->
+  <g id="image" clip-path="url(#imageClip)">
+    <rect width="1080" height="1350" fill="#f5efe6"/>
+    <!-- Gradiente de ambiente simulando fotografia de alta fidelidade com luz lateral -->
+    <rect width="1080" height="1350" fill="url(#lightGrad)"/>
+    <!-- Ilustração esquemática vetorial do produto em vidro âmbar com pavio / difusor -->
+    <g transform="translate(540, 702) scale(1.0)">
+      <!-- Sombra de contato -->
+      <ellipse cx="0" cy="220" rx="140" ry="24" fill="#1e1e1e" opacity="0.22"/>
+      <!-- Corpo da vela/frasco em vidro âmbar -->
+      <rect x="-90" y="-70" width="180" height="280" rx="18" fill="#a45a2a" stroke="#5d3215" stroke-width="4"/>
+      <rect x="-82" y="-62" width="164" height="264" rx="12" fill="#8c481d" opacity="0.95"/>
+      <!-- Brilho lateral no vidro (fotografia com luz lateral natural) -->
+      <path d="M -70 -50 Q -75 60 -70 180" stroke="#ffd9aa" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.45"/>
+      <!-- Rótulo de linho natural -->
+      <rect x="-65" y="0" width="130" height="130" rx="4" fill="#fcf9f2" stroke="#d5ccb8" stroke-width="2"/>
+      <text x="0" y="42" font-family="'Rubik', sans-serif" font-size="14" font-weight="600" fill="#273b32" text-anchor="middle" letter-spacing="2">KIROS</text>
+      <line x1="-30" y1="52" x2="30" y2="52" stroke="#273b32" stroke-width="1" opacity="0.4"/>
+      <text x="0" y="74" font-family="'Inter', sans-serif" font-size="10" font-weight="500" fill="#4a5550" text-anchor="middle">AROMA NATURAL</text>
+      <text x="0" y="92" font-family="'Inter', sans-serif" font-size="9" fill="#7a8580" text-anchor="middle">240g · Sorocaba/SP</text>
+      <!-- Tampa em madeira maciça com ranhuras sutis -->
+      <rect x="-96" y="-95" width="192" height="30" rx="6" fill="#54361e" stroke="#36200f" stroke-width="2"/>
+      <line x1="-80" y1="-80" x2="80" y2="-80" stroke="#785030" stroke-width="1.5" opacity="0.6"/>
+      <!-- Chama suave (se iluminação permitir) -->
+      <path d="M 0 -105 Q 12 -135 0 -160 Q -12 -135 0 -105 Z" fill="#ffb74d" opacity="0.85"/>
+      <ellipse cx="0" cy="-120" rx="4" ry="10" fill="#fff3e0"/>
+    </g>
+  </g>
+
+  <!-- 2. Camada Decorativa -->
+  <g id="decorative" transform="translate(80, 1140)" opacity="0.95"><rect width="180" height="32" rx="4" fill="rgba(255, 255, 255, 0.75)" stroke="rgba(39, 59, 50, 0.25)" stroke-width="1"/><text x="90" y="21" font-family="Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="1.5" fill="#273b32" text-anchor="middle">AROMAS BOTÂNICOS</text></g>
+
+  <!-- 3. Headline Exata e Tipografia Rubik (sem LLM) -->
+  <g id="headline" class="font-headline">
+    <text x="80" y="140" font-size="54" font-weight="600" fill="#1f2421" letter-spacing="-0.5">
+      <tspan x="80" dy="0">Slide 1: Ritual da Manhã</tspan>
+    </text>
+  </g>
+
+  <!-- 4. Logo Oficial da Marca (Proporções estritamente bloqueadas) -->
+  <g id="logo" class="font-ui" transform="translate(80, 70) scale(1.0)">
+    <!-- Emblema botânico estilizado -->
+    <g transform="translate(0, -16)">
+      <circle cx="16" cy="16" r="16" fill="#273b32"/>
+      <path d="M 16 6 C 21 11 21 21 16 26 C 11 21 11 11 16 6 Z" fill="#ffffff"/>
+      <circle cx="16" cy="16" r="3" fill="#273b32"/>
+    </g>
+    <!-- Wordmark da marca -->
+    <text x="44" y="8" font-family="'Rubik', sans-serif" font-size="22" font-weight="700" fill="#273b32" letter-spacing="3.5">KIROS</text>
+    <text x="44" y="24" font-family="'Inter', sans-serif" font-size="9" font-weight="500" fill="#273b32" letter-spacing="2" opacity="0.85">AROMAS · BRASIL</text>
+  </g>
+
+  <!-- 5. CTA (Call To Action) com texto exato -->
+  <g id="cta" class="font-ui" transform="translate(80, 1220)">
+    <rect width="324" height="60" rx="999" fill="#273b32"/>
+    <text x="162" y="38" font-size="24" font-weight="600" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">
+      Descubra a Coleção
+    </text>
+  </g>
+
+  <!-- Safe area visual indicator para auditoria e teste de ausência de cortes -->
+  <g id="safe-area-overlay" opacity="0.6"><rect x="60" y="60" width="960" height="1230" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="8 6"/><text x="70" y="84" font-family="Inter, sans-serif" font-size="14" fill="#2563eb" font-weight="600">SAFE AREA (4:5)</text></g>
+</svg>

@@ -216,7 +216,37 @@
       "timeout_seconds": 60
     }
   ],
-  "M07": [],
+  "M07": [
+    {
+      "name": "Testes M07 de Layout, Editor Visual, Templates, Governança e HTTP",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "Build local com migração e módulo de layout M07",
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício de processos",
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "M08": [],
   "M09": [],
   "M10": [],

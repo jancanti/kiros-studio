@@ -33,15 +33,25 @@ class CampaignManager:
         router: Optional[ImageEngineRouter] = None,
         queue: Optional[Any] = None,
         fidelity_service: Optional[Any] = None,
+        layout_editor: Optional[Any] = None,
+        template_library: Optional[Any] = None,
     ):
         self.db = db
         self.cost_manager = cost_manager
         self.router = router
         self.queue = queue
         self.fidelity_service = fidelity_service
+        self.layout_editor = layout_editor
+        self.template_library = template_library
         if self.queue is None and self.cost_manager is not None:
             from kiros.execution.queue import ExecutionQueue
             self.queue = ExecutionQueue(self.db, self.cost_manager, fidelity_service=self.fidelity_service)
+        if self.layout_editor is None:
+            from kiros.layout import LayoutEditor, LayoutEngine
+            self.layout_editor = LayoutEditor(self.db, LayoutEngine())
+        if self.template_library is None:
+            from kiros.layout import TemplateLibrary
+            self.template_library = TemplateLibrary(self.db)
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -127,6 +137,16 @@ class CampaignManager:
 
         # Cria a etapa mínima necessária no pipeline (Seção 23: menor número de etapas necessário)
         self._generate_step_for_slide(campaign_id, slide_id, clean_prompt, engine_override)
+
+        # Cria layout padrão para o slide (Seção 28 e 29)
+        if self.layout_editor:
+            self.layout_editor.get_or_create_layout(
+                campaign_id=campaign_id,
+                slide_id=slide_id,
+                target_format='4:5',
+                default_headline=clean_title,
+            )
+
         return slide_id
 
     def _resolve_engine_for_slide(self, campaign_id: str, engine_override: Optional[str]) -> Tuple[str, str, float]:
@@ -753,4 +773,114 @@ class CampaignManager:
         if not self.queue:
             return []
         return self.queue.list_learnings_for_slide(slide_id)
+
+    # -------------------------------------------------------------
+    # Métodos de Layout e Design Determinístico (Seções 28, 29, 30)
+    # -------------------------------------------------------------
+
+    def get_slide_layout(self, slide_id: str) -> Any:
+        """Recupera layout associado a um slide ou gera o padrão."""
+        if not self.layout_editor:
+            raise RuntimeError("LayoutEditor não configurado.")
+        # Localiza campaign_id e título do slide
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT campaign_id, title FROM storyboard_slides WHERE id=?', (slide_id,)).fetchone()
+            if not row:
+                raise ValueError(f"Slide '{slide_id}' não encontrado.")
+            cid = row['campaign_id']
+            title = row['title']
+        return self.layout_editor.get_or_create_layout(cid, slide_id, default_headline=title)
+
+    def update_slide_layout(
+        self,
+        layout_id: str,
+        updates: Dict[str, Any],
+        confirm_protected: bool = False,
+        unlock_critical: bool = False,
+        audit_reason: Optional[str] = None,
+        unlocked_by: Optional[str] = None,
+    ) -> Tuple[Any, List[str]]:
+        """Atualiza atributos do layout com governança verde/amarelo/vermelho (Seção 29)."""
+        if not self.layout_editor:
+            raise RuntimeError("LayoutEditor não configurado.")
+        return self.layout_editor.update_layout(
+            layout_id=layout_id,
+            updates=updates,
+            confirm_protected=confirm_protected,
+            unlock_critical=unlock_critical,
+            audit_reason=audit_reason,
+            unlocked_by=unlocked_by,
+        )
+
+    def switch_slide_layout_format(self, layout_id: str, target_format: str) -> Any:
+        """Altera o formato do layout entre 4:5 e 9:16 com adaptação responsiva."""
+        if not self.layout_editor:
+            raise RuntimeError("LayoutEditor não configurado.")
+        return self.layout_editor.switch_format(layout_id, target_format)
+
+    def apply_template_to_slide(
+        self,
+        layout_id: str,
+        template_id: str,
+        experimental_authorized: bool = False,
+    ) -> Any:
+        """Aplica template da biblioteca ao layout do slide (Seção 30)."""
+        if not self.layout_editor or not self.template_library:
+            raise RuntimeError("Editor ou Biblioteca de Templates não configurados.")
+        layout = self.layout_editor.get_layout(layout_id)
+        if not layout:
+            raise ValueError(f"Layout '{layout_id}' não encontrado.")
+        return self.template_library.apply_template(
+            template_id=template_id,
+            layout=layout,
+            experimental_authorized=experimental_authorized,
+        )
+
+    def detect_template_overuse(self, template_id: str) -> Dict[str, Any]:
+        """Detecta sobreuso de template para preservar diversidade visual da marca (Seções 30 e 32)."""
+        if not self.template_library:
+            raise RuntimeError("TemplateLibrary não configurada.")
+        return self.template_library.detect_overuse(template_id)
+
+    def save_slide_layout_as_template(
+        self,
+        layout_id: str,
+        name: str,
+        family: str,
+        status: str = 'active',
+        provenance_source: str = 'user',
+    ) -> Any:
+        """Salva uma composição aprovada como template na biblioteca (Seção 30)."""
+        if not self.layout_editor or not self.template_library:
+            raise RuntimeError("Editor ou Biblioteca de Templates não configurados.")
+        layout = self.layout_editor.get_layout(layout_id)
+        if not layout:
+            raise ValueError(f"Layout '{layout_id}' não encontrado.")
+        return self.template_library.save_composition_as_template(
+            layout=layout,
+            name=name,
+            family=family,
+            status=status,
+            provenance_source=provenance_source,
+        )
+
+    def render_slide_svg(self, layout_id: str, show_safe_areas: bool = False) -> str:
+        """Renderiza o SVG determinístico do slide sem LLM."""
+        if not self.layout_editor:
+            raise RuntimeError("LayoutEditor não configurado.")
+        layout = self.layout_editor.get_layout(layout_id)
+        if not layout:
+            raise ValueError(f"Layout '{layout_id}' não encontrado.")
+        return self.layout_editor.engine.render_svg(layout, show_safe_areas=show_safe_areas)
+
+    def export_slide_layout(self, layout_id: str) -> Dict[str, Any]:
+        """Exporta dados completos e SVG determinístico do layout."""
+        if not self.layout_editor:
+            raise RuntimeError("LayoutEditor não configurado.")
+        layout = self.layout_editor.get_layout(layout_id)
+        if not layout:
+            raise ValueError(f"Layout '{layout_id}' não encontrado.")
+        return self.layout_editor.engine.export_layout_data(layout)
+
 

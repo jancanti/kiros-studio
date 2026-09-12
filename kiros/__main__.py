@@ -50,6 +50,27 @@ def make_server(data_dir, port=8765):
                 if not row:
                     return self.respond(404, 'Imagem não encontrada')
                 return self.respond(200, app.storage.get(row['asset_key']), row['mime'])
+            if path == '/api/layout/svg':
+                query = parse_qs(urlsplit(self.path).query)
+                lid = query.get('layout_id', [''])[0]
+                safe = query.get('safe_areas', ['0'])[0] == '1'
+                if not lid:
+                    return self.respond(400, 'layout_id é obrigatório')
+                try:
+                    svg_content = app.campaigns.render_slide_svg(lid, show_safe_areas=safe)
+                    return self.respond(200, svg_content, 'image/svg+xml; charset=utf-8')
+                except Exception as exc:
+                    return self.respond(404, str(exc))
+            if path == '/api/layout/export':
+                query = parse_qs(urlsplit(self.path).query)
+                lid = query.get('layout_id', [''])[0]
+                if not lid:
+                    return self.respond(400, 'layout_id é obrigatório')
+                try:
+                    export_data = app.campaigns.export_slide_layout(lid)
+                    return self.respond(200, json.dumps(export_data, ensure_ascii=False), 'application/json')
+                except Exception as exc:
+                    return self.respond(404, str(exc))
             section = path.strip('/') or 'inicio'
             if section not in dict(NAVIGATION):
                 return self.respond(404, 'Página não encontrada')
@@ -139,7 +160,7 @@ def make_server(data_dir, port=8765):
                     data = {k: v[0] for k, v in parsed.items()}
                     query_str = dispatch_campaign_action(app, action, data)
                     return self.respond(303, '', location='/conteudo?' + query_str)
-                except (ValueError, UnicodeError) as exc:
+                except (ValueError, UnicodeError, PermissionError) as exc:
                     return self.respond(303, '', location='/conteudo?' + urlencode({'error': str(exc)}))
             if self.path != '/api/preferences':
                 return self.respond(404, 'Operação não encontrada')
