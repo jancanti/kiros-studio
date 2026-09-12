@@ -203,6 +203,9 @@ th{font-weight:600;font-family:var(--font-body)}
 .hero-editorial{display:flex;flex-direction:column;justify-content:center;padding:12px 0}
 .hero-editorial h1{margin-bottom:16px}
 .hero-editorial .intro{margin-bottom:24px;font-size:16px}
+.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px}
+.hero-actions .button,.hero-actions .button-primary,.hero-actions .button-secondary{margin:0 16px 8px 0}
+.hero-actions .button:last-child{margin-right:0}
 .hero-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px}
 .hero-stat-item{background:rgba(255,255,255,0.1);padding:16px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,0.15)}
 .hero-stat-value{font-family:var(--font-heading);font-size:28px;font-weight:600;color:#ffffff;line-height:1.1}
