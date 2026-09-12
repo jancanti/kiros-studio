@@ -257,9 +257,25 @@ class ImageEngineRouter:
                 'reason': 'Padrão configurado manualmente para a campanha.',
             }
 
-        # 3. Recomendação automática
+        # 3. Recomendação automática com Fallback de Provedor Ativo
         rec = self.recommend(slide_context)
         rec['source'] = 'automatic_recommendation'
         rec['is_manual'] = False
+
+        # Fallback de crédito/disponibilidade: Se o provedor recomendado não estiver ativo no Manager, faz fallback
+        if self.provider_manager:
+            active_providers = [p for p in self.provider_manager.list_providers() if p.get('is_active')]
+            if active_providers:
+                active_types = {p['type'] for p in active_providers}
+                if rec['provider'] not in active_types:
+                    # Escolhe o primeiro ativo das alternativas ou o primeiro provedor ativo
+                    fallback_prov = active_providers[0]
+                    rec['original_provider'] = rec['provider']
+                    rec['provider'] = fallback_prov['type']
+                    rec['model'] = fallback_prov['model']
+                    rec['fallback_used'] = True
+                    rec['reason'] += f" (Fallback automático ativado: '{rec['original_provider']}' indisponível ou sem créditos, redirecionado para '{fallback_prov['name']}')."
+
         return rec
+
 

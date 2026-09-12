@@ -85,12 +85,76 @@ def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]
 
 
 def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
-    """Renderiza painel específico para providers (Seção 8)."""
+    """Renderiza painel simples e didático para provedores de IA e Instagram."""
     pm = app.providers
     providers = pm.list_providers()
     test_logs = pm.get_test_logs(limit=10)
 
     html = []
+
+    # Wizard de Boas-Vindas / Instalação Guiada
+    html.append('''
+    <div class="panel onboarding-wizard-panel" style="background: linear-gradient(135deg, rgba(105,62,223,0.08) 0%, rgba(69,20,166,0.03) 100%); border: 1px solid var(--hairline-cool, #e4edf1); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <span class="tag" style="background: #693edf; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 11px;">PASSO A PASSO INICIAL</span>
+        <h2 style="margin-top: 10px; margin-bottom: 8px;">👋 Bem-vindo às Configurações do KIROS Studio!</h2>
+        <p style="color: #444; margin-bottom: 16px;">Conecte seus motores de Inteligência Artificial para gerar imagens deslumbrantes e agendar seus posts diretamente no Instagram.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px;">
+            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
+                <strong style="color: #693edf;">1. Provedor de IA</strong>
+                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Adobe Firefly, ChatGPT ou Gemini.</p>
+            </div>
+            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
+                <strong style="color: #693edf;">2. Fallback Inteligente</strong>
+                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Troca automática se faltar créditos em uma IA.</p>
+            </div>
+            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
+                <strong style="color: #693edf;">3. Instagram API</strong>
+                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Fila de postagens automáticas para @kiros.sp.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guia Rápido: Como encontrar suas chaves -->
+    <div class="panel" style="margin-bottom: 24px;">
+        <h2>💡 Como pegar sua chave de API em 3 cliques</h2>
+        <p style="color: #5d5d5d;">Consulte as instruções abaixo para cadastrar suas credenciais sem complicação:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
+            <div style="border-left: 3px solid #e00000; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0;">🎨 Adobe Firefly Services</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+                    <li>Acesse <a href="https://developer.adobe.com/console" target="_blank" rel="noopener">Adobe Developer Console</a></li>
+                    <li>Crie um projeto de Firefly Services</li>
+                    <li>Copie o Client ID e Secret obtidos</li>
+                </ol>
+            </div>
+            <div style="border-left: 3px solid #10a37f; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0;">🤖 ChatGPT (OpenAI / DALL-E)</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+                    <li>Acesse <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI API Keys</a></li>
+                    <li>Clique em <em>Create new secret key</em></li>
+                    <li>Copie a chave gerada (inicia com <code>sk-</code>)</li>
+                </ol>
+            </div>
+            <div style="border-left: 3px solid #4285f4; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0;">✨ Google Gemini / Imagen</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+                    <li>Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></li>
+                    <li>Clique em <em>Get API key</em></li>
+                    <li>Copie sua chave de API do Gemini</li>
+                </ol>
+            </div>
+            <div style="border-left: 3px solid #e1306c; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0;">📸 Instagram Graph API</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+                    <li>Acesse Meta for Developers</li>
+                    <li>Vincule sua página do Instagram (@kiros.sp)</li>
+                    <li>Obtenha o User Access Token de publicação</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    ''')
 
     # Avisos e resultados de teste
     if query.get('msg'):
@@ -125,7 +189,7 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
     ''')
 
     if not providers:
-        html.append('<p class="empty-state">Nenhum provedor configurado ainda. Utilize o formulário abaixo para adicionar.</p>')
+        html.append('<p class="empty-state">Nenhum provedor configurado ainda. Utilize o formulário abaixo para adicionar seu primeiro motor de IA (Adobe Firefly, ChatGPT ou Gemini).</p>')
     else:
         html.append('<div class="provider-cards">')
         for p in providers:
@@ -138,6 +202,7 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             status_text = 'Ativo' if pactive else 'Inativo'
             status_class = 'status-active' if pactive else 'status-inactive'
             secret_preview = escape(p['secret_preview'])
+
 
             html.append(f'''
             <div class="card provider-card">
