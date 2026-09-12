@@ -1,0 +1,581 @@
+{
+  "schema_version": 1,
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af",
+  "milestones": [
+    {
+      "id": "M00",
+      "title": "Fundação local e limites arquiteturais",
+      "depends_on": [],
+      "status": "completed",
+      "sections": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        60,
+        62,
+        63,
+        64,
+        65,
+        70,
+        72,
+        73,
+        74,
+        76,
+        83,
+        85
+      ],
+      "file": "docs/milestones/M00.md",
+      "acceptance": [
+        {
+          "id": "M00-A01",
+          "text": "Escolher e registrar stack simples compatível com o repositório; aplicação inicia e oferece navegação base acessível."
+        },
+        {
+          "id": "M00-A02",
+          "text": "Persistência SQLite e arquivos no filesystem funcionam após reinício; schema inicial evolui por migrações, sem blobs de imagens."
+        },
+        {
+          "id": "M00-A03",
+          "text": "Definir as dez interfaces da seção 6 sem serviços remotos extras; Creative Director independente de provider."
+        },
+        {
+          "id": "M00-A04",
+          "text": "Configurar ambiente de desenvolvimento mock por padrão e ponto central que recusa chamadas externas do produto nesse modo; testar a recusa."
+        },
+        {
+          "id": "M00-A05",
+          "text": "Proveniência, proteção de segredos e validação de caminhos têm contratos iniciais e testes relevantes; não criar todas as tabelas sem uso."
+        },
+        {
+          "id": "M00-A06",
+          "text": "Registrar comandos reais de iniciar, build e testes em docs/DEVELOPMENT.md e checks.json; comprovar inicialização e persistência."
+        }
+      ],
+      "checkpoint": {
+        "path": "docs/checkpoints/M00/959f1cda6a03491eb1c9afd7dbedb244/checkpoint.json",
+        "at": "2026-09-12T14:12:15.163257+00:00"
+      },
+      "blocker": null
+    },
+    {
+      "id": "M01",
+      "title": "Marca, produtos e referências",
+      "depends_on": [
+        "M00"
+      ],
+      "status": "completed",
+      "sections": [
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "file": "docs/milestones/M01.md",
+      "acceptance": [
+        {
+          "id": "M01-A01",
+          "text": "Brand Bible global versionada, aprovação de mudança oficial e overrides de campanha isolados funcionam."
+        },
+        {
+          "id": "M01-A02",
+          "text": "Produtos, estoque manual e importação CSV de vendas validam dados e origem, sem inventar valores ausentes."
+        },
+        {
+          "id": "M01-A03",
+          "text": "Product Bible recebe fotos, análise por contrato de visão e atributos free/protected/critical; mock claramente identificado."
+        },
+        {
+          "id": "M01-A04",
+          "text": "Reference Set permite ângulos, escolha por tarefa e override manual; referências visuais têm escopo e origem."
+        },
+        {
+          "id": "M01-A05",
+          "text": "Referência com direitos desconhecidos fica inspiration_only; testes cobrem isolamento, versionamento, CSV inválido e preservação."
+        }
+      ],
+      "checkpoint": {
+        "path": "docs/checkpoints/M01/88610d967cc046d49ff59c24c6b6037a/checkpoint.json",
+        "at": "2026-09-12T14:35:30.528500+00:00"
+      },
+      "blocker": null
+    },
+    {
+      "id": "M02",
+      "title": "Providers, roteamento e controle de gastos",
+      "depends_on": [
+        "M01"
+      ],
+      "status": "completed",
+      "sections": [
+        7,
+        8,
+        22,
+        24,
+        25,
+        26,
+        77
+      ],
+      "file": "docs/milestones/M02.md",
+      "acceptance": [
+        {
+          "id": "M02-A01",
+          "text": "Configurações permitem cadastrar, ativar, desativar, escolher modelo e testar providers; segredos nunca retornam ao frontend nem logs."
+        },
+        {
+          "id": "M02-A02",
+          "text": "Implementar adaptadores Gemini/OpenAI/Firefly e contratos customizados segundo documentação oficial vigente; registrar URLs e data; nenhum ID presumido."
+        },
+        {
+          "id": "M02-A03",
+          "text": "Mocks determinísticos e testes de contrato cobrem conexão, erro, timeout, credencial inválida e indisponibilidade, sem rede real."
+        },
+        {
+          "id": "M02-A04",
+          "text": "Router recomenda engine/modelo por campanha ou slide com motivo, alternativas, estimativa e confiança; manual prevalece."
+        },
+        {
+          "id": "M02-A05",
+          "text": "CostManager separa estimativa de custo real, registra campanha/asset/etapa e reserva orçamento antes da execução concorrente; limites exigem autorização."
+        },
+        {
+          "id": "M02-A06",
+          "text": "Contexto seletivo, orçamento de contexto, cache com invalidação e deduplicação evitam chamadas redundantes; falha ou preço desconhecido não autoriza gasto."
+        },
+        {
+          "id": "M02-A07",
+          "text": "Política central bloqueia egress do produto em mock; execução real exige configuração explícita e autorização aplicável. Registrar em docs/INTEGRATIONS.md o que foi validado com fixture e o que precisa de conta real."
+        }
+      ],
+      "checkpoint": {
+        "path": "docs/checkpoints/M02/af838fd561df415da30111a24032db95/checkpoint.json",
+        "at": "2026-09-12T14:55:06.500137+00:00"
+      },
+      "blocker": null
+    },
+    {
+      "id": "M03",
+      "title": "Creative Director, ideias e contexto",
+      "depends_on": [
+        "M02"
+      ],
+      "status": "completed",
+      "sections": [
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        48,
+        49
+      ],
+      "file": "docs/milestones/M03.md",
+      "acceptance": [
+        {
+          "id": "M03-A01",
+          "text": "Briefing livre vira estrutura confirmável com perguntas mínimas agrupadas; objetivo principal/secundário, justificativa e confiança."
+        },
+        {
+          "id": "M03-A02",
+          "text": "Creative Director consulta marca, produto e memória relevante por interfaces; decisões estratégicas registram proveniência."
+        },
+        {
+          "id": "M03-A03",
+          "text": "Seis pilares iniciais e limite de cinco ideias ativas por pilar; fixar/bloquear, rejeitar e arquivar com motivo impedem reapresentação superficial."
+        },
+        {
+          "id": "M03-A04",
+          "text": "Conteúdo adjacente explica público, relação com KIROS e ponte; datas prioritárias geram rascunhos 2–3 meses antes, sem oficializar calendário."
+        },
+        {
+          "id": "M03-A05",
+          "text": "Memória tipada recupera/compacta somente contexto relevante; conflitos mostram origens e nunca sobrescrevem dados oficiais automaticamente."
+        },
+        {
+          "id": "M03-A06",
+          "text": "Testes cobrem objetivos, pilares, seleção de produto sem dados comerciais, limites, recuperação, compactação, relevância e conflitos."
+        }
+      ],
+      "checkpoint": {
+        "path": "docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/checkpoint.json",
+        "at": "2026-09-12T15:11:52.330400+00:00"
+      },
+      "blocker": null
+    },
+    {
+      "id": "M04",
+      "title": "Campanha, storyboard e aprovação",
+      "depends_on": [
+        "M03"
+      ],
+      "status": "pending",
+      "sections": [
+        10,
+        23,
+        31,
+        56,
+        66,
+        75
+      ],
+      "file": "docs/milestones/M04.md",
+      "acceptance": [
+        {
+          "id": "M04-A01",
+          "text": "Campanha persiste briefing, estratégia, produtos, storyboard e pipeline editável com estados explícitos."
+        },
+        {
+          "id": "M04-A02",
+          "text": "Pipeline usa mínimo de etapas necessário; engine por slide e edição localizada preservam etapas não afetadas."
+        },
+        {
+          "id": "M04-A03",
+          "text": "Tela de aprovação mostra objetivo, conceito, produtos, storyboard, engine, pipeline, gerações, custo e confiança."
+        },
+        {
+          "id": "M04-A04",
+          "text": "Modos minimal/step_by_step/full_control permitem aprovar conjunto ou etapa; aprovação fica vinculada à versão do plano e orçamento."
+        },
+        {
+          "id": "M04-A05",
+          "text": "Mudança material invalida aprovação anterior; execução sem aprovação válida é recusada no servidor; testes cobrem transições e edição após aprovação."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M05",
+      "title": "Fila, execução e recuperação",
+      "depends_on": [
+        "M04"
+      ],
+      "status": "pending",
+      "sections": [
+        50,
+        51,
+        52,
+        67,
+        68,
+        69
+      ],
+      "file": "docs/milestones/M05.md",
+      "acceptance": [
+        {
+          "id": "M05-A01",
+          "text": "Fila persistente executa pipelines com concorrência, prioridade, rate limit, timeout e número finito de retries."
+        },
+        {
+          "id": "M05-A02",
+          "text": "Pausa, retomada, cancelamento de geração/slide/campanha preservam resultados concluídos e informam custo ou cobrança ainda possível."
+        },
+        {
+          "id": "M05-A03",
+          "text": "Idempotência e reconciliação de resultado incerto evitam geração/cobrança duplicada; timeout não dispara nova cobrança automaticamente."
+        },
+        {
+          "id": "M05-A04",
+          "text": "Modos de acompanhamento Quick/Supervised/Detailed/Manual e falhas mostram provider, etapa, causa provável, correção e custo potencial."
+        },
+        {
+          "id": "M05-A05",
+          "text": "Testes com mocks cobrem concorrência, orçamento reservado, retries, reinício do worker, cancelamento em andamento e retomada sem duplicação."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M06",
+      "title": "Fidelidade, ativos e versões",
+      "depends_on": [
+        "M05"
+      ],
+      "status": "pending",
+      "sections": [
+        27,
+        53,
+        54,
+        78,
+        80
+      ],
+      "file": "docs/milestones/M06.md",
+      "acceptance": [
+        {
+          "id": "M06-A01",
+          "text": "Fidelity Check usa referência real e atributos críticos; score explicitamente estimado, threshold configurável e recommend_before_spend como padrão."
+        },
+        {
+          "id": "M06-A02",
+          "text": "Falha explica diferenças, sugere correção, estima custo e respeita aprovação; auto_regenerate continua sujeito a orçamento e limite de tentativas."
+        },
+        {
+          "id": "M06-A03",
+          "text": "Versões registram motivo, solicitante, engine, prompt deduplicado/referenciado, referências, custo, fidelidade e timestamp."
+        },
+        {
+          "id": "M06-A04",
+          "text": "Comparar até três versões, escolher, restaurar e usar como base preserva histórico; regeneração afeta apenas asset/slide selecionado."
+        },
+        {
+          "id": "M06-A05",
+          "text": "Fixtures de produto correto, produto/etiqueta/logo alterados e limites de threshold validam o contrato; não apresentar fixture como acurácia real de visão."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M07",
+      "title": "Layout determinístico e editor",
+      "depends_on": [
+        "M06"
+      ],
+      "status": "pending",
+      "sections": [
+        28,
+        29,
+        30
+      ],
+      "file": "docs/milestones/M07.md",
+      "acceptance": [
+        {
+          "id": "M07-A01",
+          "text": "Layout 4:5 e 9:16 renderiza/exporta texto exato, logo, tipografia e elementos headline/image/logo/CTA/decorative sem LLM."
+        },
+        {
+          "id": "M07-A02",
+          "text": "Editor altera posição, escala, enquadramento e iluminação com proteção por atributo; protected confirma, critical exige unlock explícito auditado."
+        },
+        {
+          "id": "M07-A03",
+          "text": "Edição nunca muda Product Bible oficial automaticamente; testes verificam bloqueio também no servidor."
+        },
+        {
+          "id": "M07-A04",
+          "text": "Templates active/archived/experimental, famílias e composição aprovada funcionam; experimental exige autorização e sobreuso gera alerta."
+        },
+        {
+          "id": "M07-A05",
+          "text": "Testes verificam proporções, texto, logo e proteção; revisão visual em ambos formatos comprova legibilidade e ausência de cortes."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M08",
+      "title": "Copy, legendas e Stories",
+      "depends_on": [
+        "M07"
+      ],
+      "status": "pending",
+      "sections": [
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "file": "docs/milestones/M08.md",
+      "acceptance": [
+        {
+          "id": "M08-A01",
+          "text": "Modos automatic/suggestions/user_provided/ai_plus_user respeitam voz brasileira e preservam contribuição do usuário."
+        },
+        {
+          "id": "M08-A02",
+          "text": "Sem hashtags automáticas ou emojis editoriais; CTA contextual é opcional; preço só com justificativa, dado real e aprovação."
+        },
+        {
+          "id": "M08-A03",
+          "text": "Nunca inventar preço, estoque, promoção ou disponibilidade; SEO natural e URL de destino configurável, sem integração profunda com site."
+        },
+        {
+          "id": "M08-A04",
+          "text": "Stories independentes ou derivados têm planejamento de sequência próprio, não simples redimensionamento do feed."
+        },
+        {
+          "id": "M08-A05",
+          "text": "Testes cobrem dados ausentes, modos de legenda, CTA, preço e Stories; conteúdo entra na auditoria pré-publicação."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M09",
+      "title": "Calendário e Instagram controlado",
+      "depends_on": [
+        "M08"
+      ],
+      "status": "pending",
+      "sections": [
+        39,
+        40,
+        41,
+        42,
+        79
+      ],
+      "file": "docs/milestones/M09.md",
+      "acceptance": [
+        {
+          "id": "M09-A01",
+          "text": "Calendário organiza conteúdo, pilares e sazonalidade respeitando frequência, prioridades e saturação disponível."
+        },
+        {
+          "id": "M09-A02",
+          "text": "Após aprovação total, recomenda horário com fonte/camada/confiança e registra recommended_time/selected_time/accepted/data_basis/later_performance; manual vence."
+        },
+        {
+          "id": "M09-A03",
+          "text": "SocialPublisher implementa fluxo operacional suportado pela documentação oficial vigente; contas/permissões/formatos e limitações ficam documentados."
+        },
+        {
+          "id": "M09-A04",
+          "text": "Auditoria verifica aprovação da versão, fidelidade, copy, direitos de uso, formatos e dados comerciais antes de publicar/agendar; publicação requer confirmação explícita."
+        },
+        {
+          "id": "M09-A05",
+          "text": "Mock testa agendamento, timezone, recusa sem confirmação, versão modificada, indisponibilidade e reconciliação sem publicar duplicado."
+        },
+        {
+          "id": "M09-A06",
+          "text": "Acesso real pendente é registrado como não validado; não publicar conteúdo real durante desenvolvimento nem simular sucesso de uma publicação real."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M10",
+      "title": "Diversidade, tendências e experimentos",
+      "depends_on": [
+        "M09"
+      ],
+      "status": "pending",
+      "sections": [
+        32,
+        33,
+        43,
+        44,
+        45,
+        46
+      ],
+      "file": "docs/milestones/M10.md",
+      "acceptance": [
+        {
+          "id": "M10-A01",
+          "text": "Mapa de saturação e diversidade usa dimensões das seções 32–33, alerta e permite repetição intencional."
+        },
+        {
+          "id": "M10-A02",
+          "text": "Análise competitiva informada e descoberta por categoria/localização usam fontes disponíveis, origem e data; dados mock identificados, sem inventar acesso externo."
+        },
+        {
+          "id": "M10-A03",
+          "text": "Tendências exibem relevância, saturação, risco de cópia, interpretação KIROS, potencial, confiança e recomendação."
+        },
+        {
+          "id": "M10-A04",
+          "text": "Experimentos classificam risco; médio/alto aguardam aprovação e baixo respeita autorização existente."
+        },
+        {
+          "id": "M10-A05",
+          "text": "A/B registra hipótese, controle, variável, resultado, amostra e confiança; amostras pequenas não geram conclusão forte; testes cobrem essas restrições."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M11",
+      "title": "Aprendizado, busca e experiência integrada",
+      "depends_on": [
+        "M10"
+      ],
+      "status": "pending",
+      "sections": [
+        47,
+        55,
+        57,
+        58,
+        59,
+        61
+      ],
+      "file": "docs/milestones/M11.md",
+      "acceptance": [
+        {
+          "id": "M11-A01",
+          "text": "Correções geram aprendizado local; preferências/regras permanentes e prompts só são salvos oficialmente com aprovação."
+        },
+        {
+          "id": "M11-A02",
+          "text": "Busca natural/semântica com filtros cobre campanhas, produtos, imagens, versões, ideias, templates, decisões e histórico; ignora acentos/caixa preservando original."
+        },
+        {
+          "id": "M11-A03",
+          "text": "Command Bar executa navegação e ações reversíveis; gastos mostram impacto e publicação continua exigindo confirmação específica."
+        },
+        {
+          "id": "M11-A04",
+          "text": "Dashboard Hoje/Oportunidade/Próximo passo/Calendário/Criação/Aprendizados e biblioteca integram dados existentes sem duplicar serviços."
+        },
+        {
+          "id": "M11-A05",
+          "text": "Testes cobrem aprovação de aprendizado, proveniência, busca relevante com acentos e recusa de comando ambíguo para gastos/publicação."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    },
+    {
+      "id": "M12",
+      "title": "Backup e aceite completo da V1",
+      "depends_on": [
+        "M11"
+      ],
+      "status": "pending",
+      "sections": [
+        71,
+        81,
+        82,
+        84,
+        86
+      ],
+      "file": "docs/milestones/M12.md",
+      "acceptance": [
+        {
+          "id": "M12-A01",
+          "text": "Backup consistente de SQLite e arquivos inclui marca, produtos, campanhas, assets e configurações protegidas; restauração testada sem apagar original."
+        },
+        {
+          "id": "M12-A02",
+          "text": "Executar fluxo completo ideia → campanha → geração mock → fidelidade → layout → copy → auditoria → aprovação → publicação mock → medição → aprendizado."
+        },
+        {
+          "id": "M12-A03",
+          "text": "Mapear cada item das seções 81 e 84 a evidência concreta e todos os grupos de testes da seção 82 a comandos executados."
+        },
+        {
+          "id": "M12-A04",
+          "text": "Executar testes completos, build, inicialização e revisão da UI; nenhum erro crítico conhecido permanece."
+        },
+        {
+          "id": "M12-A05",
+          "text": "Entregar instruções de uso/recuperação e matriz de integrações implementadas, testadas com fixtures, testadas ao vivo ou bloqueadas."
+        },
+        {
+          "id": "M12-A06",
+          "text": "Separar prontidão local com mocks de prontidão real: se validação real necessária depende de credenciais, custo ou publicação ainda não autorizados, registrar bloqueio e não declarar V1 pronta para uso real."
+        }
+      ],
+      "checkpoint": null,
+      "blocker": null
+    }
+  ]
+}

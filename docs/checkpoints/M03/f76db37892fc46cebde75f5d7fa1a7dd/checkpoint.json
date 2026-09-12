@@ -1,0 +1,120 @@
+{
+  "at": "2026-09-12T15:11:52.330400+00:00",
+  "report": {
+    "milestone": "M03",
+    "summary": "Implementação do Creative Director como cérebro estratégico central da V1 (Seção 9), briefing híbrido com conversão de linguagem livre em dados estruturados e perguntas mínimas agrupadas, recomendação de objetivos e seleção de produtos por afinidade visual/catálogo sem dependência de dados comerciais, Banco de Ideias com 6 pilares iniciais e teto estrito de 5 ideias ativas por pilar, algoritmo anti-reapresentação superficial por fingerprint, sugestões de conteúdo adjacente com ponte de marca, radar sazonal antecipado 2-3 meses antes com 4 fases (Warm-up, Consideração, Conversão, Last Call) sem oficializar calendário, memória tipada com 6 tipos estruturados e proveniência, recuperação seletiva e compactação de contexto, detecção de conflitos protegendo dados oficiais da Brand/Product Bible contra sobrescrita automática, e interface /criar com proteção CSRF e Origin/Host.",
+    "critical_errors": [],
+    "limitations": [
+      "Testes e simulação operam em modo mock local; nenhuma chamada externa de LLM ou tráfego pago de rede foi acionada.",
+      "O planejamento sazonal e ideias adjacentes geram rascunhos estratégicos protegidos; a inserção no calendário oficial requer aprovação explícita em milestones futuras.",
+      "Novos pilares sugeridos ('Outro') são registrados como propostas pendentes e nunca são oficializados sem confirmação do usuário."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M03-A01": {
+        "files": [
+          "kiros/core/director.py",
+          "kiros/ui/creator.py",
+          "tests/test_director.py",
+          "tests/test_creator_http.py",
+          "docs/evidence/M03-desktop.png"
+        ],
+        "verification": "test_freeform_briefing_to_structured_conversion, test_objective_recommendation_matrix e test_interpret_briefing_flow comprovam que briefings livres são convertidos em estruturas confirmáveis com perguntas mínimas agrupadas por afinidade temática (sem questionários excessivos). Recomenda objetivo principal, secundário, justificativa e percentual de confiança com base em matriz semântica."
+      },
+      "M03-A02": {
+        "files": [
+          "kiros/core/director.py",
+          "kiros/director/memory.py",
+          "kiros/library.py",
+          "tests/test_director.py",
+          "tests/test_memory.py"
+        ],
+        "verification": "test_creative_director_consults_brand_product_and_memory e test_strategic_decisions_record_provenance comprovam que o CreativeDirector acessa Brand Bible, Product Bible e memórias tipadas estritamente através de interfaces desacopladas. Decisões estratégicas são persistidas em strategic_decisions com proveniência obrigatória e rastreabilidade."
+      },
+      "M03-A03": {
+        "files": [
+          "kiros/director/ideas.py",
+          "kiros/migrations/004_creative_director_and_ideas.sql",
+          "kiros/ui/creator.py",
+          "tests/test_ideas.py",
+          "tests/test_creator_http.py",
+          "docs/evidence/M03-desktop.png"
+        ],
+        "verification": "test_initial_six_pillars_and_propose_other, test_active_ideas_limit_per_pillar, test_pin_and_rejection_prevents_superficial_re_presentation e test_idea_bank_add_pin_reject_and_limit_via_http comprovam os 6 pilares iniciais, proposta de novo pilar pendente de aprovação, limite estrito de 5 ideias ativas por pilar, fixação de ideias e bloqueio algorítmico por fingerprint de reapresentação superficial de ideias rejeitadas."
+      },
+      "M03-A04": {
+        "files": [
+          "kiros/director/ideas.py",
+          "kiros/ui/creator.py",
+          "tests/test_ideas.py",
+          "docs/evidence/M03-desktop.png",
+          "docs/evidence/M03-mobile.png"
+        ],
+        "verification": "test_adjacent_content_explains_audience_relation_and_bridge comprova que sugestões de conteúdo de topo de funil detalham por que atraem o público, qual a relação com a KIROS e como criar a ponte para a marca. test_seasonal_planning_priorities_and_phases_without_official_calendar comprova planejamento de Natal e Dia das Mães 2–3 meses antes estruturado nas 4 fases da Seção 15, mantido como rascunho sem oficialização automática no calendário."
+      },
+      "M03-A05": {
+        "files": [
+          "kiros/director/memory.py",
+          "kiros/core/director.py",
+          "tests/test_memory.py"
+        ],
+        "verification": "test_selective_retrieval_and_provenance, test_memory_compaction_and_budget e test_conflict_detection_and_non_overwriting_of_official_data comprovam os 6 tipos de memória com proveniência, recuperação seletiva sem despejar contexto desnecessário, compactação com limite de orçamento e detecção rigorosa de conflitos com dados oficiais da Brand e Product Bible (classificando por criticidade e impacto), garantindo que dados oficiais nunca sejam sobrescritos automaticamente."
+      },
+      "M03-A06": {
+        "files": [
+          "tests/test_director.py",
+          "tests/test_ideas.py",
+          "tests/test_memory.py",
+          "tests/test_creator_http.py"
+        ],
+        "verification": "Suite completa de testes unitários e de integração HTTP cobrindo recomendação de objetivos (matriz), governança de 6 pilares, seleção de produto baseada em catálogo e atributos sem requerer dados comerciais de vendas, limites de 5 ideias ativas por pilar, recuperação seletiva de memórias, compactação por orçamento de tokens e detecção de conflitos sem mutação de dados oficiais."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/evidence/M03-desktop.png": "d8ebc435841ef6ccb4e4759631beb9acd30e0c149ef322b6bf576e196385c3d5",
+    "docs/evidence/M03-mobile.png": "6171fd7a39de028f541314a3cf45929f2fa9ccae12b8f2163a668ff407873170",
+    "kiros/core/director.py": "8baf9df1a9128523fb74451d267e36a819f80f768ac89c0b789ae35ff006524b",
+    "kiros/director/ideas.py": "ca63ffd668da73ce3c090e035138b32e909c397550209de8456587614082532a",
+    "kiros/director/memory.py": "d0f229acb93db855c28d2fa9b60117e6d0e1c4e0b2d72200294bb0a950c2676f",
+    "kiros/library.py": "489e054346089507f1edc60ae4fe2ee5d73a7fc7ae53f3928f76039dbb42a902",
+    "kiros/migrations/004_creative_director_and_ideas.sql": "63a6e0a28caa9da268d8db1401302f2d72931d6b6b8add520ad0f99dceb196e3",
+    "kiros/ui/creator.py": "8028d0016417a6eab5cfddef7b4ef7550c3ae9f1499d6bced81b7783efc5bab7",
+    "tests/test_creator_http.py": "a1fce5f9e31f6039d7da9f05ddc17dc43a14f5f014f20571c415716e750c41fd",
+    "tests/test_director.py": "01c089e44b75dbdf1370e50821a7b88b253b7fa2ed915fc54efbf3b652ac2aaf",
+    "tests/test_ideas.py": "e02d14d878f750094441712336fe37017ad30bdad0978794d10f1bf3fe4525d0",
+    "tests/test_memory.py": "fb3e35182ee02e8dd6e24efe319c33a10c484bead39b044633b7ae27b4e691ef"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}
