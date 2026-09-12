@@ -32,14 +32,16 @@ class CampaignManager:
         cost_manager: Optional[CostManager] = None,
         router: Optional[ImageEngineRouter] = None,
         queue: Optional[Any] = None,
+        fidelity_service: Optional[Any] = None,
     ):
         self.db = db
         self.cost_manager = cost_manager
         self.router = router
         self.queue = queue
+        self.fidelity_service = fidelity_service
         if self.queue is None and self.cost_manager is not None:
             from kiros.execution.queue import ExecutionQueue
-            self.queue = ExecutionQueue(self.db, self.cost_manager)
+            self.queue = ExecutionQueue(self.db, self.cost_manager, fidelity_service=self.fidelity_service)
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -706,3 +708,49 @@ class CampaignManager:
             'approved_by': campaign.approved_by,
             'approved_at': campaign.approved_at,
         }
+
+    def compare_slide_versions(self, version_ids: List[str]) -> Dict[str, Any]:
+        """Compara visualmente até 3 versões de slides lado a lado (Seção 54)."""
+        if not self.queue:
+            raise RuntimeError("Fila de execução não configurada.")
+        return self.queue.compare_versions(version_ids)
+
+    def choose_slide_version(self, version_id: str, chooser: str = 'user') -> Any:
+        """Define uma versão como ativa para o slide (Seção 54, 80)."""
+        if not self.queue:
+            raise RuntimeError("Fila de execução não configurada.")
+        return self.queue.choose_version(version_id, chooser)
+
+    def restore_slide_version(self, version_id: str, restorer: str = 'user') -> Any:
+        """Restaura versão anterior mantendo histórico preservado (Seção 53, 80)."""
+        if not self.queue:
+            raise RuntimeError("Fila de execução não configurada.")
+        return self.queue.restore_version(version_id, restorer)
+
+    def use_version_as_base(
+        self,
+        version_id: str,
+        new_prompt: Optional[str] = None,
+        requester: str = 'user',
+    ) -> Any:
+        """Usa versão preservada como base para intervenção localizada no slide (Seção 53, 54)."""
+        if not self.queue:
+            raise RuntimeError("Fila de execução não configurada.")
+        return self.queue.use_version_as_base(version_id, new_prompt, requester)
+
+    def record_version_learning(
+        self,
+        version_id: str,
+        learning_note: str,
+        recorder: str = 'user',
+    ) -> str:
+        """Registra aprendizado na memória tipada e histórico (Seção 54, 80)."""
+        if not self.queue:
+            raise RuntimeError("Fila de execução não configurada.")
+        return self.queue.record_version_learning(version_id, learning_note, recorder)
+
+    def list_learnings_for_slide(self, slide_id: str) -> List[Dict[str, Any]]:
+        if not self.queue:
+            return []
+        return self.queue.list_learnings_for_slide(slide_id)
+

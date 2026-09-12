@@ -1,6 +1,8 @@
 """Fila persistente em SQLite para execução de campanhas, storyboard e pipelines (M05)."""
 from datetime import datetime, timezone
+import hashlib
 import json
+import logging
 import sqlite3
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,13 +25,23 @@ from kiros.execution.models import (
 )
 from kiros.infrastructure.local import SQLiteDatabase
 
+logger = logging.getLogger(__name__)
+
 
 class ExecutionQueue:
     """Gerenciador da fila persistente com concorrência, prioridade, rate limit, timeout e idempotência."""
 
-    def __init__(self, db: SQLiteDatabase, cost_manager: CostManager):
+    def __init__(
+        self,
+        db: SQLiteDatabase,
+        cost_manager: CostManager,
+        fidelity_service: Optional[Any] = None,
+        memory_store: Optional[Any] = None,
+    ):
         self.db = db
         self.cost_manager = cost_manager
+        self.fidelity_service = fidelity_service
+        self.memory_store = memory_store
         # Registro em memória de timestamps de requisições por provider para rate limiting
         self._provider_call_timestamps: Dict[str, List[float]] = {}
         # Configuração de taxa máxima de requisições por minuto por provider
@@ -325,7 +337,8 @@ class ExecutionQueue:
                 (now, step_id),
             )
 
-            # Preserva versão de geração (Seção 52 e 53: Nunca apagar versões)
+            # Preserva versão de geração (Seção 52, 53 e M06-A03: Nunca apagar versões)
+            ver_id = None
             if slide_id:
                 ver_count_row = conn.execute(
                     'SELECT COALESCE(MAX(version_number), 0) + 1 FROM execution_versions WHERE slide_id=?',
@@ -333,16 +346,32 @@ class ExecutionQueue:
                 ).fetchone()
                 ver_num = int(ver_count_row[0])
 
+                # Marca versões anteriores como não-atuais
+                conn.execute('UPDATE execution_versions SET is_current=0 WHERE slide_id=?', (slide_id,))
+
+                prompt_str = job_dict['prompt'] or ''
+                prompt_ref = hashlib.sha256(prompt_str.encode('utf-8')).hexdigest()[:16]
+
+                params_data = json.loads(job_dict['params_json'] or '{}')
+                reason = params_data.get('reason', 'Geração inicial' if ver_num == 1 else 'Regeneração localizada')
+                requester = params_data.get('requester', 'system')
+                parent_version_id = params_data.get('parent_version_id')
+                references_list = params_data.get('references', [])
+
+                ver_id = uuid.uuid4().hex
                 conn.execute(
                     '''INSERT INTO execution_versions (
                         id, campaign_id, slide_id, step_id, job_id, version_number,
-                        provider_id, model_id, prompt, asset_id, actual_cost, status, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?)''',
+                        provider_id, model_id, prompt, asset_id, actual_cost, status,
+                        reason, requester, prompt_ref, references_json, parent_version_id, is_current,
+                        created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, 1, ?)''',
                     (
-                        uuid.uuid4().hex, campaign_id, slide_id, step_id, job_id, ver_num,
-                        job_dict['provider_id'], job_dict['model_id'], job_dict['prompt'], output_asset_id,
-                        float(actual_cost), now,
-                    )
+                        ver_id, campaign_id, slide_id, step_id, job_id, ver_num,
+                        job_dict['provider_id'], job_dict['model_id'], prompt_str, output_asset_id,
+                        float(actual_cost), reason, requester, prompt_ref,
+                        json.dumps(references_list, ensure_ascii=False), parent_version_id, now,
+                    ),
                 )
 
             # Verifica se todas as etapas da campanha foram concluídas
@@ -355,7 +384,31 @@ class ExecutionQueue:
                 conn.execute("UPDATE campaigns SET status='completed', updated_at=? WHERE id=?", (now, campaign_id))
 
             updated = conn.execute('SELECT * FROM execution_jobs WHERE id=?', (job_id,)).fetchone()
-            return self._row_to_job(updated)
+
+        # Checagem automática de fidelidade de produto fora da transação de escrita (Seção 27)
+        if self.fidelity_service and slide_id and ver_id and output_asset_id:
+            try:
+                with sqlite3.connect(self.db.path) as c:
+                    c.row_factory = sqlite3.Row
+                    camp_row = c.execute('SELECT products_json FROM campaigns WHERE id=?', (campaign_id,)).fetchone()
+                    if camp_row and camp_row['products_json']:
+                        prods = json.loads(camp_row['products_json'])
+                        if prods and isinstance(prods, list) and len(prods) > 0:
+                            prod_id = prods[0].get('product_id')
+                            if prod_id:
+                                self.fidelity_service.check_fidelity(
+                                    campaign_id=campaign_id,
+                                    slide_id=slide_id,
+                                    version_id=ver_id,
+                                    product_id=prod_id,
+                                    asset_id=output_asset_id,
+                                    provider_id=job_dict['provider_id'],
+                                    model_id=job_dict['model_id'],
+                                )
+            except Exception as e:
+                logger.warning("Aviso na checagem automática de fidelidade: %s", e)
+
+        return self._row_to_job(updated)
 
     def record_job_failure(
         self,
@@ -648,6 +701,7 @@ class ExecutionQueue:
         slide_id: str,
         new_prompt: Optional[str] = None,
         engine_override: Optional[str] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> ExecutionJob:
         """Intervenção localizada: regenera somente o slide afetado e preserva todo o restante (Seção 51)."""
         now = self._now()
@@ -678,6 +732,11 @@ class ExecutionQueue:
         regen_key = f"{campaign_id}:{step_dict['id']}:regen:{uuid.uuid4().hex[:8]}"
         job_id = uuid.uuid4().hex
 
+        merged_params = json.loads(step_dict['params_json'] or '{}')
+        if params:
+            merged_params.update(params)
+        merged_params_json = json.dumps(merged_params, ensure_ascii=False)
+
         with sqlite3.connect(self.db.path, timeout=30.0) as conn:
             conn.row_factory = sqlite3.Row
             conn.execute('BEGIN IMMEDIATE')
@@ -690,7 +749,7 @@ class ExecutionQueue:
                 ) VALUES (?, ?, ?, ?, ?, 'pending', 5, 0, 3, 30.0, ?, ?, ?, ?, ?, 0.0, ?, ?, ?)''',
                 (
                     job_id, campaign_id, slide_id, step_dict['id'], regen_key,
-                    prov_id, mod_id, prompt, step_dict['params_json'], cost, res_id, now, now,
+                    prov_id, mod_id, prompt, merged_params_json, cost, res_id, now, now,
                 )
             )
             conn.execute("UPDATE campaigns SET status='running', updated_at=? WHERE id=?", (now, campaign_id))
@@ -712,31 +771,210 @@ class ExecutionQueue:
             ).fetchall()
             return [self._row_to_job(r) for r in rows]
 
+    def _row_to_version(self, r: sqlite3.Row) -> ExecutionVersion:
+        keys = r.keys()
+        ref_data = json.loads(r['references_json']) if 'references_json' in keys and r['references_json'] else []
+        details_data = json.loads(r['fidelity_details_json']) if 'fidelity_details_json' in keys and r['fidelity_details_json'] else {}
+        return ExecutionVersion(
+            id=r['id'],
+            campaign_id=r['campaign_id'],
+            slide_id=r['slide_id'],
+            step_id=r['step_id'],
+            job_id=r['job_id'],
+            version_number=int(r['version_number']),
+            provider_id=r['provider_id'],
+            model_id=r['model_id'],
+            prompt=r['prompt'],
+            asset_id=r['asset_id'],
+            actual_cost=float(r['actual_cost']),
+            status=r['status'],
+            reason=r['reason'] if 'reason' in keys and r['reason'] else 'Geração inicial',
+            requester=r['requester'] if 'requester' in keys and r['requester'] else 'system',
+            prompt_ref=r['prompt_ref'] if 'prompt_ref' in keys else None,
+            references=ref_data,
+            fidelity_score=float(r['fidelity_score']) if 'fidelity_score' in keys and r['fidelity_score'] is not None else None,
+            fidelity_details=details_data,
+            fidelity_status=r['fidelity_status'] if 'fidelity_status' in keys and r['fidelity_status'] else 'pending',
+            parent_version_id=r['parent_version_id'] if 'parent_version_id' in keys else None,
+            is_current=bool(r['is_current']) if 'is_current' in keys else True,
+            created_at=r['created_at'],
+        )
+
+    def get_version(self, version_id: str) -> Optional[ExecutionVersion]:
+        """Recupera uma versão de execução preservada por ID (Seção 53)."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute('SELECT * FROM execution_versions WHERE id=?', (version_id,)).fetchone()
+            return self._row_to_version(row) if row else None
+
     def list_versions_for_slide(self, slide_id: str) -> List[ExecutionVersion]:
+        """Lista todas as versões históricas preservadas de um slide (Seção 53, 80)."""
         with sqlite3.connect(self.db.path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 'SELECT * FROM execution_versions WHERE slide_id=? ORDER BY version_number ASC',
                 (slide_id,),
             ).fetchall()
-            return [
-                ExecutionVersion(
-                    id=r['id'],
-                    campaign_id=r['campaign_id'],
-                    slide_id=r['slide_id'],
-                    step_id=r['step_id'],
-                    job_id=r['job_id'],
-                    version_number=int(r['version_number']),
-                    provider_id=r['provider_id'],
-                    model_id=r['model_id'],
-                    prompt=r['prompt'],
-                    asset_id=r['asset_id'],
-                    actual_cost=float(r['actual_cost']),
-                    status=r['status'],
-                    created_at=r['created_at'],
+            return [self._row_to_version(r) for r in rows]
+
+    def compare_versions(self, version_ids: List[str]) -> Dict[str, Any]:
+        """Compara visualmente até 3 versões lado a lado exibindo metadados e diferenças (Seção 54)."""
+        if not version_ids:
+            raise ValueError("Selecione pelo menos uma versão para comparar.")
+        if len(version_ids) > 3:
+            raise ValueError("Permitido comparar no máximo 3 versões lado a lado (Seção 54).")
+
+        versions = []
+        for vid in version_ids:
+            v = self.get_version(vid)
+            if not v:
+                raise ValueError(f"Versão '{vid}' não encontrada.")
+            versions.append(v)
+
+        engines = [f"{v.provider_id}:{v.model_id}" for v in versions]
+        prompts = [v.prompt for v in versions]
+        costs = [v.actual_cost for v in versions]
+        fidelities = [v.fidelity_score for v in versions]
+
+        engines_differ = len(set(engines)) > 1
+        prompts_differ = len(set(prompts)) > 1
+        costs_differ = len(set(costs)) > 1
+        fidelities_differ = len(set(fidelities)) > 1
+
+        differences = {
+            'engines_differ': engines_differ,
+            'engines': engines,
+            'prompts_differ': prompts_differ,
+            'cost_min': min(costs) if costs else 0.0,
+            'cost_max': max(costs) if costs else 0.0,
+            'cost_diff': round(max(costs) - min(costs), 4) if costs else 0.0,
+            'fidelity_scores': fidelities,
+            'fidelities_differ': fidelities_differ,
+        }
+
+        return {
+            'slide_id': versions[0].slide_id,
+            'campaign_id': versions[0].campaign_id,
+            'versions': [v.to_dict() for v in versions],
+            'differences': differences,
+        }
+
+    def choose_version(self, version_id: str, chooser: str = 'user') -> ExecutionVersion:
+        """Define uma versão como a ativa/escolhida do slide, preservando histórico completo (Seção 54, 80)."""
+        ver = self.get_version(version_id)
+        if not ver:
+            raise ValueError(f"Versão '{version_id}' não encontrada.")
+
+        now = self._now()
+        with sqlite3.connect(self.db.path, timeout=30.0) as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            conn.execute(
+                'UPDATE execution_versions SET is_current = CASE WHEN id=? THEN 1 ELSE 0 END WHERE slide_id=?',
+                (version_id, ver.slide_id),
+            )
+            engine_str = f"{ver.provider_id}:{ver.model_id}"
+            conn.execute(
+                "UPDATE storyboard_slides SET engine_override=?, updated_at=? WHERE id=?",
+                (engine_str, now, ver.slide_id),
+            )
+        return self.get_version(version_id)
+
+    def restore_version(self, version_id: str, restorer: str = 'user') -> ExecutionVersion:
+        """Restaura uma versão anterior como ativa sem apagar as posteriores (Seção 53, 80, M06-A04)."""
+        ver = self.get_version(version_id)
+        if not ver:
+            raise ValueError(f"Versão '{version_id}' não encontrada.")
+
+        now = self._now()
+        with sqlite3.connect(self.db.path, timeout=30.0) as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            conn.execute(
+                'UPDATE execution_versions SET is_current = CASE WHEN id=? THEN 1 ELSE 0 END WHERE slide_id=?',
+                (version_id, ver.slide_id),
+            )
+            engine_str = f"{ver.provider_id}:{ver.model_id}"
+            conn.execute(
+                "UPDATE storyboard_slides SET engine_override=?, updated_at=? WHERE id=?",
+                (engine_str, now, ver.slide_id),
+            )
+        return self.get_version(version_id)
+
+    def use_version_as_base(
+        self,
+        version_id: str,
+        new_prompt: Optional[str] = None,
+        requester: str = 'user',
+    ) -> ExecutionJob:
+        """Usa uma versão preservada como base para intervenção localizada no slide (Seção 53, 54, M06-A04)."""
+        base = self.get_version(version_id)
+        if not base:
+            raise ValueError(f"Versão '{version_id}' não encontrada.")
+
+        engine_override = f"{base.provider_id}:{base.model_id}"
+        prompt = (new_prompt or base.prompt).strip()
+        params = {
+            'reason': f"Regeneração baseada na versão v{base.version_number}",
+            'requester': requester,
+            'parent_version_id': base.id,
+            'base_version_number': base.version_number,
+        }
+        return self.regenerate_slide(
+            campaign_id=base.campaign_id,
+            slide_id=base.slide_id,
+            new_prompt=prompt,
+            engine_override=engine_override,
+            params=params,
+        )
+
+    def record_version_learning(
+        self,
+        version_id: str,
+        learning_note: str,
+        recorder: str = 'user',
+    ) -> str:
+        """Registra aprendizado derivado de uma versão ou comparação (Seção 54, 80)."""
+        clean_note = (learning_note or '').strip()
+        if not clean_note:
+            raise ValueError("Nota de aprendizado não pode ser vazia.")
+
+        ver = self.get_version(version_id)
+        if not ver:
+            raise ValueError(f"Versão '{version_id}' não encontrada.")
+
+        learning_id = uuid.uuid4().hex
+        now = self._now()
+
+        with sqlite3.connect(self.db.path, timeout=30.0) as conn:
+            conn.execute(
+                '''INSERT INTO version_learnings (
+                    id, campaign_id, slide_id, version_id, learning_note, action_taken, recorder, created_at
+                ) VALUES (?, ?, ?, ?, ?, 'record_learning', ?, ?)''',
+                (learning_id, ver.campaign_id, ver.slide_id, ver.id, clean_note, recorder, now),
+            )
+
+        if self.memory_store:
+            try:
+                self.memory_store.store_memory(
+                    memory_type='creative_decision',
+                    key=f"slide_learning_v{ver.version_number}",
+                    value=f"Aprendizado na versão v{ver.version_number}: {clean_note}",
+                    scope=ver.campaign_id,
                 )
-                for r in rows
-            ]
+            except Exception as e:
+                logger.warning("Aviso ao salvar aprendizado em memória tipada: %s", e)
+
+        return learning_id
+
+    def list_learnings_for_slide(self, slide_id: str) -> List[Dict[str, Any]]:
+        """Lista aprendizados registrados para um slide (Seção 54, 80)."""
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                'SELECT * FROM version_learnings WHERE slide_id=? ORDER BY created_at DESC',
+                (slide_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
 
     def _row_to_job(self, r: sqlite3.Row) -> ExecutionJob:
         diag = None

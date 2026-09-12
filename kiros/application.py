@@ -16,6 +16,8 @@ from kiros.campaigns.manager import CampaignManager
 from kiros.execution.queue import ExecutionQueue
 from kiros.execution.worker import ExecutionWorker
 
+from kiros.fidelity import ProductFidelityService
+
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
     ('conteudo', 'Conteúdo'), ('biblioteca', 'Biblioteca'), ('insights', 'Insights'),
@@ -37,9 +39,16 @@ class Application:
         self.router = ImageEngineRouter(self.database, self.providers)
         self.cost_manager = CostManager(self.database)
         self.context_optimizer = ContextOptimizer(self.cost_manager)
-        self.queue = ExecutionQueue(self.database, self.cost_manager)
+        self.fidelity_service = ProductFidelityService(
+            self.database, self.library, self.cost_manager, self.storage, self.memory
+        )
+        self.queue = ExecutionQueue(
+            self.database, self.cost_manager, fidelity_service=self.fidelity_service, memory_store=self.memory
+        )
         self.worker = ExecutionWorker(self.queue, self.providers, self.storage)
-        self.campaigns = CampaignManager(self.database, self.cost_manager, self.router, self.queue)
+        self.campaigns = CampaignManager(
+            self.database, self.cost_manager, self.router, self.queue, fidelity_service=self.fidelity_service
+        )
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

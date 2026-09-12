@@ -192,6 +192,48 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
         processed = app.worker.run_all_pending()
         return urlencode({'campaign_id': cid, 'msg': f"{processed} trabalho(s) processado(s) pelo worker local."})
 
+    elif action == 'choose_version':
+        cid = data.get('campaign_id', '').strip()
+        vid = data.get('version_id', '').strip()
+        ver = mgr.choose_slide_version(vid)
+        return urlencode({'campaign_id': cid, 'msg': f"Versão v{ver.version_number} definida como ativa para o slide."})
+
+    elif action == 'restore_version':
+        cid = data.get('campaign_id', '').strip()
+        vid = data.get('version_id', '').strip()
+        ver = mgr.restore_slide_version(vid)
+        return urlencode({'campaign_id': cid, 'msg': f"Versão v{ver.version_number} restaurada sem apagar histórico."})
+
+    elif action == 'use_as_base':
+        cid = data.get('campaign_id', '').strip()
+        vid = data.get('version_id', '').strip()
+        new_prompt = data.get('new_prompt', '').strip() or None
+        job = mgr.use_version_as_base(vid, new_prompt=new_prompt)
+        return urlencode({'campaign_id': cid, 'msg': 'Nova geração baseada na versão selecionada agendada com prioridade.'})
+
+    elif action == 'record_learning':
+        cid = data.get('campaign_id', '').strip()
+        vid = data.get('version_id', '').strip()
+        note = data.get('learning_note', '').strip()
+        mgr.record_version_learning(vid, note)
+        return urlencode({'campaign_id': cid, 'msg': 'Aprendizado registrado na memória criativa e histórico permanente.'})
+
+    elif action == 'set_fidelity_config':
+        cid = data.get('campaign_id', '').strip()
+        mode = data.get('fidelity_mode', 'recommend_before_spend').strip()
+        threshold = float(data.get('fidelity_threshold', 85.0))
+        app.fidelity_service.set_campaign_fidelity_config(cid, mode=mode, threshold=threshold)
+        return urlencode({'campaign_id': cid, 'msg': f"Configuração de fidelidade atualizada: {mode} (Threshold: {threshold:.0f}/100)."})
+
+    elif action == 'approve_fidelity_correction':
+        cid = data.get('campaign_id', '').strip()
+        check_id = data.get('check_id', '').strip()
+        slide_id = data.get('slide_id', '').strip()
+        res = app.fidelity_service.approve_correction(check_id)
+        if slide_id and res.get('suggested_fix'):
+            mgr.regenerate_slide(cid, slide_id, new_prompt=res['suggested_fix'])
+        return urlencode({'campaign_id': cid, 'msg': 'Correção de fidelidade aprovada e regeneração do slide disparada.'})
+
     raise ValueError(f"Ação desconhecida: {action}")
 
 
@@ -214,7 +256,7 @@ def render_campaigns_hub(app: Application, query: Dict[str, Any]) -> str:
     if cid:
         camp = mgr.get_campaign(cid)
         if camp:
-            html.append(render_approval_screen(app, camp))
+            html.append(render_approval_screen(app, camp, query=query))
             return '\n'.join(html)
 
     # Formulário para criar nova campanha
@@ -285,10 +327,11 @@ def render_campaigns_hub(app: Application, query: Dict[str, Any]) -> str:
     return '\n'.join(html)
 
 
-def render_approval_screen(app: Application, camp: Any) -> str:
+def render_approval_screen(app: Application, camp: Any, query: Optional[Dict[str, Any]] = None) -> str:
     """Renderiza a Tela de Aprovação rigorosa conforme Seção 75 da especificação."""
     mgr = app.campaigns
     data = mgr.get_approval_screen_data(camp.id)
+    fidelity_cfg = app.fidelity_service.get_campaign_fidelity_config(camp.id)
 
     cid = escape(data['campaign_id'])
     title = escape(data['title'])
@@ -309,6 +352,107 @@ def render_approval_screen(app: Application, camp: Any) -> str:
     <div style="margin-bottom:18px;">
         <a href="/conteudo" class="button-secondary" style="display:inline-block;padding:8px 14px;font-size:12px;text-decoration:none;border-radius:3px;">← Voltar à lista de campanhas</a>
     </div>
+    ''')
+
+    # Seção 54: Painel de Comparação Visual Lado a Lado (até 3 versões)
+    compare_vids = []
+    if query:
+        raw_vids = query.get('compare_versions', [])
+        for item in raw_vids:
+            for v in item.split(','):
+                clean_v = v.strip()
+                if clean_v and clean_v not in compare_vids:
+                    compare_vids.append(clean_v)
+
+    if compare_vids:
+        try:
+            comp = mgr.compare_slide_versions(compare_vids[:3])
+            c_versions = comp['versions']
+            c_diffs = comp['differences']
+            html.append(f'''
+            <div class="panel" style="margin-bottom:24px;border:2px solid var(--accent);background:#fcfbf9;">
+                <div class="card-header">
+                    <div>
+                        <span class="tag">Comparação Visual · Seção 54</span>
+                        <h2>Comparação Lado a Lado ({len(c_versions)} versões de até 3)</h2>
+                    </div>
+                    <a href="/conteudo?campaign_id={cid}" class="button-secondary" style="font-size:12px;padding:6px 12px;text-decoration:none;">✕ Fechar Comparação</a>
+                </div>
+                <p class="hint" style="margin-top:4px;">Exibindo imagem, engine, modelo, custo, fidelidade e diferenças conforme Seção 54.</p>
+                <div style="display:grid;grid-template-columns:repeat({len(c_versions)},1fr);gap:16px;margin-top:14px;">
+            ''')
+            for ver in c_versions:
+                v_id = escape(ver['id'])
+                v_num = ver['version_number']
+                v_eng = escape(f"{ver['provider_id'].upper()} · {ver['model_id']}")
+                v_cost = ver['actual_cost']
+                v_fid = ver['fidelity_score']
+                fid_text = f"Fidelidade: {v_fid:.0f}/100" if v_fid is not None else "Fidelidade: Pendente"
+                fid_badge_style = "background:#e6f4ea;color:#137333;" if (v_fid is not None and v_fid >= 85) else "background:#fef7e0;color:#b06000;"
+                v_asset = escape(ver['asset_id'] or 'em processamento')
+                v_prompt = escape(ver['prompt'])
+                is_cur = ver.get('is_current', False)
+
+                html.append(f'''
+                <div class="card" style="background:#fff;border:{'2px solid #273b32' if is_cur else '1px solid var(--border)'};padding:14px;border-radius:4px;">
+                    <div class="card-header" style="margin-bottom:8px;">
+                        <div>
+                            <strong style="font-size:16px;">v{v_num}</strong>
+                            {'<span class="badge status-active" style="background:#273b32;color:#fff;margin-left:6px;">ATIVA</span>' if is_cur else ''}
+                        </div>
+                        <span class="tag">R$ {v_cost:.2f}</span>
+                    </div>
+                    <div style="height:110px;background:#f0ede8;display:flex;align-items:center;justify-content:center;border-radius:4px;margin-bottom:8px;">
+                        <code style="font-size:11px;">{v_asset}</code>
+                    </div>
+                    <p style="font-size:12px;margin:3px 0;"><strong>Engine:</strong> {v_eng}</p>
+                    <p style="font-size:12px;margin:3px 0;"><span class="badge" style="{fid_badge_style}">{fid_text}</span> <span class="hint" style="font-size:10px;">(estimativa)</span></p>
+                    <p style="font-size:11px;margin:3px 0;"><strong>Motivo:</strong> {escape(ver.get('reason', 'Geração inicial'))}</p>
+                    <p style="font-size:11px;color:var(--muted);max-height:45px;overflow:hidden;margin-top:6px;">{v_prompt[:130]}...</p>
+
+                    <!-- Ações da Seção 54: choose, use_as_base, record_learning -->
+                    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+                        <form method="post" action="/api/campaigns/choose_version" style="margin:0;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="version_id" value="{v_id}">
+                            <button type="submit" class="button-secondary" style="width:100%;font-size:11px;padding:6px;">Escolher como Ativa (choose)</button>
+                        </form>
+                        <form method="post" action="/api/campaigns/use_as_base" style="margin:0;">
+                            <input type="hidden" name="campaign_id" value="{cid}">
+                            <input type="hidden" name="version_id" value="{v_id}">
+                            <button type="submit" class="button-secondary" style="width:100%;font-size:11px;padding:6px;">Usar como Base (use_as_base)</button>
+                        </form>
+                        <details style="font-size:11px;margin-top:2px;">
+                            <summary style="padding:4px 0;cursor:pointer;">Registrar Aprendizado (record_learning)</summary>
+                            <form method="post" action="/api/campaigns/record_learning" style="margin-top:6px;">
+                                <input type="hidden" name="campaign_id" value="{cid}">
+                                <input type="hidden" name="version_id" value="{v_id}">
+                                <textarea name="learning_note" rows="2" placeholder="O que funcionou ou divergiu nesta versão..." style="font-size:11px;width:100%;box-sizing:border-box;" required></textarea>
+                                <button type="submit" class="button-secondary" style="margin-top:4px;width:100%;font-size:11px;padding:4px;">Salvar Aprendizado</button>
+                            </form>
+                        </details>
+                    </div>
+                </div>
+                ''')
+
+            html.append(f'''
+                </div>
+                <!-- Resumo das Diferenças da Seção 54 -->
+                <div style="margin-top:14px;background:#fff;padding:12px;border-radius:4px;font-size:12px;border:1px solid var(--border);">
+                    <strong>Diferenças Detectadas na Comparação:</strong>
+                    <ul style="margin:4px 0 0 0;padding-left:18px;">
+                        <li><strong>Motores:</strong> {'Diferentes entre as versões' if c_diffs['engines_differ'] else 'Idênticos'} ({", ".join(c_diffs['engines'])})</li>
+                        <li><strong>Variação de Custo:</strong> R$ {c_diffs['cost_diff']:.2f} (Mín: R$ {c_diffs['cost_min']:.2f} / Máx: R$ {c_diffs['cost_max']:.2f})</li>
+                        <li><strong>Prompts:</strong> {'Modificados entre as versões' if c_diffs['prompts_differ'] else 'Idênticos'}</li>
+                        <li><strong>Fidelidade:</strong> {'Variação nos scores de fidelidade' if c_diffs['fidelities_differ'] else 'Scores compatíveis'}</li>
+                    </ul>
+                </div>
+            </div>
+            ''')
+        except Exception as e:
+            html.append(f'<p class="notice warning">Erro ao carregar comparação de versões: {escape(str(e))}</p>')
+
+    html.append(f'''
     <div class="panel" role="region" aria-label="Tela de Aprovação">
         <div class="card-header">
             <div>
@@ -436,6 +580,24 @@ def render_approval_screen(app: Application, camp: Any) -> str:
                     <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Alterar Modo</button>
                 </form>
             </div>
+
+            <!-- Seção 27: Configuração de Fidelidade de Produto (warn_only, auto_regenerate, recommend_before_spend) -->
+            <div style="margin-top:10px;background:var(--paper);padding:14px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <strong>Fidelidade de Produto (Seção 27):</strong> <span class="tag">{fidelity_cfg['mode'].upper()}</span> · Threshold: <strong>{fidelity_cfg['threshold']:.0f}/100</strong>
+                    <p class="hint" style="margin:4px 0 0 0;">recommend_before_spend (padrão: recomenda antes de gastar), warn_only (apenas alerta), auto_regenerate (sujeito a orçamento e tentativas).</p>
+                </div>
+                <form method="post" action="/api/campaigns/set_fidelity_config" class="inline-form" style="margin:0;display:flex;gap:8px;align-items:center;">
+                    <input type="hidden" name="campaign_id" value="{cid}">
+                    <select name="fidelity_mode" style="font-size:13px;padding:6px;">
+                        <option value="recommend_before_spend" {'selected' if fidelity_cfg['mode'] == 'recommend_before_spend' else ''}>recommend_before_spend (Padrão)</option>
+                        <option value="warn_only" {'selected' if fidelity_cfg['mode'] == 'warn_only' else ''}>warn_only (Apenas alertar)</option>
+                        <option value="auto_regenerate" {'selected' if fidelity_cfg['mode'] == 'auto_regenerate' else ''}>auto_regenerate (Auto-regenerar)</option>
+                    </select>
+                    <input type="number" name="fidelity_threshold" value="{fidelity_cfg['threshold']:.0f}" min="50" max="100" style="width:70px;font-size:13px;padding:6px;" title="Threshold de fidelidade (0 a 100)">
+                    <button type="submit" class="button-secondary" style="font-size:12px;padding:6px 12px;">Salvar Config</button>
+                </form>
+            </div>
         ''')
 
         # Seção 52: Demonstrativo de custos, risco de cobrança e cancelamento
@@ -542,12 +704,84 @@ def render_approval_screen(app: Application, camp: Any) -> str:
             { f"<p><strong>Legenda Preliminar:</strong> <em>{s_caption}</em></p>" if s_caption else "" }
         ''')
 
-        # Seção 52: Versões de imagem preservadas
+        # Seção 52 e 53: Versões de imagem preservadas com metadados e fidelidade
         if slide_versions:
-            html.append('<div style="background:var(--paper);padding:8px 12px;border-radius:4px;margin-top:8px;font-size:13px;"><strong>Versões Preservadas:</strong><ul style="margin:4px 0 0 0;padding-left:18px;">')
+            html.append('<div style="background:var(--paper);padding:10px 14px;border-radius:4px;margin-top:10px;font-size:13px;">')
+            html.append('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong>Versões Preservadas (Seção 53):</strong><span class="hint" style="font-size:11px;">Histórico permanente</span></div>')
+            html.append(f'<form method="get" action="/conteudo" style="margin:0;">')
+            html.append(f'<input type="hidden" name="campaign_id" value="{cid}">')
+            html.append(f'<input type="hidden" name="compare_slide_id" value="{s_id}">')
+            html.append('<div style="display:flex;flex-direction:column;gap:6px;margin:6px 0;">')
             for v in slide_versions:
-                html.append(f"<li>v{v.version_number}: <code>{escape(v.asset_id or 'gerando')}</code> (R$ {v.actual_cost:.2f}) · {escape(v.provider_id.upper())}</li>")
+                v_fid = v.fidelity_score
+                fid_badge = f'<span class="badge" style="background:#e6f4ea;color:#137333;font-size:11px;">Fidelidade: {v_fid:.0f}/100</span>' if (v_fid is not None and v_fid >= 85) else (f'<span class="badge" style="background:#fef7e0;color:#b06000;font-size:11px;">Fidelidade: {v_fid:.0f}/100</span>' if v_fid is not None else '<span class="tag" style="font-size:11px;">Fidelidade: Pendente</span>')
+                cur_badge = '<span class="badge status-active" style="background:#273b32;color:#fff;font-size:10px;padding:2px 6px;">Ativa</span>' if v.is_current else ''
+                html.append(f'''
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;padding:6px 10px;border-radius:3px;border:1px solid var(--border);flex-wrap:wrap;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" name="compare_versions" value="{v.id}" title="Selecionar para comparar">
+                        <strong>v{v.version_number}</strong>
+                        <code>{escape(v.asset_id or 'gerando')}</code>
+                        <span>(R$ {v.actual_cost:.2f})</span>
+                        <span class="tag">{escape(v.provider_id.upper())}</span>
+                        {cur_badge}
+                        {fid_badge}
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button type="submit" formaction="/api/campaigns/choose_version" formmethod="post" name="version_id" value="{v.id}" class="button-secondary" style="font-size:11px;padding:3px 8px;">Escolher</button>
+                        <button type="submit" formaction="/api/campaigns/restore_version" formmethod="post" name="version_id" value="{v.id}" class="button-secondary" style="font-size:11px;padding:3px 8px;">Restaurar</button>
+                    </div>
+                </div>
+                ''')
+            html.append('</div>')
+            html.append('<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px;">')
+            html.append('<button type="submit" class="button-secondary" style="font-size:11px;padding:5px 12px;">Comparar Selecionadas (Até 3) Lado a Lado</button>')
+            html.append('<span class="hint" style="font-size:11px;">O score é uma estimativa de visão computacional, não uma prova absoluta.</span>')
+            html.append('</div>')
+            html.append('</form>')
+            html.append('</div>')
+
+        # Seção 27: Alerta estruturado de falha de fidelidade de produto
+        slide_checks = app.fidelity_service.list_checks_for_slide(s['id'])
+        for chk in slide_checks:
+            if not chk.passed:
+                html.append(f'''
+                <div style="margin-top:10px;background:#fef7e0;border-left:4px solid #b06000;padding:12px;border-radius:4px;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <strong>⚠️ Alerta de Fidelidade de Produto ({chk.formatted_score})</strong>
+                        <span class="tag">Threshold: {chk.threshold:.0f} · Modo: {chk.mode.upper()}</span>
+                    </div>
+                    <p style="margin:4px 0 2px 0;"><strong>Problema Detectado:</strong></p>
+                    <ul style="margin:2px 0 6px 0;padding-left:18px;">
+                ''')
+                for d in chk.discrepancies:
+                    html.append(f"<li><code>{escape(d.attribute)}</code> ({escape(d.severity)}): {escape(d.explanation)}</li>")
+                html.append(f'''
+                    </ul>
+                    <p style="margin:4px 0;"><strong>Sugestão de Correção:</strong> {escape(chk.suggested_fix or '')}</p>
+                    <p style="margin:4px 0;"><strong>Custo Estimado da Correção:</strong> R$ {chk.estimated_correction_cost:.2f}</p>
+                ''')
+                if chk.approval_status == 'pending':
+                    html.append(f'''
+                    <form method="post" action="/api/campaigns/approve_fidelity_correction" style="margin-top:8px;">
+                        <input type="hidden" name="campaign_id" value="{cid}">
+                        <input type="hidden" name="check_id" value="{chk.id}">
+                        <input type="hidden" name="slide_id" value="{s_id}">
+                        <button type="submit" class="button-primary" style="font-size:12px;padding:6px 12px;">Aprovar Correção e Regenerar Slide (R$ {chk.estimated_correction_cost:.2f})</button>
+                    </form>
+                    ''')
+                elif chk.approval_status == 'auto_applied':
+                    html.append('<span class="badge badge-success" style="margin-top:6px;display:inline-block;">Auto-regeneração disparada dentro do orçamento disponível</span>')
+                html.append('</div>')
+
+        # Seção 80: Aprendizados registrados para este slide
+        slide_learnings = mgr.list_learnings_for_slide(s['id'])
+        if slide_learnings:
+            html.append('<div style="margin-top:8px;background:#f4f6f8;padding:8px 12px;border-radius:4px;font-size:12px;"><strong>Aprendizados Registrados (Seção 80):</strong><ul style="margin:4px 0 0 0;padding-left:18px;">')
+            for l in slide_learnings:
+                html.append(f"<li><em>{escape(l['learning_note'])}</em> <span class='hint'>({escape(l['created_at'][:19])})</span></li>")
             html.append('</ul></div>')
+
 
         # Seção 51: Intervenção localizada / Regenerar somente este slide
         html.append(f'''

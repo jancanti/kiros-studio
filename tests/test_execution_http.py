@@ -118,7 +118,7 @@ class ExecutionHTTPTests(unittest.TestCase):
 
         _, page, _ = self.request(f'/conteudo?campaign_id={cid}')
         self.assertIn('COMPLETED', page)
-        self.assertIn('Versões Preservadas:', page)
+        self.assertIn('Versões Preservadas', page)
         self.assertIn('asset-', page)
 
     def test_localized_slide_regeneration_via_http(self):
@@ -147,7 +147,7 @@ class ExecutionHTTPTests(unittest.TestCase):
 
         _, page_after, _ = self.request(f'/conteudo?campaign_id={cid}')
         # Slide agora possui versão 2 preservada (Seção 52: Nunca apagar versões)
-        self.assertIn('v2:', page_after)
+        self.assertIn('v2', page_after)
 
     def test_slide_cancellation_and_impact_disclosure(self):
         # 6. Cancelamento de slide com demonstrativo financeiro (Seção 52)

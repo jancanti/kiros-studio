@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M06 — Fidelidade, ativos e versões
+Atual: M07 — Layout determinístico e editor
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -12,7 +12,7 @@ Atual: M06 — Fidelidade, ativos e versões
 | M03 — Creative Director, ideias e contexto | completed | docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/checkpoint.json |
 | M04 — Campanha, storyboard e aprovação | completed | docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/checkpoint.json |
 | M05 — Fila, execução e recuperação | completed | docs/checkpoints/M05/c344c530409f4c1a83eaf142eb61e4ff/checkpoint.json |
-| M06 — Fidelidade, ativos e versões | pending | — |
+| M06 — Fidelidade, ativos e versões | completed | docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/checkpoint.json |
 | M07 — Layout determinístico e editor | pending | — |
 | M08 — Copy, legendas e Stories | pending | — |
 | M09 — Calendário e Instagram controlado | pending | — |

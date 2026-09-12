@@ -1,0 +1,118 @@
+{
+  "at": "2026-09-12T16:53:34.093063+00:00",
+  "report": {
+    "milestone": "M06",
+    "summary": "Implementação completa de verificação de fidelidade de produto em 8 dimensões (shape, proportion, cap, label, logo, colors, material, critical_attributes), modos de tolerância (recommend_before_spend como padrão, warn_only, auto_regenerate sujeito a orçamento e retries), diagnósticos estruturados de falha com estimativa de custo e ação corretiva, versionamento permanente e imutável de imagens geradas em SQLite via migração 007 com metadados de rastreabilidade (motivo, solicitante, engine, referências, prompt_ref, score de fidelidade), painel de comparação visual lado a lado para até 3 versões com matriz de diferenças, governança para escolha, restauração e uso como base para intervenção localizada sem alteração dos demais slides, e registro de aprendizados criativos tipados em version_learnings e MemoryStore (Seções 27, 49, 53, 54 e 55).",
+    "critical_errors": [],
+    "limitations": [
+      "Operação em modo mock local determinístico; nenhuma chamada de visão computacional paga ou geração externa em nuvem foi realizada.",
+      "Os scores de fidelidade (94, 62, 76, 71) são simulações determinísticas de contrato estruturado e não constituem garantia física ou acurácia real de modelos de visão.",
+      "O editor visual de layout e overlay determinístico será implementado na milestone seguinte (M07)."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M06-A01": {
+        "files": [
+          "kiros/fidelity/service.py",
+          "kiros/fidelity/models.py",
+          "kiros/campaigns/models.py",
+          "kiros/campaigns/manager.py",
+          "kiros/ui/campaigns.py",
+          "tests/test_fidelity.py",
+          "tests/test_fidelity_http.py",
+          "docs/evidence/M06-desktop.png",
+          "docs/evidence/M06-mobile.png"
+        ],
+        "verification": "test_fidelity_check_uses_real_references_and_critical_attributes e test_set_fidelity_config_flow comprovam verificação nas 8 dimensões da Seção 27 com peso dobrado em dimensões críticas, referências da Product Bible, score estimado (ex: 94/100), threshold configurável e recommend_before_spend como padrão persistido na campanha."
+      },
+      "M06-A02": {
+        "files": [
+          "kiros/fidelity/service.py",
+          "kiros/fidelity/models.py",
+          "kiros/cost.py",
+          "kiros/execution/queue.py",
+          "kiros/ui/campaigns.py",
+          "tests/test_fidelity.py",
+          "tests/test_fidelity_http.py"
+        ],
+        "verification": "test_fidelity_failure_explains_differences_suggests_fix_estimates_cost_and_respects_approval e test_set_fidelity_config_flow comprovam que falhas de fidelidade geram diagnóstico completo (dimensão, esperado, encontrado, sugestão de correção, custo potencial em R$), respeitam autorização prévia no modo recommend_before_spend e no modo auto_regenerate respeitam orçamento restante do CostManager e teto finito de retries."
+      },
+      "M06-A03": {
+        "files": [
+          "kiros/migrations/007_fidelity_and_versioning.sql",
+          "kiros/execution/models.py",
+          "kiros/execution/queue.py",
+          "tests/test_fidelity.py"
+        ],
+        "verification": "test_version_registration_tracks_all_required_metadata comprova registro estrito de versão com todas as colunas mandatórias da Seção 53: motivo da geração, solicitante, motor/modelo, referências reais utilizadas, prompt_ref deduplicado, custo incorrido em R$, fidelidade com detalhes e carimbo de tempo, sem sobrescrita de versões anteriores."
+      },
+      "M06-A04": {
+        "files": [
+          "kiros/execution/queue.py",
+          "kiros/ui/campaigns.py",
+          "tests/test_fidelity.py",
+          "tests/test_fidelity_http.py",
+          "docs/evidence/M06-desktop.png",
+          "docs/evidence/M06-mobile.png"
+        ],
+        "verification": "test_compare_up_to_three_versions_choose_restore_and_use_as_base, test_side_by_side_comparison_view_and_differences, test_choose_and_restore_version_flow, test_use_as_base_flow e test_record_learning_flow comprovam comparação visual de até 3 versões com matriz de diferenças, ações de escolha de versão ativa, restauração e 'usar como base' disparando regeneração localizada restrita ao slide selecionado, além de gravação de aprendizados no MemoryStore."
+      },
+      "M06-A05": {
+        "files": [
+          "kiros/fidelity/fixtures.py",
+          "kiros/fidelity/service.py",
+          "tests/test_fidelity.py"
+        ],
+        "verification": "test_fixtures_correct_altered_and_threshold_boundaries_contract comprova fixtures para produto correto (score 94), proporções alteradas (score 62), rótulo desalinhado (score 76) e logo distorcido (score 71), verificando limites de threshold (85/100) com aviso explícito de que scores são estimativas determinísticas de teste e não acurácia física em produção."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M06/5cc4851d52d24a9c8d1d168d2178a9bf/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/evidence/M06-desktop.png": "8a0861b189840440157b1f46323c637d1a03e590c8a170c4e525ac89fc07a420",
+    "docs/evidence/M06-mobile.png": "31ba2d3485c0b5e80d2d678f1807219d928def96cff2320c841898fe8703f21c",
+    "kiros/campaigns/manager.py": "db5ea663366162c670af2124cc59f31e26d78dea061272069fc7cd92507df875",
+    "kiros/campaigns/models.py": "c8ac53f2e182e02f8b6152a8d3e86352bd591e6e1c6d289a3aa6e885effab300",
+    "kiros/cost.py": "c4261374729a42b0d36a84d0ef6c7f4216237fe6f7ae611894be2cfbee37b4f3",
+    "kiros/execution/models.py": "f7d7dc2e47e85b989a8b50e1dc6c0c15d37aae0e9ba7a363df379ce92d625fad",
+    "kiros/execution/queue.py": "344024cd472fc068be4aefcc9fad86d20ca81ec8514d35a141ae8a3ac94c5e11",
+    "kiros/fidelity/fixtures.py": "04991d883f97c31f3d890acad63d3543c2b7f075940e28fb24083e6cf19675da",
+    "kiros/fidelity/models.py": "c8a0eb3ffc253895cf496b93e7a2d1d8996d7c43397e54f9460d3910f20682a1",
+    "kiros/fidelity/service.py": "aeb1e4d665546b9d43f0720773d94838ebdba17984bbea3ca8490a4a9a92add5",
+    "kiros/migrations/007_fidelity_and_versioning.sql": "cf52a2c3d91a28b7c9d85a06f5fd73e7bb97bc121db473d11a6b4c572301dff7",
+    "kiros/ui/campaigns.py": "019aa8712772cf5293cefa325cef3ed7df566f062fb8943ad1dbbcb4204c7b6b",
+    "tests/test_fidelity.py": "db0c0151abfe984c60bf1173872357263cefe467f2681e44f1c331c8b1c0ebf8",
+    "tests/test_fidelity_http.py": "d9f46b8ea7444785aaaf94d91ddba88351cff7746414818bd6ff8d7af7a583b8"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

@@ -116,6 +116,16 @@ class CostManager:
             'records': records,
         }
 
+    def check_budget(self, campaign_id: str, amount: float = 0.0) -> bool:
+        """Verifica se há orçamento disponível para a campanha sem estourar o limite definido."""
+        summary = self.get_cost_summary(campaign_id)
+        b_limit = summary['budget_limit']
+        if b_limit <= 0:
+            return True
+        if summary['allow_over_budget']:
+            return True
+        return (summary['remaining_budget'] >= float(amount)) and not summary['is_exceeded']
+
     def estimate_cost(
         self,
         provider: str,

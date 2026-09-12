@@ -161,5 +161,41 @@ class ExecutionVersion:
     actual_cost: float = 0.0
     status: str = 'completed'
     job_id: Optional[str] = None
+    reason: str = 'Geração inicial'
+    requester: str = 'system'
+    prompt_ref: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    fidelity_score: Optional[float] = None
+    fidelity_details: Dict[str, Any] = field(default_factory=dict)
+    fidelity_status: str = 'pending'
+    parent_version_id: Optional[str] = None
+    is_current: bool = True
     created_at: str = ''
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'campaign_id': self.campaign_id,
+            'slide_id': self.slide_id,
+            'step_id': self.step_id,
+            'version_number': self.version_number,
+            'provider_id': self.provider_id,
+            'model_id': self.model_id,
+            'prompt': self.prompt,
+            'asset_id': self.asset_id,
+            'actual_cost': round(self.actual_cost, 4),
+            'status': self.status,
+            'job_id': self.job_id,
+            'reason': self.reason,
+            'requester': self.requester,
+            'prompt_ref': self.prompt_ref,
+            'references': self.references,
+            'fidelity_score': round(self.fidelity_score, 1) if self.fidelity_score is not None else None,
+            'fidelity_details': self.fidelity_details,
+            'fidelity_status': self.fidelity_status,
+            'parent_version_id': self.parent_version_id,
+            'is_current': self.is_current,
+            'created_at': self.created_at,
+        }
+
 

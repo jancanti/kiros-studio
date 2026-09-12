@@ -279,5 +279,54 @@ A M05 implementa o sistema robusto de fila persistente, execução concorrente, 
    - Regeneração de slide individual (`regenerate_slide`) preservando integralmente todas as demais etapas e slides concluídos.
    - Histórico de versões preservadas em `execution_versions` exibido no Storyboard.
 
+## M06 — Fidelidade, ativos e versões
+
+A M06 implementa a verificação rigorosa de fidelidade de produto em 8 dimensões, o versionamento completo de ativos visuais sem sobrescrita, comparação lado a lado de até 3 versões e registro de aprendizados criativos (Seções 27, 49, 53, 54 e 55 da especificação):
+
+1. **Checagem de Fidelidade de Produto em 8 Dimensões** (`kiros/fidelity/service.py`, `kiros/fidelity/models.py`, Seção 27):
+   - Migração `007_fidelity_and_versioning.sql` adicionando colunas a `execution_versions`, novas configurações em `campaigns` (`fidelity_mode`, `fidelity_threshold`) e tabelas `product_fidelity_checks` e `version_learnings`.
+   - Verificação das 8 dimensões obrigatórias:
+     - `shape`: Geometria do frasco (cilíndrico, quadrado, etc.).
+     - `proportion`: Relação entre altura, largura e profundidade.
+     - `cap`: Tipo e acabamento da tampa (madeira torneada, metal, etc.).
+     - `label`: Dimensões, textura e posicionamento do rótulo.
+     - `logo`: Posição, legibilidade e proporção do logotipo da marca.
+     - `colors`: Paleta e transparência de vidro/cera.
+     - `material`: Textura da cera, vidro fosco/âmbar e pavio.
+     - `critical_attributes`: Atributos inegociáveis definidos no catálogo oficial.
+   - Ponderação com peso dobrado (2.0) para dimensões críticas e atributos inegociáveis.
+   - Score quantitativo de 0 a 100 com nota de corte configurável (padrão 85/100).
+   - Diagnóstico estruturado da falha:
+     `Dimensão violada` → `Esperado vs Encontrado` → `Ação corretiva sugerida` → `Custo estimado em R$`.
+   - Modos de operação:
+     - `recommend_before_spend` (padrão da Seção 27): recomenda regeneração mas exige aprovação antes de incorrer em novos gastos.
+     - `warn_only`: emite alerta e permite prosseguir sem regeneração.
+     - `auto_regenerate`: agenda nova tentativa automaticamente, respeitando teto de retries e orçamento restante.
+   - Conjunto de fixtures determinísticas (`kiros/fidelity/fixtures.py`):
+     - `FIXTURE_CORRECT_PRODUCT` (score 94/100 - aprovado)
+     - `FIXTURE_ALTERED_PRODUCT` (score 62/100 - proporções alteradas)
+     - `FIXTURE_ALTERED_LABEL` (score 76/100 - rótulo desalinhado)
+     - `FIXTURE_ALTERED_LOGO` (score 71/100 - logo distorcido)
+     - Declaração explícita de que scores são simulações de visão computacional, não provas físicas absolutas.
+
+2. **Versionamento Rigoroso e Preservação de Ativos** (`kiros/execution/queue.py`, Seção 53):
+   - Regra inviolável: nenhuma versão anterior de imagem gerada é apagada, substituída ou sobrescrita no banco ou em disco.
+   - Rastreabilidade completa de cada versão em `execution_versions`:
+     `id`, `job_id`, `campaign_id`, `slide_id`, `version_number`, `asset_id`, `file_path`, `width`, `height`, `actual_cost`, `reason`, `requester`, `prompt_ref`, `references_json`, `fidelity_score`, `fidelity_details_json`, `fidelity_status`, `parent_version_id`, `is_current`, `created_at`.
+   - Versionamento sequencial por slide (v1, v2, v3...), mantendo indicador booleano `is_current` na versão ativa.
+
+3. **Painel de Comparação Visual Lado a Lado** (`kiros/ui/campaigns.py`, Seção 54):
+   - Comparação simultânea de 2 a 3 versões com matriz de dimensões lado a lado.
+   - Destaque das diferenças detectadas entre versões: alterações de motor de imagem, variações de custo, evolução do score de fidelidade e mudanças de prompt.
+   - Ações de governança na interface:
+     - `[Escolher Versão]`: define a versão selecionada como ativa para exportação e publicação.
+     - `[Restaurar Versão]`: reverte para uma iteração anterior mantendo o histórico de versões posteriores.
+     - `[Usar como Base]`: inicia regeneração localizada focando apenas no slide em questão, herdando os metadados da versão escolhida e criando uma nova iteração (`vN+1`).
+
+4. **Registro de Aprendizados e Memória Contínua** (Seções 49 e 55):
+   - Registro de feedback do operador (`record_version_learning`) vinculado à versão e slide.
+   - Classificação do aprendizado em `recurring_preference` (preferência de estilo) ou `campaign_context` (nota específica da campanha).
+   - Persistência estruturada em `version_learnings` e integração transparente com o `MemoryStore` do Creative Director, influenciando gerações futuras sem sobrescrever dados oficiais.
+
 
 
