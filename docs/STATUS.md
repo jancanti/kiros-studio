@@ -2,7 +2,7 @@
 
 Gerado de `milestones.yaml`; não editar manualmente.
 
-Atual: M04 — Campanha, storyboard e aprovação
+Atual: M05 — Fila, execução e recuperação
 
 | Milestone | Estado | Checkpoint |
 |---|---|---|
@@ -10,7 +10,7 @@ Atual: M04 — Campanha, storyboard e aprovação
 | M01 — Marca, produtos e referências | completed | docs/checkpoints/M01/88610d967cc046d49ff59c24c6b6037a/checkpoint.json |
 | M02 — Providers, roteamento e controle de gastos | completed | docs/checkpoints/M02/af838fd561df415da30111a24032db95/checkpoint.json |
 | M03 — Creative Director, ideias e contexto | completed | docs/checkpoints/M03/f76db37892fc46cebde75f5d7fa1a7dd/checkpoint.json |
-| M04 — Campanha, storyboard e aprovação | pending | — |
+| M04 — Campanha, storyboard e aprovação | completed | docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/checkpoint.json |
 | M05 — Fila, execução e recuperação | pending | — |
 | M06 — Fidelidade, ativos e versões | pending | — |
 | M07 — Layout determinístico e editor | pending | — |

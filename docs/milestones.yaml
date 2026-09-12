@@ -213,7 +213,7 @@
       "depends_on": [
         "M03"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         10,
         23,
@@ -245,7 +245,10 @@
           "text": "Mudança material invalida aprovação anterior; execução sem aprovação válida é recusada no servidor; testes cobrem transições e edição após aprovação."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/checkpoint.json",
+        "at": "2026-09-12T15:38:25.590170+00:00"
+      },
       "blocker": null
     },
     {

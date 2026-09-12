@@ -123,7 +123,37 @@
       "timeout_seconds": 60
     }
   ],
-  "M04": [],
+  "M04": [
+    {
+      "name": "Testes M04 de Campanhas, Storyboard, Pipeline, Aprovação e HTTP",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "Build local com migração e módulo de campanhas M04",
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício de processos",
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "M05": [],
   "M06": [],
   "M07": [],

@@ -1,0 +1,112 @@
+{
+  "at": "2026-09-12T15:38:25.590170+00:00",
+  "report": {
+    "milestone": "M04",
+    "summary": "Implementação do fluxo principal de campanhas, storyboard por slide, pipeline de execução multi-engine e sistema de governança e aprovação (Seções 10, 23, 31, 56, 66 e 75). Persistência relacional em SQLite via migração 005 com estados explícitos (draft, awaiting_approval, approved, queued, running, validating, completed, failed, paused, cancelled, archived); pipeline estruturado com o menor número de etapas necessário para atingir qualidade sem degradação; suporte a motores por slide com prevalência hierárquica e preservação de etapas não afetadas em edições localizadas; tela de aprovação rigorosa conforme Seção 75 com objetivo, conceito, produtos, storyboard, motores, pipeline, gerações estimadas, custo e confiança; governança flexível com modos minimal, step_by_step e full_control; vinculação estrita de aprovações à versão do plano e orçamento reservado; e invalidação imediata de aprovações prévias em alterações materiais com recusa inflexível no servidor de execuções não aprovadas.",
+    "critical_errors": [],
+    "limitations": [
+      "Operação estritamente local em modo mock; nenhuma chamada externa aos provedores de geração nem tráfego de rede foi realizado.",
+      "O enfileiramento de execução (queue_execution) transiciona a campanha aprovada para o estado 'queued'; a orquestração dos workers de geração e checks de fidelidade pertence às próximas milestones.",
+      "Nenhuma publicação externa ou agendamento de postagens ao vivo é realizado sem confirmação explícita."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M04-A01": {
+        "files": [
+          "kiros/campaigns/models.py",
+          "kiros/campaigns/manager.py",
+          "kiros/migrations/005_campaigns_storyboard_and_approval.sql",
+          "kiros/ui/campaigns.py",
+          "tests/test_campaigns.py",
+          "docs/evidence/M04-desktop.png"
+        ],
+        "verification": "test_campaign_persistence_and_explicit_states comprova que a campanha persiste briefing estruturado, estratégia de funil/pilar, produtos selecionados, storyboard e pipeline editável no SQLite com estados explícitos de ciclo de vida (draft, awaiting_approval, approved, queued, etc.) e versionamento incremental do plano."
+      },
+      "M04-A02": {
+        "files": [
+          "kiros/campaigns/manager.py",
+          "kiros/providers/router.py",
+          "kiros/ui/campaigns.py",
+          "tests/test_campaigns.py",
+          "tests/test_campaigns_http.py"
+        ],
+        "verification": "test_pipeline_minimum_steps_and_localized_editing e test_slide_engine_override_preserves_other_slides comprovam que o pipeline gera apenas o menor número de etapas necessário por slide (Seção 23), suporta motores independentes por slide e que edições localizadas em uma etapa preservam integralmente todas as etapas e slides não afetados."
+      },
+      "M04-A03": {
+        "files": [
+          "kiros/ui/campaigns.py",
+          "kiros/campaigns/manager.py",
+          "tests/test_campaigns.py",
+          "tests/test_campaigns_http.py",
+          "docs/evidence/M04-desktop.png",
+          "docs/evidence/M04-mobile.png"
+        ],
+        "verification": "test_approval_screen_data_contains_required_fields e test_create_campaign_flow_and_approval_screen_fields comprovam que a tela de aprovação sob /conteudo?campaign_id= exibe rigorosamente todos os campos da Seção 75: Objetivo, Conceito, Produtos selecionados, Storyboard visual por slide, Motores e Pipeline com custos, Gerações estimadas, Custo estimado total, Nível de confiança e ações explícitas [Aprovar Execução] e [Cancelar Campanha]."
+      },
+      "M04-A04": {
+        "files": [
+          "kiros/campaigns/manager.py",
+          "kiros/campaigns/models.py",
+          "kiros/cost.py",
+          "tests/test_campaigns.py",
+          "tests/test_campaigns_http.py"
+        ],
+        "verification": "test_approval_modes_and_plan_version_binding comprova que as campanhas suportam os modos minimal (aprovação do plano conjunto), step_by_step (aprovação progressiva por etapa) e full_control, registrando a aprovação formal vinculada à versão exata do plano (plan_version) e com reserva atômica de orçamento orquestrada com o CostManager."
+      },
+      "M04-A05": {
+        "files": [
+          "kiros/campaigns/manager.py",
+          "kiros/campaigns/models.py",
+          "kiros/ui/campaigns.py",
+          "tests/test_campaigns.py",
+          "tests/test_campaigns_http.py"
+        ],
+        "verification": "test_material_change_invalidates_approval_and_refuses_unapproved_execution e test_execution_without_approval_refused_via_http comprovam que qualquer alteração material posterior (adição de slide, edição localizada de etapa, troca de motor) invalida imediatamente a aprovação anterior, incrementa a versão do plano e que qualquer tentativa de enfileirar execução sem aprovação válida para a versão corrente é recusada com UnapprovedExecutionError no servidor."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M04/c34fe15ae8744dea99a5f0c9949d57f3/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/evidence/M04-desktop.png": "ebfc9140138dc457482a69b7a011f22caa0c01fde82f8063f7e0f891b13ced90",
+    "docs/evidence/M04-mobile.png": "f8fce4d3a05777b0abde747c7ccbce615ed556881e98a92f8ab6d8f81d9b984e",
+    "kiros/campaigns/manager.py": "9bce021234a50e632a3c7a47d9254556d7e575af2f57f9bba703e1e11e046c4c",
+    "kiros/campaigns/models.py": "a2881dee25aba5bd0c97520035f754a17117acd70c518aa4e07fdc99751f57f8",
+    "kiros/cost.py": "b2e20780240467771e20bdb9d790445ac1859aaac0ad60c60d69775170ce8ae5",
+    "kiros/migrations/005_campaigns_storyboard_and_approval.sql": "3f57c4dcd3feb25af0c844dd4b06472869d249bd9604af18096c97516bd54136",
+    "kiros/providers/router.py": "7d183fcd397d236e171ca2514ebb019a10308ad0b31456b8ffbcbfdcdcaba487",
+    "kiros/ui/campaigns.py": "a8cf60c4f24b3b5ff11abf870e36f0163108752527e8ffa9d4f7d254e287e46e",
+    "tests/test_campaigns.py": "939e1eead98888be1bfb655e2eb6c2e35a0e0681e6c2ed91586304b6c960d1e3",
+    "tests/test_campaigns_http.py": "74897d158f7a1dfd1a52abc71eeaf9a4c335e226b9a54bb400edc7c17c563591"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

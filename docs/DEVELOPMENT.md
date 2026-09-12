@@ -205,3 +205,44 @@ A M03 implementa o núcleo estratégico do KIROS Studio, integrando o Creative D
    - Rota `/criar` com formulário de briefing híbrido, painel de diretrizes estruturadas, contadores visuais de ideias ativas por pilar, cartões com status e ações (fixar, rejeitar com motivo), sugestões adjacentes e radar sazonal.
    - Endpoints sob `/api/creator/*` protegidos contra CSRF, verificação estrita de Origin/Host e formato `application/x-www-form-urlencoded`.
 
+## M04 — Campanha, storyboard e aprovação
+
+A M04 implementa o fluxo principal de campanhas, storyboard por slide, pipeline de execução multi-engine e o sistema rigoroso de aprovação (Seções 10, 23, 31, 56, 66, 75 da especificação):
+
+1. **Ciclo de Vida e Persistência de Campanhas** (`kiros/campaigns/models.py`, `kiros/campaigns/manager.py`, Seções 10 e 66):
+   - Migração `005_campaigns_storyboard_and_approval.sql` com tabelas relacionais `campaigns`, `storyboard_slides`, `pipeline_steps` e `campaign_approvals`.
+   - Estados explícitos de execução: `draft`, `awaiting_approval`, `approved`, `queued`, `running`, `validating`, `completed`, `failed`, `paused`, `cancelled`, `archived`.
+   - Persistência estruturada em SQLite de briefing interpretado, estratégia, produtos vinculados, storyboard e pipeline.
+   - Versionamento rigoroso do plano (`plan_version`) iniciado em 1 e incrementado a cada alteração material.
+
+2. **Storyboard por Slide e Pipeline Multi-Engine Mínimo** (Seções 23 e 31):
+   - Cada slide possui enquadramento (`wide`, `medium`, `detail`, `close-up`, `overhead`), prompt visual detalhado, rascunho de legenda e motor de imagem dedicado.
+   - Regra da Seção 23: menor número de etapas necessário para máxima qualidade, evitando degradação e custos desnecessários (por padrão, 1 etapa concisa de geração por slide).
+   - Suporte a multi-engine na mesma campanha com resolução hierárquica: override explícito do slide > recomendação do router > Gemini Imagen 3 padrão.
+   - Edição localizada do pipeline (`update_pipeline_step`): alterar uma etapa preserva integralmente todas as etapas e slides não afetados.
+
+3. **Tela de Aprovação Rigorosa** (`kiros/ui/campaigns.py`, Seção 75):
+   - Rota `/conteudo?campaign_id={id}` apresentando o painel unificado com todos os campos mandatórios:
+     - Objetivo (primário e secundário em destaque).
+     - Conceito e briefing detalhado.
+     - Produtos selecionados do catálogo.
+     - Storyboard completo com visualização por cartão.
+     - Motores e etapas do pipeline com seus custos unitários.
+     - Resumo quantitativo: gerações estimadas, custo total estimado em R$ e nível de confiança (%).
+     - Ações explícitas de governança: `[Aprovar Execução]`, `[Cancelar Campanha]` e controles de edição localizada.
+
+4. **Modos de Aprovação e Vinculação Orçamentária** (Seção 56):
+   - Suporte aos três modos da especificação:
+     - `minimal`: aprovação conjunta de todo o plano de execução.
+     - `step_by_step`: aprovação progressiva de cada etapa individual do pipeline.
+     - `full_control`: aprovação minuciosa de cada etapa e slide antes da execução.
+   - Registro formal na tabela `campaign_approvals` vinculando a aprovação ao `plan_version`, custo estimado, aprovador, proveniência e data/hora.
+   - Orçamento planejado reservado preventivamente pelo `CostManager`.
+
+5. **Invalidação por Alteração Material e Recusa no Servidor** (M04-A05):
+   - Qualquer alteração posterior à aprovação (adição/remoção de slide, troca de motor, alteração de prompt ou modelo) dispara `_on_material_change`.
+   - A aprovação anterior é imediatamente invalidada no banco (`is_valid = 0` com motivo da invalidação registrado).
+   - O status da campanha reverte para `draft`, a versão do plano é incrementada e o vínculo aprovado é limpo.
+   - Tentativa de enfileirar (`queue_execution`) sem aprovação válida para a versão corrente é estritamente RECUSADA no servidor com `UnapprovedExecutionError`.
+
+

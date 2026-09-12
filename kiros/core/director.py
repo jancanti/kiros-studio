@@ -257,3 +257,41 @@ class CreativeDirector:
             mems = self.memory.query_memories(memory_types=memory_types, keys=memory_keys, limit=10)
             context['memories'] = self.memory.compact_memories(mems)
         return context
+
+    def create_storyboard_concept(
+        self,
+        briefing_text: str,
+        visual_tone: str = 'Minimalista, acolhedor e contemporâneo',
+        num_slides: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """Gera conceitos de storyboard estruturados a partir do briefing (Seções 9 e 10)."""
+        raw = (briefing_text or 'Velas aromáticas em ambiente acolhedor').strip()
+        slides = []
+
+        slides.append({
+            'title': 'Atmosfera e Cenário',
+            'visual_prompt': f"Cena editorial em plano aberto: {raw}. Luz natural difusa, composição acolhedora em tons terrosos e madeira clara. Tom: {visual_tone}.",
+            'framing': 'wide',
+            'caption_draft': 'Onde o silêncio encontra o aconchego olfativo.',
+            'engine_override': 'gemini:imagen-3.0-generate-002',
+        })
+
+        if num_slides >= 2:
+            slides.append({
+                'title': 'Presença e Detalhes Sensoriais',
+                'visual_prompt': f"Plano médio focado: vela aromática ou difusor sobre mesa de apoio nobre com reflexos sutis. {raw}. Estilo editorial minimalista KIROS.",
+                'framing': 'medium',
+                'caption_draft': 'Criado para ancorar momentos de presença e desaceleração.',
+                'engine_override': 'gemini:imagen-3.0-generate-002',
+            })
+
+        if num_slides >= 3:
+            slides.append({
+                'title': 'Texturas e Acabamento de Objeto',
+                'visual_prompt': f"Plano detalhe macro: textura do vidro âmbar fosco, cera vegetal e pavio trançado. {raw}.",
+                'framing': 'detail',
+                'caption_draft': 'Cada camada olfativa pensada para transformar o seu espaço.',
+                'engine_override': 'openai:dall-e-3',
+            })
+
+        return slides[:num_slides]
