@@ -1,0 +1,120 @@
+{
+  "at": "2026-09-12T19:10:21.058799+00:00",
+  "report": {
+    "milestone": "M10",
+    "summary": "M10 implementa Insights em três abas: mapa local de saturação e diversidade com 19 dimensões, frequência/recência e intenção de repetição; descoberta competitiva na base informada com origem, datas e oito campos de tendência; experimentos A/B com risco, autorização específica, histórico e resultados descritivos preservados. Sem chamadas externas, geração de imagens ou publicação.",
+    "critical_errors": [],
+    "limitations": [
+      "Descoberta competitiva pesquisa exclusivamente observações cadastradas na base local; não há scraping nem consulta a perfis externos. Avaliações e confiança de tendências são informadas pelo operador, não verificadas automaticamente.",
+      "Campos visuais ausentes permanecem desconhecidos. Calendário é analisado em grupo separado e não comprova publicação. Alerta de 3 ocorrências e 50% é uma heurística descritiva, não benchmark de mercado.",
+      "Classificação de risco é conservadora por variável e declaração de mudança protegida; não detecta semanticamente mudanças ocultadas pelo operador. Iniciar experimento significa acompanhamento local, sem geração, distribuição de tráfego ou publicação.",
+      "A/B aceita somente métricas binárias e contagens informadas com fonte. Não calcula significância ou causalidade nem declara vencedor; menos de 100 observações por braço gera cautela reforçada, não um cálculo de poder estatístico.",
+      "Capturas usam fixtures fictícias em banco temporário, sem alterar .kiros. A verificação visual usa Chrome headless com emulação real de viewport via Node 24; o navegador integrado não estava conectado nesta sessão.",
+      "Alterações preexistentes em nove arquivos da M09 foram preservadas e ficam fora do commit da M10."
+    ],
+    "real_readiness": false,
+    "acceptance": {
+      "M10-A01": {
+        "files": [
+          "kiros/insights.py",
+          "kiros/ui/insights.py",
+          "tests/test_insights.py",
+          "docs/evidence/M10-diversity-desktop.png",
+          "docs/evidence/M10-diversity-mobile.png",
+          "docs/evidence/M10-visual.json"
+        ],
+        "verification": "test_saturation_all_dimensions_and_intentional_repeat_survive_restart cobre as 19 dimensões, frequência, recência UTC, alerta e repetição com motivo; test_missing_values_recency_and_calendar_scope_are_not_invented cobre janela, desconhecidos e separação do calendário. A tela exibe a base do alerta e não impede repetição intencional."
+      },
+      "M10-A02": {
+        "files": [
+          "kiros/insights.py",
+          "tests/test_insights.py",
+          "tests/test_insights_http.py",
+          "docs/INTEGRATIONS.md",
+          "docs/evidence/M10-sources-desktop.png",
+          "docs/evidence/M10-sources-mobile.png"
+        ],
+        "verification": "test_competitive_discovery_preserves_provenance_all_trend_fields_and_mock_separation verifica descoberta literal por perfil/categoria/localização, origem, datas e exclusão padrão de mocks. test_source_form_discovery_and_mock_labels cobre cadastro HTTP, busca e aviso visível de dados fictícios; conteúdo externo permanece texto escapado."
+      },
+      "M10-A03": {
+        "files": [
+          "kiros/insights.py",
+          "kiros/ui/insights.py",
+          "tests/test_insights.py",
+          "docs/evidence/M10-sources-desktop.png"
+        ],
+        "verification": "Os oito campos da seção 44 são obrigatórios na persistência e apresentados com fonte, data e identificação de avaliação do operador. Testes verificam preservação exata do objeto de tendência e rejeição de campos ausentes."
+      },
+      "M10-A04": {
+        "files": [
+          "kiros/insights.py",
+          "kiros/migrations/011_insights_and_experiments.sql",
+          "tests/test_insights.py",
+          "tests/test_insights_http.py",
+          "docs/evidence/M10-experiments-desktop.png"
+        ],
+        "verification": "test_medium_high_cannot_inherit_low_risk_authority, test_low_risk_requires_authority_and_protected_change_escalates e test_experiment_constraints_and_failed_approval_are_atomic verificam classificações, confirmação específica, bloqueio antes de aprovação, autorização de baixo risco e histórico preservado. O fluxo HTTP testa tentativa de início negada, aprovação e início local."
+      },
+      "M10-A05": {
+        "files": [
+          "kiros/insights.py",
+          "tests/test_insights.py",
+          "tests/test_insights_http.py",
+          "docs/evidence/M10-experiments-mobile.png",
+          "scripts/capture_insights_screenshot.py",
+          "scripts/capture_insights_browser.mjs"
+        ],
+        "verification": "test_small_ab_sample_never_announces_winner_and_history_is_immutable verifica 0/5 contra 5/5 com confiança baixa e nenhum vencedor, preservando resultado após tentativa de sobrescrita. test_invalid_samples_rejected_and_large_samples_still_descriptive verifica contagens inválidas e leitura descritiva com 1000 por braço. test_http_experiment_end_to_end_authority_and_small_sample comprova o fluxo pela aplicação; test_no_external_calls_or_publications_for_any_experiment verifica ausência de publicação."
+      }
+    }
+  },
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/check-1.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/build.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/check-2.log"
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke.py"
+      ],
+      "exit_code": 0,
+      "log": "docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/check-3.log"
+    }
+  ],
+  "evidence_sha256": {
+    "docs/INTEGRATIONS.md": "707d38d50a8689bfdde33cb6476741863fcb593671d7ee5f6b17168178e38978",
+    "docs/evidence/M10-diversity-desktop.png": "17ef4743576dc5508ca0ceec9b8d7f3fa0d79b5448f957a3b1f3526cdaad0da9",
+    "docs/evidence/M10-diversity-mobile.png": "f5b15815133e20c6739ba98ce7c3ad026d270a19c65f2a5d7a1b56ee512f56c4",
+    "docs/evidence/M10-experiments-desktop.png": "f29b559a28face7961714da0a5467810f6466b6a1b2f2e840631c9f1740b0c6c",
+    "docs/evidence/M10-experiments-mobile.png": "16198f95a03943cb10c14bdc9de7947a674b2b443c73d44bcd27746286c94fa2",
+    "docs/evidence/M10-sources-desktop.png": "3aef7c8be6a88e3966ceabbb13654fcf84491cfec31a386295ceb3257420e789",
+    "docs/evidence/M10-sources-mobile.png": "f0b980011063731117e4c443ad1e03a8fc6acf4c0197ad904cec906ee0162201",
+    "docs/evidence/M10-visual.json": "04d7fc9ba17a35cb7fd03965323134ea4f768a05781e43e87661072b68e30af5",
+    "kiros/insights.py": "af745b6855c7ebac5a6f47913565581f6daa559e7d6d98764c1427c7a87f1135",
+    "kiros/migrations/011_insights_and_experiments.sql": "6c704cabc6d988ace1931464f2fbc28c76038e712e5d367f50bc12f31d1da61b",
+    "kiros/ui/insights.py": "cad3c28015a2db235888d973a30c25fe5db63b2bd35ff3df078afcc71d003804",
+    "scripts/capture_insights_browser.mjs": "9136f65f4c28cb871fb7570b6ab2815f394155a01c894396b73b79384c2cbfa7",
+    "scripts/capture_insights_screenshot.py": "d4ede37417cff71ccfe7eaae74255288b09985b3653f1fbbf8bc36b6a31bb9f5",
+    "tests/test_insights.py": "c1181d3a4f2f642f7a66039894aca9cc22cd6561e195a6bb9210ae197aee02ce",
+    "tests/test_insights_http.py": "d5d687aa1cec963321db164600350d47ae882336a59840f8dea728032f7eb9a7"
+  },
+  "spec_sha256": "71ec4afb7b843e1b68746e1b7553a411abbaa182eda5a1d42f4ca199bd0ca1af"
+}

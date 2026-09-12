@@ -1,5 +1,42 @@
 # Desenvolvimento local — M00
 
+## M10 — Insights, diversidade e experimentos
+
+Abra `/insights`: abas Diversidade, Fontes e tendências e Experimentos A/B.
+Migração aditiva `011_insights_and_experiments.sql`, sem alteração do histórico
+das milestones anteriores. Serviço em `kiros/insights.py`, UI em
+`kiros/ui/insights.py`; rotas POST `/api/insights/{observation,source,experiment,approve,start,result}`.
+Origin/Host são verificados antes de ações; campos duplicados são recusados.
+
+- Diversidade: 19 dimensões das seções 32–33, incluindo campos opcionais para
+  atributos visuais, produto, fragrância e campanha. Janela de 1–365 dias,
+  frequência média por 7 dias e última ocorrência. Alerta com 3 ocorrências e
+  participação >=50% dos dados conhecidos por dimensão e origem, regra local
+  descritiva, sem bloquear repetição intencional. Calendário e observações
+  informadas são grupos distintos; ausência não equivale a zero saturação.
+- Fontes: entrada manual com origem e datas, busca literal por perfil, categoria
+  e localização. Oito campos obrigatórios de avaliação da tendência; simulações
+  não aparecem sem inclusão explícita. Não existe busca remota nesta etapa.
+- Experimentos: baixo risco para enquadramento/paleta; médio para imagem,
+  composição/copy/CTA; alto para produto/outra variável ou mudança protegida
+  declarada. A classificação não lê semanticamente textos nem detecta falsidade
+  de declarações do operador. Hipótese/controle/variante/variável/métrica são
+  imutáveis após criação. Autorização prévia só aprova risco baixo; médio/alto
+  exigem confirmação específica. Todos exigem aprovação antes de iniciar.
+- Iniciar significa acompanhamento local, sem geração, publicação ou distribuição
+  de tráfego. Resultado definitivo preservado, com contagens, taxas, fonte e
+  histórico do responsável. Apenas métricas binárias: eventos <= observações.
+  Menos de 100 observações por braço implica confiança baixa; acima disso, a
+  confiança continua limitada e a leitura descritiva. Esse limiar não é cálculo
+  estatístico. Não se declara vencedor nem causalidade automaticamente.
+
+Verificação focada: `python3 -m unittest discover -s tests -p 'test_insights*.py' -v`.
+O checkpoint M10 executa regressão completa, build e smoke. Evidência visual:
+`python3 scripts/capture_insights_screenshot.py` (Chrome instalado e Node 24;
+usa `capture_insights_browser.mjs` com emulação real de viewport e registra
+geometria/rótulos em `M10-visual.json`; banco e perfil temporários, sem semear `.kiros`). Para abrir o estúdio:
+`python3 -m kiros --port 8765 --data-dir .kiros`.
+
 ## Stack e execução
 
 Python 3.9+ com biblioteca padrão: HTTP server local, HTML renderizado no servidor,
@@ -327,6 +364,4 @@ A M06 implementa a verificação rigorosa de fidelidade de produto em 8 dimensõ
    - Registro de feedback do operador (`record_version_learning`) vinculado à versão e slide.
    - Classificação do aprendizado em `recurring_preference` (preferência de estilo) ou `campaign_context` (nota específica da campanha).
    - Persistência estruturada em `version_learnings` e integração transparente com o `MemoryStore` do Creative Director, influenciando gerações futuras sem sobrescrever dados oficiais.
-
-
 

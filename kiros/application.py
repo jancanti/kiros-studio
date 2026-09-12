@@ -21,6 +21,7 @@ from kiros.layout import LayoutEngine, LayoutEditor, TemplateLibrary
 from kiros.content import CopyEngine, StoriesEngine, PrePublishAuditor
 from kiros.calendar import EditorialCalendarService
 from kiros.social import InstagramPublisher, PublicationAuditor
+from kiros.insights import InsightsService
 
 NAVIGATION = (
     ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
@@ -86,6 +87,7 @@ class Application:
             campaigns=self.campaigns,
             library=self.library,
         )
+        self.insights = InsightsService(self.database)
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

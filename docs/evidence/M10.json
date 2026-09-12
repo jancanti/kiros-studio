@@ -1,29 +1,36 @@
 {
   "milestone": "M10",
-  "summary": "",
+  "summary": "M10 implementa Insights em três abas: mapa local de saturação e diversidade com 19 dimensões, frequência/recência e intenção de repetição; descoberta competitiva na base informada com origem, datas e oito campos de tendência; experimentos A/B com risco, autorização específica, histórico e resultados descritivos preservados. Sem chamadas externas, geração de imagens ou publicação.",
   "critical_errors": [],
-  "limitations": [],
+  "limitations": [
+    "Descoberta competitiva pesquisa exclusivamente observações cadastradas na base local; não há scraping nem consulta a perfis externos. Avaliações e confiança de tendências são informadas pelo operador, não verificadas automaticamente.",
+    "Campos visuais ausentes permanecem desconhecidos. Calendário é analisado em grupo separado e não comprova publicação. Alerta de 3 ocorrências e 50% é uma heurística descritiva, não benchmark de mercado.",
+    "Classificação de risco é conservadora por variável e declaração de mudança protegida; não detecta semanticamente mudanças ocultadas pelo operador. Iniciar experimento significa acompanhamento local, sem geração, distribuição de tráfego ou publicação.",
+    "A/B aceita somente métricas binárias e contagens informadas com fonte. Não calcula significância ou causalidade nem declara vencedor; menos de 100 observações por braço gera cautela reforçada, não um cálculo de poder estatístico.",
+    "Capturas usam fixtures fictícias em banco temporário, sem alterar .kiros. A verificação visual usa Chrome headless com emulação real de viewport via Node 24; o navegador integrado não estava conectado nesta sessão.",
+    "Alterações preexistentes em nove arquivos da M09 foram preservadas e ficam fora do commit da M10."
+  ],
   "real_readiness": false,
   "acceptance": {
     "M10-A01": {
-      "files": [],
-      "verification": ""
+      "files": ["kiros/insights.py", "kiros/ui/insights.py", "tests/test_insights.py", "docs/evidence/M10-diversity-desktop.png", "docs/evidence/M10-diversity-mobile.png", "docs/evidence/M10-visual.json"],
+      "verification": "test_saturation_all_dimensions_and_intentional_repeat_survive_restart cobre as 19 dimensões, frequência, recência UTC, alerta e repetição com motivo; test_missing_values_recency_and_calendar_scope_are_not_invented cobre janela, desconhecidos e separação do calendário. A tela exibe a base do alerta e não impede repetição intencional."
     },
     "M10-A02": {
-      "files": [],
-      "verification": ""
+      "files": ["kiros/insights.py", "tests/test_insights.py", "tests/test_insights_http.py", "docs/INTEGRATIONS.md", "docs/evidence/M10-sources-desktop.png", "docs/evidence/M10-sources-mobile.png"],
+      "verification": "test_competitive_discovery_preserves_provenance_all_trend_fields_and_mock_separation verifica descoberta literal por perfil/categoria/localização, origem, datas e exclusão padrão de mocks. test_source_form_discovery_and_mock_labels cobre cadastro HTTP, busca e aviso visível de dados fictícios; conteúdo externo permanece texto escapado."
     },
     "M10-A03": {
-      "files": [],
-      "verification": ""
+      "files": ["kiros/insights.py", "kiros/ui/insights.py", "tests/test_insights.py", "docs/evidence/M10-sources-desktop.png"],
+      "verification": "Os oito campos da seção 44 são obrigatórios na persistência e apresentados com fonte, data e identificação de avaliação do operador. Testes verificam preservação exata do objeto de tendência e rejeição de campos ausentes."
     },
     "M10-A04": {
-      "files": [],
-      "verification": ""
+      "files": ["kiros/insights.py", "kiros/migrations/011_insights_and_experiments.sql", "tests/test_insights.py", "tests/test_insights_http.py", "docs/evidence/M10-experiments-desktop.png"],
+      "verification": "test_medium_high_cannot_inherit_low_risk_authority, test_low_risk_requires_authority_and_protected_change_escalates e test_experiment_constraints_and_failed_approval_are_atomic verificam classificações, confirmação específica, bloqueio antes de aprovação, autorização de baixo risco e histórico preservado. O fluxo HTTP testa tentativa de início negada, aprovação e início local."
     },
     "M10-A05": {
-      "files": [],
-      "verification": ""
+      "files": ["kiros/insights.py", "tests/test_insights.py", "tests/test_insights_http.py", "docs/evidence/M10-experiments-mobile.png", "scripts/capture_insights_screenshot.py", "scripts/capture_insights_browser.mjs"],
+      "verification": "test_small_ab_sample_never_announces_winner_and_history_is_immutable verifica 0/5 contra 5/5 com confiança baixa e nenhum vencedor, preservando resultado após tentativa de sobrescrita. test_invalid_samples_rejected_and_large_samples_still_descriptive verifica contagens inválidas e leitura descritiva com 1000 por braço. test_http_experiment_end_to_end_authority_and_small_sample comprova o fluxo pela aplicação; test_no_external_calls_or_publications_for_any_experiment verifica ausência de publicação."
     }
   }
 }

@@ -1,5 +1,23 @@
 # Validação de integrações
 
+M10 (2026-09-12): `InsightsService` usa SQLite real local. Observações competitivas
+e avaliações de tendências são cadastradas pelo operador com fonte, data da
+observação e data da análise. A descoberta por perfil/categoria/localização pesquisa
+apenas essa base local; não há scraping, descoberta remota ou acesso autenticado a
+concorrentes. Nenhuma API, LLM ou geração de imagem foi chamada nesta milestone.
+Simulações são marcadas individualmente e excluídas das buscas por padrão.
+
+O mapa usa dimensões informadas e metadados disponíveis do calendário em grupos
+separados, sem tratar agendamento como publicação. Não infere fragrância, produto
+ou atributos visuais ausentes. Fonte informada não significa fonte verificada.
+
+Experimentos só iniciam acompanhamento local após autorização registrada. Não
+executam geração nem publicação. Resultados A/B são contagens informadas com fonte,
+taxas descritivas e confiança limitada; não há integração com Analytics ao vivo,
+teste de significância, vencedor automático ou alteração da identidade oficial.
+As capturas M10 usam banco temporário e dados fictícios identificados; não
+representam desempenho ou análise de concorrentes reais.
+
 M00 (2026-09-12): fundação local implementada; nenhuma integração externa testada ao vivo.
 Dez contratos definidos em `kiros/core/contracts.py`; MockLLM determinístico e
 gateway central com recusa antes do transporte. SQLite e filesystem reais locais;
@@ -113,4 +131,3 @@ em 7 dimensões com bloqueio por falta de confirmação explícita (Seção 79).
 Nenhum post real foi disparado para contas ao vivo durante o desenvolvimento.
 Toda a validação em ambiente local utilizou fixtures determinísticas e recusa central do gateway.
 Segredos de autenticação nunca são registrados em logs nem retornados ao frontend.
-

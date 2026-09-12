@@ -475,7 +475,7 @@
       "depends_on": [
         "M09"
       ],
-      "status": "pending",
+      "status": "completed",
       "sections": [
         32,
         33,
@@ -507,7 +507,10 @@
           "text": "A/B registra hipótese, controle, variável, resultado, amostra e confiança; amostras pequenas não geram conclusão forte; testes cobrem essas restrições."
         }
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "path": "docs/checkpoints/M10/ff7f38b20fd04c0cbb67b62881751ce8/checkpoint.json",
+        "at": "2026-09-12T19:10:21.058799+00:00"
+      },
       "blocker": null
     },
     {

@@ -309,7 +309,23 @@
       "timeout_seconds": 60
     }
   ],
-  "M10": [],
+  "M10": [
+    {
+      "name": "M10: domínio, HTTP, aprovações, proveniência, A/B e regressão completa",
+      "argv": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"],
+      "timeout_seconds": 180
+    },
+    {
+      "name": "Build local com migração 011 e Insights",
+      "argv": ["python3", "scripts/build.py"],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "Smoke HTTP e persistência após reinício",
+      "argv": ["python3", "scripts/smoke.py"],
+      "timeout_seconds": 60
+    }
+  ],
   "M11": [],
   "M12": []
 }

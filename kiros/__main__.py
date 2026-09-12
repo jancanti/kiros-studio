@@ -201,6 +201,24 @@ def make_server(data_dir, port=8765):
                     return self.respond(303, '', location='/calendario?' + query_str)
                 except (ValueError, UnicodeError, PermissionError, Exception) as exc:
                     return self.respond(303, '', location='/calendario?' + urlencode({'error': str(exc)}))
+            if self.path.startswith('/api/insights/'):
+                from kiros.ui.insights import dispatch_insights
+                action = self.path.rsplit('/', 1)[-1]
+                tab = 'diversity' if action == 'observation' else ('sources' if action == 'source' else 'experiments')
+                if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':
+                    return self.respond(415, 'Formato não permitido')
+                try:
+                    size = int(self.headers.get('Content-Length', '0'))
+                    if not 0 < size <= 64000:
+                        raise ValueError('Tamanho de requisição inválido.')
+                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True,
+                                     strict_parsing=True, max_num_fields=70)
+                    if any(len(values) != 1 for values in parsed.values()):
+                        raise ValueError('Campos duplicados não são permitidos.')
+                    dispatch_insights(app.insights, action, {k: v[0] for k, v in parsed.items()})
+                    return self.respond(303, '', location='/insights?' + urlencode({'tab': tab, 'saved': '1'}))
+                except (ValueError, UnicodeError, PermissionError) as exc:
+                    return self.respond(303, '', location='/insights?' + urlencode({'tab': tab, 'error': str(exc)}))
             if self.path != '/api/preferences':
                 return self.respond(404, 'Operação não encontrada')
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/x-www-form-urlencoded':

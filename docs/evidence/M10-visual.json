@@ -1,0 +1,68 @@
+[
+  {
+    "tab": "diversity",
+    "device": "desktop",
+    "width": 1280,
+    "documentWidth": 1280,
+    "title": "Insights",
+    "height": 1524,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-diversity-desktop.png"
+  },
+  {
+    "tab": "diversity",
+    "device": "mobile",
+    "width": 390,
+    "documentWidth": 390,
+    "title": "Insights",
+    "height": 1909,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-diversity-mobile.png"
+  },
+  {
+    "tab": "sources",
+    "device": "desktop",
+    "width": 1280,
+    "documentWidth": 1280,
+    "title": "Insights",
+    "height": 2082,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-sources-desktop.png"
+  },
+  {
+    "tab": "sources",
+    "device": "mobile",
+    "width": 390,
+    "documentWidth": 390,
+    "title": "Insights",
+    "height": 2502,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-sources-mobile.png"
+  },
+  {
+    "tab": "experiments",
+    "device": "desktop",
+    "width": 1280,
+    "documentWidth": 1280,
+    "title": "Insights",
+    "height": 2158,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-experiments-desktop.png"
+  },
+  {
+    "tab": "experiments",
+    "device": "mobile",
+    "width": 390,
+    "documentWidth": 390,
+    "title": "Insights",
+    "height": 2647,
+    "duplicateIds": [],
+    "unlabeledControls": 0,
+    "file": "M10-experiments-mobile.png"
+  }
+]

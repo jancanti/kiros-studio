@@ -118,3 +118,21 @@ th{font-weight:600;font-family:var(--font-body)}
 .idea-cards{display:grid;gap:14px}
 .idea-card{padding:16px;border:1px solid var(--line);border-radius:4px;background:var(--white)}
 .idea-pinned{border-left:4px solid var(--ink);background:var(--paper)}
+
+/* M10: extensão da área de operação, com a identidade existente. */
+.insights{min-width:0;max-width:1100px}
+.insights p{max-width:74ch;line-height:1.7}
+.insights-tabs{display:flex;flex-wrap:wrap;gap:12px 24px;border-bottom:1px solid var(--line);margin:32px 0}
+.insights-tabs a{padding:12px 0;text-decoration:none}
+.insights-tabs a[aria-current]{border-bottom:2px solid var(--ink);font-weight:600}
+.insights-record{border-top:1px solid var(--line);padding:28px 0;margin-top:24px;overflow-wrap:anywhere}
+.insights-record h3{font:500 22px var(--font-heading);margin:0 0 16px}
+.insights-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%}
+.insights-fields label{display:block;margin-bottom:8px}
+.insights caption{text-align:left;padding:16px 0;font-weight:600}
+.insights .table-scroll:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.insights .table-scroll{max-width:100%}
+.insights th,.insights td{min-width:130px;vertical-align:top;overflow-wrap:anywhere}
+.insights button:hover{background:#3d5548}
+.insights summary{padding:8px 0}
+@media(max-width:700px){.insights-fields{grid-template-columns:1fr}.insights-tabs{gap:8px 16px;font-size:14px}.insights-record h3{font-size:20px}}
