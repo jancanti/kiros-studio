@@ -125,10 +125,13 @@ class ProvidersHTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(headers.get('Referrer-Policy'), 'same-origin')
 
-        # 2. Estilos do botão e input para evitar quebra de linha em telas estreitas
-        self.assertIn('white-space:nowrap', page)
-        self.assertIn('min-width:max-content', page)
-        self.assertIn('flex-shrink:0', page)
+        # 2. Estilos do formulário e botão no CSS e formulário inline
+        status_css, css, _ = self.request('/style.css')
+        self.assertEqual(status_css, 200)
+        self.assertIn('form.inline-form', css)
+        self.assertIn('white-space:nowrap', css)
+        self.assertIn('min-width:max-content', css)
+        self.assertIn('flex-shrink:0', css)
         self.assertIn('flex:1;min-width:140px', page)
 
         # 3. Submissão via formulário padrão com Referer (sem Origin) é aceita
