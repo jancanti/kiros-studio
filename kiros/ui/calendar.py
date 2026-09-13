@@ -253,7 +253,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             </div>
         </div>'''
     else:
-        html += '<div style="display:grid;gap:16px;margin-top:16px">'
+        html += '<div style="display:grid;gap:20px;margin-top:20px">'
         for entry in entries:
             # Badges
             status_cls = 'status-active' if entry.status in ('published', 'scheduled') else 'status-inactive'
@@ -271,7 +271,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             }
             pillar_style = pillar_badges.get(entry.pillar, 'background:var(--surface-input);color:var(--ink)')
 
-            html += f'''<div class="card" style="padding:16px;border:1px solid var(--hairline);border-radius:var(--radius-sm);background:var(--canvas)">
+            html += f'''<div class="card" style="padding:20px;border:1px solid var(--hairline);border-radius:var(--radius-sm);background:var(--canvas);margin-bottom:0">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
                     <div>
                         <span class="badge" style="{pillar_style};margin-right:6px">{escape(entry.pillar.upper())}</span>
@@ -318,14 +318,14 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             html += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center">'
             
             # Botão Recomendar Horário
-            html += f'''<form method="post" action="/api/calendar/recommend_time" style="display:inline;margin:0">
+            html += f'''<form method="post" action="/api/calendar/recommend_time" class="inline-form" style="margin:0">
                 <input type="hidden" name="entry_id" value="{entry.id}">
                 <button type="submit" class="button button-secondary" style="margin:0;padding:8px 14px;font-size:13px" title="Solicitar cálculo estatístico de melhor horário">Sugerir Melhor Horário (CD)</button>
             </form>'''
 
             # Formulário de Horário Manual ("Manual sempre vence" - Seção 41)
             now_def = entry.scheduled_for or (datetime.now(timezone.utc).isoformat()[:16])
-            html += f'''<form method="post" action="/api/calendar/set_time_decision" style="display:flex;align-items:center;gap:6px;margin:0">
+            html += f'''<form method="post" action="/api/calendar/set_time_decision" class="inline-form" style="gap:6px;margin:0">
                 <input type="hidden" name="entry_id" value="{entry.id}">
                 <input type="datetime-local" name="selected_time" value="{now_def[:16]}" aria-label="Definir data e horário manual" style="padding:6px 8px;max-width:200px;font-size:13px" required>
                 <input type="hidden" name="accept_recommendation" value="0">
@@ -333,7 +333,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             </form>'''
 
             # Remover Item
-            html += f'''<form method="post" action="/api/calendar/delete_entry" style="display:inline;margin:0;margin-left:auto">
+            html += f'''<form method="post" action="/api/calendar/delete_entry" class="inline-form" style="margin:0;margin-left:auto">
                 <input type="hidden" name="entry_id" value="{entry.id}">
                 <button type="submit" class="button button-danger" style="margin:0;padding:8px 14px;font-size:13px" onclick="return confirm('Remover este post planejado do calendário? Esta ação não pode ser desfeita.')">Remover Item</button>
             </form>'''
