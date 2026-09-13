@@ -28,7 +28,7 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     out = '<div class="hero-split">'
     # Coluna Esquerda: Editorial (Geist Display + Inter + CTA)
     out += '<div class="hero-editorial">'
-    out += '<p class="eyebrow">Visão Geral do Estúdio · KIROS V1</p>'
+    out += '<p class="eyebrow">Dashboard Contextual · Visão Geral do Estúdio · KIROS V1</p>'
     out += '<p class="intro">Esteira KIROS para Instagram (@usekiros): Hub de Ideias, Cadastro de Produtos, Aprovação Visual e Agendamento Simplificado.</p>'
     out += '<div class="hero-actions">'
     out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a> '
@@ -39,9 +39,9 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # Coluna Direita: Architectural Gradient Slab (3-stop Copy.ai Gradient)
     out += '<div class="gradient-panel">'
     out += '<div>'
-    out += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+    out += '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px;">'
     out += '<span class="tag" style="color:rgba(255,255,255,0.85);letter-spacing:1.5px;">ESTÚDIO &amp; FILA</span>'
-    out += f'<span style="font-size:12px;background:rgba(255,255,255,0.18);padding:3px 10px;border-radius:4px;font-weight:500;">{e(hoje["mode"])}</span>'
+    out += f'<span style="font-size:11px;background:rgba(255,255,255,0.18);padding:3px 8px;border-radius:4px;font-weight:500;color:rgba(255,255,255,0.9);">{e(hoje["mode"])}</span>'
     out += '</div>'
     out += f'<h3 style="font-size:22px;margin:8px 0 6px;">Status: {e(hoje["queue_status"])}</h3>'
     out += '<p style="font-size:13px;margin:0 0 16px;">Ambiente determinístico local com orquestração contínua.</p>'
@@ -68,41 +68,54 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     if query.get('error'):
         out += f'<p class="notice" role="alert">{e(query["error"][0])}</p>'
 
-    # Grid de 2 colunas com os blocos
+    # Grid de 2 colunas com os blocos uniformes
     out += '<div class="dashboard-grid">'
 
     # 1. Bloco: Hoje
     out += '<section class="panel dashboard-card">'
+    out += '<div class="dashboard-card-body">'
     out += '<span class="tag">Hoje</span>'
     out += f'<h2>{e(hoje["data_formatada"])}</h2>'
     out += f'<p><strong>Fila de geração:</strong> {e(hoje["queue_status"])}</p>'
     out += f'<p>Tarefas pendentes: <strong>{hoje["pending_jobs"]}</strong> · Concluídas: <strong>{hoje["completed_jobs"]}</strong></p>'
-    out += f'<p class="aside-note">Ambiente: {e(hoje["mode"])}</p>'
+    out += f'<p class="aside-note" style="margin-top:auto;font-size:12px;color:var(--muted);">Ambiente: {e(hoje["mode"])}</p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
     if hoje['queue_paused']:
-        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Retome a geração"><button type="submit">Retomar fila</button></form>'
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Retome a geração"><button type="submit">Retomar fila</button></form>'
     else:
-        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar fila</button></form>'
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar fila</button></form>'
+    out += '</div>'
     out += '</section>'
 
     # 2. Bloco: Oportunidade
     out += '<section class="panel dashboard-card">'
+    out += '<div class="dashboard-card-body">'
     out += '<span class="tag">Oportunidade</span>'
     out += f'<h2>{e(oportunidade["title"])}</h2>'
     out += f'<p>{e(oportunidade["description"])}</p>'
-    out += f'<p>Pilar recomendado: <strong>{e(oportunidade["recommended_pillar"])}</strong></p>'
+    out += f'<p style="font-size:13px;color:var(--muted-blue);">Pilar recomendado: <strong>{e(oportunidade["recommended_pillar"])}</strong></p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
     out += f'<a class="button" href="{e(oportunidade.get("target_url", "/criar"))}">Explorar oportunidade <span aria-hidden="true">→</span></a>'
+    out += '</div>'
     out += '</section>'
 
     # 3. Bloco: Próximo passo recomendado
     out += '<section class="panel dashboard-card highlight-step">'
+    out += '<div class="dashboard-card-body">'
     out += f'<span class="tag priority-{e(proximo_passo["priority"])}">Próximo passo recomendado</span>'
     out += f'<h2>{e(proximo_passo["action_label"])}</h2>'
     out += f'<p>{e(proximo_passo["description"])}</p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
     out += f'<a class="button" href="{e(proximo_passo["url"])}">Executar ação recomendada <span aria-hidden="true">→</span></a>'
+    out += '</div>'
     out += '</section>'
 
     # 4. Bloco: Calendário
     out += '<section class="panel dashboard-card">'
+    out += '<div class="dashboard-card-body">'
     out += '<span class="tag">Calendário</span>'
     out += f'<h2>Postagens agendadas: {calendario["scheduled_count"]}</h2>'
     if calendario['upcoming_posts']:
@@ -111,12 +124,16 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
             out += f'<li><strong>{e(post["title"])}</strong> ({e(post["pillar"])}) — {e(post["publish_time"])} [{e(post["format"])}]</li>'
         out += '</ul>'
     else:
-        out += '<p>Nenhuma publicação agendada nos próximos dias.</p>'
+        out += '<p style="color:var(--muted-blue);">Nenhuma publicação agendada nos próximos dias.</p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
     out += '<a class="button button-secondary" href="/calendario">Abrir calendário editorial <span aria-hidden="true">→</span></a>'
+    out += '</div>'
     out += '</section>'
 
     # 5. Bloco: Criação
     out += '<section class="panel dashboard-card">'
+    out += '<div class="dashboard-card-body">'
     out += '<span class="tag">Criação</span>'
     out += f'<h2>Campanhas recentes ({len(criacao["recent_campaigns"])})</h2>'
     if criacao['recent_campaigns']:
@@ -125,13 +142,17 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
             out += f'<li><a href="{e(camp["url"])}"><strong>{e(camp["title"])}</strong></a> · {e(camp["status"])} ({camp["slides_count"]} slides)</li>'
         out += '</ul>'
     else:
-        out += '<p>Nenhuma campanha criada ainda.</p>'
-    out += f'<p class="aside-note">Ideias fixadas: <strong>{criacao["pinned_ideas_count"]}</strong> / Total de ideias: <strong>{criacao["total_ideas_count"]}</strong></p>'
+        out += '<p style="color:var(--muted-blue);">Nenhuma campanha criada ainda.</p>'
+    out += f'<p class="aside-note" style="margin-top:auto;font-size:12px;color:var(--muted);">Ideias fixadas: <strong>{criacao["pinned_ideas_count"]}</strong> / Total de ideias: <strong>{criacao["total_ideas_count"]}</strong></p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
     out += '<a class="button" href="/criar">Criar nova campanha <span aria-hidden="true">+</span></a>'
+    out += '</div>'
     out += '</section>'
 
     # 6. Bloco: Aprendizados
     out += '<section class="panel dashboard-card" id="aprendizados">'
+    out += '<div class="dashboard-card-body">'
     out += '<span class="tag">Aprendizados</span>'
     out += f'<h2>Correções locais: {aprendizados["total_corrections"]} · Prompts aprovados: {aprendizados["approved_prompts_count"]}</h2>'
 
@@ -155,9 +176,10 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
             out += f'<li>{e(l["correction_note"])}</li>'
         out += '</ul>'
     else:
-        out += '<p>Nenhum aprendizado ou proposta pendente no momento.</p>'
+        out += '<p style="color:var(--muted-blue);">Nenhum aprendizado ou proposta pendente no momento.</p>'
 
-    out += '<p class="aside-note"><a href="/biblioteca?tab=prompts">Ver Prompt Library na Biblioteca →</a></p>'
+    out += '<p class="aside-note" style="margin-top:auto;"><a href="/biblioteca?tab=prompts">Ver Prompt Library na Biblioteca →</a></p>'
+    out += '</div>'
     out += '</section>'
 
     out += '</div>'
