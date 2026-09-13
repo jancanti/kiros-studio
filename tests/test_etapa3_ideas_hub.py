@@ -58,6 +58,47 @@ class TestEtapa3IdeasHub(unittest.TestCase):
             self.assertIn("✨ Gerar Novas Ideias", html)
             self.assertIn("⚡ Criar esta Campanha em 1-Clique", html)
 
+    def test_etapa3_generate_rotation_and_no_duplicates(self):
+        """Verifica rotação dinâmica de ideias e prevenção contra duplicações."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            app = Application(Path(tmp_dir))
+            # Batch 0
+            batch0 = app.director.generate_ai_recommendations(limit=3, offset=0)
+            titles0 = [i['title'] for i in batch0]
+
+            # Batch 1 (rotação)
+            batch1 = app.director.generate_ai_recommendations(limit=3, offset=3)
+            titles1 = [i['title'] for i in batch1]
+
+            # Os títulos entre lotes subsequentes devem ser distintos
+            self.assertNotEqual(titles0, titles1)
+
+            # Chamadas repetidas no mesmo batch não devem duplicar registros no banco de ideias
+            app.director.generate_ai_recommendations(limit=3, offset=0)
+            app.director.generate_ai_recommendations(limit=3, offset=0)
+
+            ideas_in_db = app.idea_bank.list_ideas()
+            # O número de ideias únicas deve ser igual ao número total de ideias
+            distinct_titles = {i['title'] for i in ideas_in_db}
+            self.assertEqual(len(distinct_titles), len(ideas_in_db))
+
+    def test_brand_bible_summary_is_concise(self):
+        """Garante que dados extensos de Brand Bible não viram blocos brutos nos cards."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            app = Application(Path(tmp_dir))
+            vid = app.library.propose('brand', 'global', {
+                'information': 'A KIROS Aromas transforma fragrâncias em experiências. Mais um parágrafo enorme que não deve poluir o card.',
+                'photography': 'A KIROS é acolhedora, sensorial e contemporânea.\r\nDiretrizes de fotografia detalhadas em 10 parágrafos...',
+            }, 'test')
+            app.library.approve(vid, 'user')
+
+            recs = app.director.generate_ai_recommendations(limit=1, offset=0)
+            card_concept = recs[0]['concept']
+            # Não deve conter parágrafos crus de diretrizes de fotografia
+            self.assertNotIn('Diretrizes de fotografia detalhadas', card_concept)
+            self.assertIn('A KIROS Aromas transforma fragrâncias em experiências', card_concept)
+
 
 if __name__ == '__main__':
     unittest.main()
+

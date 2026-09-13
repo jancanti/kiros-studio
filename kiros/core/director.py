@@ -296,34 +296,47 @@ class CreativeDirector:
 
         return slides[:num_slides]
 
-    def generate_ai_recommendations(self, limit: int = 3) -> List[Dict[str, Any]]:
-        """Gera recomendações adaptativas de campanhas (Estética & Luxo, Ingredientes & Qualidade, Ritual & Ocasião)."""
+    def generate_ai_recommendations(self, limit: int = 3, offset: int = 0) -> List[Dict[str, Any]]:
+        """Gera recomendações adaptativas de campanhas dinâmicas e rotativas."""
         brand = self.library.brand_for() if self.library else {}
         products = self.library.list_products() if self.library else []
 
-        brand_info = brand.get('information', 'Aromas artesanais para casa de luxo acessível')
-        brand_tone = brand.get('photography', 'Elegante, acolhedora, humana e contemporânea')
+        # Extrai síntese concisa da marca sem despejar a documentação inteira da brand bible
+        raw_info = (brand.get('information') or '').strip()
+        if raw_info:
+            first_sentence = raw_info.split('\n')[0].split('.')[0].strip()
+            brand_info = first_sentence if len(first_sentence) <= 120 else "Aromas artesanais para transformar a casa em refúgio acolhedor"
+        else:
+            brand_info = "Aromas artesanais para casa de luxo acessível"
 
-        ideas = []
+        raw_photo = (brand.get('photography') or '').strip()
+        if 'acolhedora' in raw_photo.lower() or 'elegante' in raw_photo.lower():
+            brand_tone = "Elegante, acolhedora, sensorial e contemporânea"
+        elif raw_photo:
+            brand_tone = raw_photo.split('\n')[0].split('.')[0][:60].strip()
+        else:
+            brand_tone = "Elegante, acolhedora, humana e contemporânea"
+
+        pool = []
 
         if products:
             p1 = products[0]
             p1_bible = self.library.product_bible_for(p1['id']) if self.library else {}
             p1_vol = p1_bible.get('material', {}).get('value', '200g') if isinstance(p1_bible.get('material'), dict) else '200g'
             p1_notes = p1_bible.get('label', {}).get('value', 'Notas botânicas frescas') if isinstance(p1_bible.get('label'), dict) else 'Notas botânicas'
+            p2 = products[1] if len(products) > 1 else p1
 
-            ideas.append({
+            pool.append({
                 'theme': 'Estética & Luxo',
                 'title': f"Carrossel: A Presença Estética de {p1['name']}",
-                'concept': f"Imagens em iluminação oblíqua natural com destaque para {p1['name']} em ambiente contemporâneo e sofisticado. Tom: {brand_tone}.",
+                'concept': f"Imagens em iluminação oblíqua natural com destaque para {p1['name']} em ambiente contemporâneo e acolhedor. Tom: {brand_tone}.",
                 'pillar': 'lifestyle',
                 'objective': 'awareness',
                 'product_id': p1['id'],
                 'product_name': p1['name'],
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
-
-            ideas.append({
+            pool.append({
                 'theme': 'Ingredientes & Qualidade',
                 'title': f"Carrossel Informativo: Composição de {p1['name']}",
                 'concept': f"Destaque para cera 100% vegetal, pavio de algodão e notas olfativas ({p1_notes}). Atributo: {p1_vol}.",
@@ -333,30 +346,58 @@ class CreativeDirector:
                 'product_name': p1['name'],
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
-
-            p2 = products[1] if len(products) > 1 else p1
-            ideas.append({
+            pool.append({
                 'theme': 'Ritual & Ocasião',
                 'title': f"Stories & Post: O Ritual de Desacelerar com {p2['name']}",
-                'concept': f"Cenas no final de tarde e recepção de visitas. Como {p2['name']} transforma o momento de descanso no lar em um verdadeiro ritual.",
+                'concept': f"Cenas no final de tarde e momento de descompressão. Como {p2['name']} transforma o descanso no lar em um verdadeiro ritual sensorial.",
                 'pillar': 'relacionamento',
                 'objective': 'engajamento',
                 'product_id': p2['id'],
                 'product_name': p2['name'],
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
+            pool.append({
+                'theme': 'Bastidores & Criação',
+                'title': f"Reels: O Processo Artesanal de {p1['name']}",
+                'concept': f"Envase manual da cera e o tempo de cura cuidadoso para a perfeita fixação aromática de {p1['name']}.",
+                'pillar': 'marca',
+                'objective': 'autoridade',
+                'product_id': p1['id'],
+                'product_name': p1['name'],
+                'format': 'Reels 9:16 + Post Feed',
+            })
+            pool.append({
+                'theme': 'Guia de Uso',
+                'title': f"Carrossel: Como Fazer sua {p1['name']} Durar o Dobro",
+                'concept': "Dicas práticas para queima homogênea, aparar o pavio e garantir a melhor exalação de aroma.",
+                'pillar': 'educativo',
+                'objective': 'educação',
+                'product_id': p1['id'],
+                'product_name': p1['name'],
+                'format': 'Carrossel 4:5',
+            })
+            pool.append({
+                'theme': 'Presentes & Afeto',
+                'title': f"Post Promocional: Presenteie com {p2['name']}",
+                'concept': f"A beleza de presentear com afeto e memórias olfativas. Embalagem especial e kit afetivo.",
+                'pillar': 'comercial',
+                'objective': 'conversão',
+                'product_id': p2['id'],
+                'product_name': p2['name'],
+                'format': 'Carrossel 4:5 + Stories',
+            })
         else:
-            ideas.append({
+            pool.append({
                 'theme': 'Estética & Luxo',
                 'title': "Carrossel: A Arte de Perfumar a Casa com Intenção",
-                'concept': f"Apresentação da essência da KIROS Aromas ({brand_info}). Tom visual: {brand_tone}.",
+                'concept': f"Apresentação da essência da KIROS Aromas: {brand_info}. Tom visual: {brand_tone}.",
                 'pillar': 'marca',
                 'objective': 'awareness',
                 'product_id': None,
                 'product_name': 'Linha de Aromas KIROS',
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
-            ideas.append({
+            pool.append({
                 'theme': 'Ingredientes & Qualidade',
                 'title': "Carrossel: Por que Escolher Velas de Cera 100% Vegetal?",
                 'concept': "Comparativo educativo sobre queima limpa, ausência de tóxicos e pavio de algodão de alta qualidade.",
@@ -366,7 +407,7 @@ class CreativeDirector:
                 'product_name': 'Linha de Aromas KIROS',
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
-            ideas.append({
+            pool.append({
                 'theme': 'Ritual & Ocasião',
                 'title': "Stories: 3 Dicas para Acolher Visitas com Aromas Marcantes",
                 'concept': "Dicas práticas de ambientação da sala de estar e lavabo para criar memórias olfativas inesquecíveis.",
@@ -376,10 +417,75 @@ class CreativeDirector:
                 'product_name': 'Linha de Aromas KIROS',
                 'format': 'Carrossel 4:5 + 3 Stories 9:16',
             })
+            pool.append({
+                'theme': 'Bastidores & Criação',
+                'title': "Reels: Do Pavio à Cura — O Processo Artesanal KIROS",
+                'concept': "Bastidores do processo manual de envase e o tempo de cura da cera vegetal para exalação equilibrada.",
+                'pillar': 'marca',
+                'objective': 'autoridade',
+                'product_id': None,
+                'product_name': 'Velas Artesanais KIROS',
+                'format': 'Reels 9:16 + Post Feed',
+            })
+            pool.append({
+                'theme': 'Guia de Uso',
+                'title': "Carrossel Prático: Como Fazer sua Vela Durar Muito Mais",
+                'concept': "Guia essencial sobre a primeira queima com piscina completa, aparar o pavio e prevenir o túnel na cera.",
+                'pillar': 'educativo',
+                'objective': 'educação',
+                'product_id': None,
+                'product_name': 'Velas Aromáticas KIROS',
+                'format': 'Carrossel 4:5',
+            })
+            pool.append({
+                'theme': 'Momentos & Rotina',
+                'title': "Stories: Qual Fragrância Combina com o Seu Fim de Tarde?",
+                'concept': "Enquete interativa para descobrir os rituais de descompressão favoritos e conexão com a comunidade.",
+                'pillar': 'relacionamento',
+                'objective': 'engajamento',
+                'product_id': None,
+                'product_name': 'Linha de Aromas KIROS',
+                'format': 'Stories Interativo 9:16',
+            })
+            pool.append({
+                'theme': 'Decoração & Design',
+                'title': "Post: A Vela como Elemento Escultural no Design de Interiores",
+                'concept': "Inspirações de styling para mesas de centro, bandejas de pedra e estantes com iluminação suave.",
+                'pillar': 'lifestyle',
+                'objective': 'desejo',
+                'product_id': None,
+                'product_name': 'Coleção Casa KIROS',
+                'format': 'Carrossel 4:5',
+            })
+            pool.append({
+                'theme': 'Presentes & Afeto',
+                'title': "Carrossel: O Presente Perfeito — Kits de Boas-Vindas e Afeto",
+                'concept': "Curadoria de aromas para presentear pessoas queridas em celebrações especiais e datas afetivas.",
+                'pillar': 'comercial',
+                'objective': 'conversão',
+                'product_id': None,
+                'product_name': 'Kits de Presente KIROS',
+                'format': 'Carrossel 4:5 + Stories',
+            })
+            pool.append({
+                'theme': 'Foco & Bem-Estar',
+                'title': "Reels: Aromaterapia Botânica para o Home Office",
+                'concept': "Como fragrâncias botânicas e notas frescas auxiliam na concentração, clareza mental e aconchego no trabalho.",
+                'pillar': 'produtos',
+                'objective': 'utilidade',
+                'product_id': None,
+                'product_name': 'Difusores & Velas KIROS',
+                'format': 'Reels 9:16 + Post Feed',
+            })
+
+        ideas = []
+        for i in range(min(limit, len(pool))):
+            idx = (offset + i) % len(pool)
+            ideas.append(pool[idx])
 
         if self.idea_bank:
             prov = Provenance('automatic_analysis', 'creative_director.recommendations', self._now())
-            for item in ideas[:limit]:
+            for item in ideas:
                 try:
                     self.idea_bank.add_idea(
                         title=item['title'],
@@ -390,5 +496,6 @@ class CreativeDirector:
                 except Exception:
                     pass
 
-        return ideas[:limit]
+        return ideas
+
 

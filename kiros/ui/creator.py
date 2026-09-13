@@ -41,8 +41,17 @@ def dispatch_creator_action(app: Application, action: str, data: Dict[str, str])
         })
 
     elif action == 'generate_ai_ideas':
-        recs = director.generate_ai_recommendations(limit=3)
-        return urlencode({'ideas_generated': '1', 'msg': '3 novas ideias de campanha geradas com base no seu catálogo e marca.'})
+        try:
+            curr_batch = int(data.get('batch', 0))
+        except (ValueError, TypeError):
+            curr_batch = 0
+        next_batch = curr_batch + 1
+        recs = director.generate_ai_recommendations(limit=3, offset=next_batch * 3)
+        return urlencode({
+            'ideas_generated': '1',
+            'batch': str(next_batch),
+            'msg': 'Novas ideias de campanha geradas com base no seu catálogo e marca.',
+        })
 
     elif action == 'use_idea':
         title = data.get('title', '').strip()
@@ -186,8 +195,12 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('<div class="creator-hero-zone">')
 
     # 0. Hub de Ideias Recomendadas pela IA
-    ai_recs = director.generate_ai_recommendations(limit=3)
-    html.append('''
+    try:
+        batch = int(query.get('batch', ['0'])[0])
+    except (ValueError, TypeError):
+        batch = 0
+    ai_recs = director.generate_ai_recommendations(limit=3, offset=batch * 3)
+    html.append(f'''
     <div class="panel ai-ideas-hub">
         <div class="ai-ideas-header">
             <div class="ai-ideas-header-left">
@@ -196,6 +209,7 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
             </div>
             <form method="post" action="/api/creator/generate_ai_ideas">
                 <input type="hidden" name="action" value="generate">
+                <input type="hidden" name="batch" value="{batch}">
                 <button type="submit" class="button-secondary" style="font-size: 13px;">✨ Gerar Novas Ideias</button>
             </form>
         </div>

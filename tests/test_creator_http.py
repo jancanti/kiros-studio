@@ -140,11 +140,19 @@ class CreatorHTTPTests(unittest.TestCase):
         self.assertIn('/criar?', headers.get('Location', ''))
         self.assertIn('ideas_generated=1', headers.get('Location', ''))
 
-        # Requisição com campo de formulário também funciona
-        status, _, headers = self.post('generate_ai_ideas', {'action': 'generate'})
+        # Requisição com campo de formulário e batch incrementa para o próximo lote
+        status, _, headers = self.post('generate_ai_ideas', {'action': 'generate', 'batch': '0'})
         self.assertEqual(status, 303)
-        self.assertIn('/criar?', headers.get('Location', ''))
-        self.assertIn('ideas_generated=1', headers.get('Location', ''))
+        loc = headers.get('Location', '')
+        self.assertIn('/criar?', loc)
+        self.assertIn('ideas_generated=1', loc)
+        self.assertIn('batch=1', loc)
+
+        # Ao carregar a página com batch=1, renderiza as novas ideias
+        status, page, _ = self.request(loc)
+        self.assertEqual(status, 200)
+        self.assertIn('Do Pavio à Cura', page)
+
 
 
 

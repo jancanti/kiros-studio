@@ -103,6 +103,22 @@ class IdeaBank:
         if similar_reason:
             raise ValueError(f"Reapresentação superficial impedida: {similar_reason}")
 
+        fp = _fingerprint(f"{title} {concept}")
+        prov_source = provenance.source if provenance else 'creative_director'
+
+        # Verifica duplicata entre ideias já ativas no mesmo pilar
+        placeholders = ','.join('?' for _ in ACTIVE_STATES)
+        with sqlite3.connect(self.db.path) as conn:
+            conn.row_factory = sqlite3.Row
+            existing = conn.execute(
+                f"SELECT id, title FROM ideas WHERE pillar=? AND (title=? OR fingerprint=?) AND state IN ({placeholders})",
+                (p_clean, title.strip(), fp, *ACTIVE_STATES),
+            ).fetchone()
+            if existing:
+                if prov_source != 'user':
+                    return existing['id']
+                raise ValueError(f"Já existe uma ideia ativa ('{existing['title']}') no pilar '{p_clean}'.")
+
         # Verifica limite de 5 ideias ativas
         active = self.count_active_ideas(p_clean)
         if active >= MAX_ACTIVE_IDEAS_PER_PILLAR:
@@ -113,9 +129,8 @@ class IdeaBank:
 
         idea_id = uuid.uuid4().hex
         now = self._now()
-        fp = _fingerprint(f"{title} {concept}")
         initial_state = 'pinned' if is_pinned else 'suggested'
-        prov_source = provenance.source if provenance else 'creative_director'
+
 
         with sqlite3.connect(self.db.path) as conn:
             conn.execute(
