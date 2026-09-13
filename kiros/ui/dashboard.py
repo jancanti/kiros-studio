@@ -68,63 +68,61 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     if query.get('error'):
         out += f'<p class="notice" role="alert">{e(query["error"][0])}</p>'
 
-    # Grid de 2 colunas com os blocos uniformes
+    # Grid calibrado (3 colunas desktop / 2 tablet / 1 mobile) com cards proporcionais
     out += '<div class="dashboard-grid">'
 
     # 1. Bloco: Hoje
     out += '<section class="panel dashboard-card">'
     out += '<div class="dashboard-card-body">'
-    out += '<span class="tag">Hoje</span>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Hoje</span><span class="aside-note" style="font-size:11px;color:var(--muted);">{e(hoje["mode"])}</span></div>'
     out += f'<h2>{e(hoje["data_formatada"])}</h2>'
-    out += f'<p><strong>Fila de geração:</strong> {e(hoje["queue_status"])}</p>'
-    out += f'<p>Tarefas pendentes: <strong>{hoje["pending_jobs"]}</strong> · Concluídas: <strong>{hoje["completed_jobs"]}</strong></p>'
-    out += f'<p class="aside-note" style="margin-top:auto;font-size:12px;color:var(--muted);">Ambiente: {e(hoje["mode"])}</p>'
+    queue_dot = '🟢' if not hoje['queue_paused'] else '⏸️'
+    out += f'<div class="dashboard-card-meta"><span>{queue_dot} <strong>Fila {e(hoje["queue_status"])}</strong></span><span>·</span><span>{hoje["pending_jobs"]} pendentes</span><span>·</span><span>{hoje["completed_jobs"]} concluídas</span></div>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
     if hoje['queue_paused']:
-        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Retome a geração"><button type="submit">Retomar fila</button></form>'
+        out += '<form method="post" action="/api/command" style="margin:0;width:100%;"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button">Retomar fila</button></form>'
     else:
-        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar fila</button></form>'
+        out += '<form method="post" action="/api/command" style="margin:0;width:100%;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar fila</button></form>'
     out += '</div>'
     out += '</section>'
 
     # 2. Bloco: Oportunidade
     out += '<section class="panel dashboard-card">'
     out += '<div class="dashboard-card-body">'
-    out += '<span class="tag">Oportunidade</span>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Oportunidade</span><span class="aside-note" style="font-size:11px;color:var(--muted-blue);">Pilar: <strong>{e(oportunidade["recommended_pillar"])}</strong></span></div>'
     out += f'<h2>{e(oportunidade["title"])}</h2>'
-    out += f'<p>{e(oportunidade["description"])}</p>'
-    out += f'<p style="font-size:13px;color:var(--muted-blue);">Pilar recomendado: <strong>{e(oportunidade["recommended_pillar"])}</strong></p>'
+    out += f'<p class="dashboard-card-desc">{e(oportunidade["description"])}</p>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
-    out += f'<a class="button" href="{e(oportunidade.get("target_url", "/criar"))}">Explorar oportunidade <span aria-hidden="true">→</span></a>'
+    out += f'<a class="button button-secondary" href="{e(oportunidade.get("target_url", "/criar"))}">Explorar oportunidade <span aria-hidden="true">→</span></a>'
     out += '</div>'
     out += '</section>'
 
     # 3. Bloco: Próximo passo recomendado
     out += '<section class="panel dashboard-card highlight-step">'
     out += '<div class="dashboard-card-body">'
-    out += f'<span class="tag priority-{e(proximo_passo["priority"])}">Próximo passo recomendado</span>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag priority-{e(proximo_passo["priority"])}">Próximo passo recomendado</span><span class="aside-note" style="font-size:11px;text-transform:capitalize;">Prioridade {e(proximo_passo["priority"])}</span></div>'
     out += f'<h2>{e(proximo_passo["action_label"])}</h2>'
-    out += f'<p>{e(proximo_passo["description"])}</p>'
+    out += f'<p class="dashboard-card-desc">{e(proximo_passo["description"])}</p>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
-    out += f'<a class="button" href="{e(proximo_passo["url"])}">Executar ação recomendada <span aria-hidden="true">→</span></a>'
+    out += f'<a class="button button-primary" href="{e(proximo_passo["url"])}">Executar ação recomendada <span aria-hidden="true">→</span></a>'
     out += '</div>'
     out += '</section>'
 
     # 4. Bloco: Calendário
     out += '<section class="panel dashboard-card">'
     out += '<div class="dashboard-card-body">'
-    out += '<span class="tag">Calendário</span>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Calendário</span><span class="aside-note" style="font-size:11px;color:var(--muted-blue);">{calendario["scheduled_count"]} na fila</span></div>'
     out += f'<h2>Postagens agendadas: {calendario["scheduled_count"]}</h2>'
     if calendario['upcoming_posts']:
         out += '<ul class="dashboard-list">'
-        for post in calendario['upcoming_posts']:
-            out += f'<li><strong>{e(post["title"])}</strong> ({e(post["pillar"])}) — {e(post["publish_time"])} [{e(post["format"])}]</li>'
+        for post in calendario['upcoming_posts'][:2]:
+            out += f'<li><strong>{e(post["title"])}</strong> · {e(post["publish_time"][:10])}</li>'
         out += '</ul>'
     else:
-        out += '<p style="color:var(--muted-blue);">Nenhuma publicação agendada nos próximos dias.</p>'
+        out += '<p class="dashboard-card-desc" style="color:var(--muted-blue);">Nenhuma publicação agendada nos próximos dias.</p>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
     out += '<a class="button button-secondary" href="/calendario">Abrir calendário editorial <span aria-hidden="true">→</span></a>'
@@ -134,16 +132,15 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # 5. Bloco: Criação
     out += '<section class="panel dashboard-card">'
     out += '<div class="dashboard-card-body">'
-    out += '<span class="tag">Criação</span>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Criação</span><span class="aside-note" style="font-size:11px;color:var(--muted);">Ideias: {criacao["pinned_ideas_count"]} fixadas · {criacao["total_ideas_count"]} total</span></div>'
     out += f'<h2>Campanhas recentes ({len(criacao["recent_campaigns"])})</h2>'
     if criacao['recent_campaigns']:
         out += '<ul class="dashboard-list">'
-        for camp in criacao['recent_campaigns']:
-            out += f'<li><a href="{e(camp["url"])}"><strong>{e(camp["title"])}</strong></a> · {e(camp["status"])} ({camp["slides_count"]} slides)</li>'
+        for camp in criacao['recent_campaigns'][:2]:
+            out += f'<li><a href="{e(camp["url"])}"><strong>{e(camp["title"])}</strong></a> · {e(camp["status"])}</li>'
         out += '</ul>'
     else:
-        out += '<p style="color:var(--muted-blue);">Nenhuma campanha criada ainda.</p>'
-    out += f'<p class="aside-note" style="margin-top:auto;font-size:12px;color:var(--muted);">Ideias fixadas: <strong>{criacao["pinned_ideas_count"]}</strong> / Total de ideias: <strong>{criacao["total_ideas_count"]}</strong></p>'
+        out += '<p class="dashboard-card-desc" style="color:var(--muted-blue);">Nenhuma campanha criada ainda.</p>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
     out += '<a class="button" href="/criar">Criar nova campanha <span aria-hidden="true">+</span></a>'
@@ -153,32 +150,35 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # 6. Bloco: Aprendizados
     out += '<section class="panel dashboard-card" id="aprendizados">'
     out += '<div class="dashboard-card-body">'
-    out += '<span class="tag">Aprendizados</span>'
-    out += f'<h2>Correções locais: {aprendizados["total_corrections"]} · Prompts aprovados: {aprendizados["approved_prompts_count"]}</h2>'
+    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Aprendizados</span><span class="aside-note" style="font-size:11px;color:var(--muted);">{aprendizados["approved_prompts_count"]} prompts</span></div>'
+    out += '<h2>Aprendizados &amp; Prompts</h2>'
+    out += f'<div class="dashboard-card-meta"><span>{aprendizados["total_corrections"]} correções locais</span><span>·</span><span>{aprendizados["approved_prompts_count"]} prompts validados</span></div>'
 
     if aprendizados['recent_proposals']:
-        out += '<h3>Sugestões aguardando aprovação:</h3>'
-        for prop in aprendizados['recent_proposals']:
-            out += f'<div class="proposal-item"><p><strong>{e(prop["summary"])}</strong> (Origem: {e(prop["provenance"])})</p>'
-            out += f'''<form method="post" action="/api/learning/proposals/approve" style="display:inline-block; margin-right:8px;">
+        out += '<div style="margin-top:6px;">'
+        for prop in aprendizados['recent_proposals'][:1]:
+            out += f'<div class="proposal-item" style="padding:8px 10px;margin:6px 0;"><p style="font-size:12px;margin:0 0 6px;"><strong>{e(prop["summary"])}</strong></p>'
+            out += f'''<form method="post" action="/api/learning/proposals/approve" style="display:inline-block; margin-right:6px;">
                 <input type="hidden" name="proposal_id" value="{e(prop["id"])}">
                 <input type="hidden" name="approver" value="Diretor de Criação">
-                <button type="submit">Aprovar regra</button>
+                <button type="submit" style="padding:4px 8px;font-size:11px;min-height:28px;">Aprovar</button>
             </form>
             <form method="post" action="/api/learning/proposals/reject" style="display:inline-block;">
                 <input type="hidden" name="proposal_id" value="{e(prop["id"])}">
                 <input type="hidden" name="reviewer" value="Diretor de Criação">
-                <button type="submit" class="button-secondary">Rejeitar</button>
+                <button type="submit" class="button-secondary" style="padding:4px 8px;font-size:11px;min-height:28px;">Rejeitar</button>
             </form></div>'''
+        out += '</div>'
     elif aprendizados['recent_learnings']:
-        out += '<h3>Últimas correções locais registradas:</h3><ul class="dashboard-list">'
-        for l in aprendizados['recent_learnings']:
+        out += '<ul class="dashboard-list">'
+        for l in aprendizados['recent_learnings'][:2]:
             out += f'<li>{e(l["correction_note"])}</li>'
         out += '</ul>'
     else:
-        out += '<p style="color:var(--muted-blue);">Nenhum aprendizado ou proposta pendente no momento.</p>'
-
-    out += '<p class="aside-note" style="margin-top:auto;"><a href="/biblioteca?tab=prompts">Ver Prompt Library na Biblioteca →</a></p>'
+        out += '<p class="dashboard-card-desc" style="color:var(--muted-blue);">Nenhuma proposta ou correção pendente.</p>'
+    out += '</div>'
+    out += '<div class="dashboard-card-footer">'
+    out += '<a class="button button-secondary" href="/biblioteca?tab=prompts">Ver Prompt Library <span aria-hidden="true">→</span></a>'
     out += '</div>'
     out += '</section>'
 
