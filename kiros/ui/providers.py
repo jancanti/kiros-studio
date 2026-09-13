@@ -458,9 +458,11 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             <span style="font-size: 12px; color: var(--muted);">Credencial ativa: <code>{escape(ig_creds.get('token_preview') or '')}</code></span>
             <div style="display:flex; gap:8px; align-items:center;">
                 <form method="post" action="/api/providers/test_instagram" style="margin:0;">
+                    <input type="hidden" name="action" value="test_instagram">
                     <button type="submit" class="button-secondary" style="font-size:12px; padding:4px 10px;">Testar Conexão do Instagram</button>
                 </form>
                 <form method="post" action="/api/providers/clear_instagram" style="margin:0;" onsubmit="return confirm('Deseja realmente remover as credenciais salvas do Instagram?');">
+                    <input type="hidden" name="action" value="clear_instagram">
                     <button type="submit" class="button-danger" style="font-size:12px; padding:4px 10px;">Desconectar Conta</button>
                 </form>
             </div>
