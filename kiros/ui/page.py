@@ -51,8 +51,8 @@ def render_page(app, section, saved=False, query=None):
                     <span class="tag">Espaço Local</span>
                     <h2 style="margin:4px 0 8px;">Seu Espaço de Trabalho</h2>
                     <form method="post" action="/api/preferences" class="inline-form" style="gap:8px;margin:0;align-items:center;">
-                        <input id="workspace" name="workspace_name" value="{name}" maxlength="80" required style="max-width:240px;height:38px;box-sizing:border-box;">
-                        <button type="submit" class="button-secondary" style="margin:0;padding:0 14px;height:38px;min-height:38px;font-size:13px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;">Salvar Nome</button>
+                        <input id="workspace" name="workspace_name" value="{name}" maxlength="80" required style="max-width:260px;height:42px;padding:0 16px;box-sizing:border-box;font-size:14px;">
+                        <button type="submit" class="button-secondary" style="margin:0;padding:0 18px;height:42px;min-height:42px;font-size:14px;font-weight:600;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;">Salvar Nome</button>
                     </form>
                 </div>
                 <div style="flex:1;min-width:260px;border-left:1px solid var(--hairline);padding-left:20px;">

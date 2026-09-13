@@ -242,8 +242,8 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
         html.append('</div>')
     html.append('</div>')
 
-    # Seção 2: Adicionar / Editar Provedor (Gaveta retrátil)
-    form_open_attr = 'open' if not providers or query.get('saved') or query.get('msg') else ''
+    # Seção 2: Adicionar / Editar Provedor (Aberto por padrão)
+    form_open_attr = 'open'
     html.append(f'''
     <details class="panel" style="margin-bottom: 20px;" {form_open_attr}>
         <summary style="font-size: 16px; font-weight: 600; cursor: pointer; color: var(--ink);">
