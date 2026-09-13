@@ -288,10 +288,8 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             <div class="form-group">
                 <label for="p_secret">Chave de API / Segredo</label>
                 <input id="p_secret" name="secret" type="password" placeholder="Digite a chave da API (armazenada de forma segura)">
-                <small class="hint">A chave nunca será reexibida após o salvamento.</small>
-            </div>
-            <div class="form-group checkbox-group">
-                <label>
+                <small class="hint" style="display: block; margin-top: 4px;">A chave nunca será reexibida após o salvamento.</small>
+                <label class="checkbox-inline">
                     <input type="checkbox" name="is_active" value="1" checked> Provedor ativo para roteamento
                 </label>
             </div>
