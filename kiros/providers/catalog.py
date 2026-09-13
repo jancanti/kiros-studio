@@ -15,6 +15,18 @@ OFFICIAL_CATALOG = {
         'checked_date': '2026-09-12',
         'default_endpoint': 'https://generativelanguage.googleapis.com/v1beta/models',
         'models': {
+            'nano-banana-pro-preview': {
+                'name': 'Nano Banana Pro (Gemini 3 Pro Image)',
+                'cost': 0.035,
+                'aspect_ratios': ['1:1', '3:4', '4:3', '9:16', '16:9'],
+                'strengths': 'Modelo avançado Gemini 3 com raciocínio multimodal e geração de estúdio.',
+            },
+            'gemini-3.8-flash': {
+                'name': 'Gemini 3.8 Flash',
+                'cost': 0.015,
+                'aspect_ratios': ['1:1', '3:4', '4:3', '9:16', '16:9'],
+                'strengths': 'Modelo ultrarrápido com janela de 1M tokens e capacidade analítica.',
+            },
             'imagen-3.0-generate-002': {
                 'name': 'Imagen 3 (Qualidade padrão)',
                 'cost': 0.030,
@@ -30,11 +42,23 @@ OFFICIAL_CATALOG = {
         },
     },
     'openai': {
-        'name': 'OpenAI (DALL-E)',
+        'name': 'OpenAI (GPT Image & DALL-E)',
         'docs_url': 'https://platform.openai.com/docs/api-reference/images/create',
-        'checked_date': '2026-09-12',
+        'checked_date': '2026-09-13',
         'default_endpoint': 'https://api.openai.com/v1/images/generations',
         'models': {
+            'gpt-image-2.5-sunburst': {
+                'name': 'GPT Image 2.5 Sunburst',
+                'cost': 0.035,
+                'aspect_ratios': ['1024x1024', '1024x1792', '1792x1024'],
+                'strengths': 'Fotografia editorial, iluminação acolhedora e tons quentes de marca.',
+            },
+            'gpt-image-2.5-flare': {
+                'name': 'GPT Image 2.5 Flare',
+                'cost': 0.035,
+                'aspect_ratios': ['1024x1024', '1024x1792', '1792x1024'],
+                'strengths': 'Realce de contraste, brilho e texturas fotorrealistas de produto.',
+            },
             'dall-e-3': {
                 'name': 'DALL-E 3',
                 'cost': 0.040,

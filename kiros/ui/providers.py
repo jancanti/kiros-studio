@@ -360,6 +360,10 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
                 <label for="p_model">Modelo</label>
                 <input id="p_model" name="model" value="imagen-3.0-generate-002" required list="known-models">
                 <datalist id="known-models">
+                    <option value="nano-banana-pro-preview">Nano Banana Pro (Gemini 3 Pro Image)</option>
+                    <option value="gemini-3.8-flash">Gemini 3.8 Flash (Google)</option>
+                    <option value="gpt-image-2.5-sunburst">GPT Image 2.5 Sunburst (OpenAI)</option>
+                    <option value="gpt-image-2.5-flare">GPT Image 2.5 Flare (OpenAI)</option>
                     <option value="imagen-3.0-generate-002">Imagen 3 (Padrão Google)</option>
                     <option value="imagen-3.0-fast-generate-001">Imagen 3 Fast (Google)</option>
                     <option value="dall-e-3">DALL-E 3 (OpenAI)</option>
@@ -367,7 +371,7 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
                     <option value="firefly-image-3">Firefly Image 3 (Adobe)</option>
                     <option value="firefly-image-2">Firefly Image 2 (Adobe)</option>
                 </datalist>
-                <small class="hint">Modelos oficiais verificados em 2026-09-12.</small>
+                <small class="hint">Modelos oficiais verificados em 2026-09-13.</small>
             </div>
             <div class="form-group">
                 <label for="p_endpoint">Endpoint (Opcional se tipo oficial)</label>

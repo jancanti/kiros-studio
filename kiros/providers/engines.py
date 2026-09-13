@@ -116,25 +116,32 @@ class GeminiImageEngine(BaseImageEngine, ImageEngine):
         super().__init__('gemini', gateway, model, **kwargs)
 
     def _build_request(self, prompt: str, aspect_ratio: str = '1:1') -> urllib.request.Request:
-        url = f"{self.endpoint}/{self.model}:predict"
         headers = {'Content-Type': 'application/json'}
         if self.secret_value:
             headers['x-goog-api-key'] = self.secret_value
-        payload = json.dumps({
-            'instances': [{'prompt': prompt}],
-            'parameters': {'sampleCount': 1, 'aspectRatio': aspect_ratio},
-        }).encode('utf-8')
+
+        if 'imagen' in self.model:
+            url = f"{self.endpoint}/{self.model}:predict"
+            payload = json.dumps({
+                'instances': [{'prompt': prompt}],
+                'parameters': {'sampleCount': 1, 'aspectRatio': aspect_ratio},
+            }).encode('utf-8')
+        else:
+            url = f"{self.endpoint}/{self.model}:generateContent"
+            payload = json.dumps({
+                'contents': [{'parts': [{'text': prompt}]}],
+            }).encode('utf-8')
+
         return urllib.request.Request(url, data=payload, headers=headers, method='POST')
 
     def test_connection(self) -> Dict[str, Any]:
         def op():
-            url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent'
-            headers = {'Content-Type': 'application/json'}
+            url = self.endpoint if self.endpoint.endswith('/models') else f"{self.endpoint}/models"
+            headers = {}
             if self.secret_value:
                 headers['x-goog-api-key'] = self.secret_value
-            payload = json.dumps({'contents': [{'parts': [{'text': 'ping'}]}]}).encode('utf-8')
-            req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
-            res = self._execute_http(req, timeout=10.0)
+            req = urllib.request.Request(url, headers=headers, method='GET')
+            res = self._execute_http(req, timeout=15.0)
             if res.get('status') == 200:
                 return {
                     'status': 'ok',
