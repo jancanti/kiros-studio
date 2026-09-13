@@ -109,6 +109,17 @@ def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]
         app.publisher.clear_credentials()
         return urlencode({'tab': 'providers', 'msg': 'Credenciais do Instagram removidas com sucesso.'})
 
+    elif action == 'test_instagram':
+        res = app.publisher.test_connection()
+        return urlencode({
+            'tab': 'providers',
+            'test_done': '1',
+            'test_type': 'Instagram Meta Graph API',
+            'test_status': res.get('status', 'error'),
+            'test_latency': str(res.get('latency_ms', 0)),
+            'test_msg': res.get('message', ''),
+        })
+
     elif action == 'update_gateway_policy':
         mode = data.get('provider_mode', 'mock').strip()
         allow_paid = data.get('allow_paid_apis') == '1'
@@ -445,9 +456,14 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
         html.append(f'''
         <div style="margin-top: 14px; border-top: 1px solid var(--hairline); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span style="font-size: 12px; color: var(--muted);">Credencial ativa: <code>{escape(ig_creds.get('token_preview') or '')}</code></span>
-            <form method="post" action="/api/providers/clear_instagram" style="margin:0;" onsubmit="return confirm('Deseja realmente remover as credenciais salvas do Instagram?');">
-                <button type="submit" class="button-danger" style="font-size:12px; padding:4px 10px;">Desconectar Conta</button>
-            </form>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <form method="post" action="/api/providers/test_instagram" style="margin:0;">
+                    <button type="submit" class="button-secondary" style="font-size:12px; padding:4px 10px;">Testar Conexão do Instagram</button>
+                </form>
+                <form method="post" action="/api/providers/clear_instagram" style="margin:0;" onsubmit="return confirm('Deseja realmente remover as credenciais salvas do Instagram?');">
+                    <button type="submit" class="button-danger" style="font-size:12px; padding:4px 10px;">Desconectar Conta</button>
+                </form>
+            </div>
         </div>
         ''')
 

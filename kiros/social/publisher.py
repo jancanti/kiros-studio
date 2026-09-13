@@ -4,6 +4,8 @@ import hashlib
 import json
 import sqlite3
 import time
+import urllib.request
+import urllib.error
 import uuid
 from typing import Any, Dict, Optional, Tuple
 
@@ -162,6 +164,71 @@ class InstagramPublisher(SocialPublisher):
                 ('mock' if self.mock_mode else 'unvalidated', now)
             )
             conn.commit()
+
+    def test_connection(self) -> Dict[str, Any]:
+        """Testa conexão ao vivo com a API oficial do Instagram via ExternalGateway."""
+        creds = self.get_credentials()
+        token = creds.get('access_token')
+        if not token:
+            return {
+                'status': 'error',
+                'latency_ms': 0,
+                'message': 'Nenhum token de acesso cadastrado para o Instagram.',
+            }
+
+        def op():
+            start = time.perf_counter()
+            host = 'https://graph.instagram.com/v20.0' if token.startswith(('IGAA', 'IGQJ')) else 'https://graph.facebook.com/v20.0'
+            url = f"{host}/me?fields=id,username,name,account_type&access_token={token}"
+            req = urllib.request.Request(url)
+            try:
+                with urllib.request.urlopen(req, timeout=12.0) as resp:
+                    lat_ms = int((time.perf_counter() - start) * 1000)
+                    data = json.loads(resp.read().decode('utf-8'))
+                    name = data.get('name') or data.get('username') or 'usekiros'
+                    u_type = data.get('account_type', 'BUSINESS')
+                    if data.get('id'):
+                        now = self._now_iso()
+                        with self._connection() as conn:
+                            conn.execute(
+                                'UPDATE instagram_accounts SET account_id = ?, username = ?, connection_status = "connected", updated_at = ? WHERE id = "default"',
+                                (data['id'], data.get('username', 'usekiros'), now)
+                            )
+                            conn.commit()
+                    return {
+                        'status': 'ok',
+                        'latency_ms': lat_ms,
+                        'message': f"Conexão ativa com Meta Instagram: {name} (@{data.get('username')}) · Perfil {u_type}.",
+                        'account_info': data,
+                    }
+            except urllib.error.HTTPError as err:
+                lat_ms = int((time.perf_counter() - start) * 1000)
+                try:
+                    err_json = json.loads(err.read().decode('utf-8'))
+                    err_msg = err_json.get('error', {}).get('message', str(err))
+                except Exception:
+                    err_msg = str(err)
+                return {
+                    'status': 'error',
+                    'latency_ms': lat_ms,
+                    'message': f"Falha na API da Meta (HTTP {err.code}): {err_msg}",
+                }
+            except Exception as exc:
+                lat_ms = int((time.perf_counter() - start) * 1000)
+                return {
+                    'status': 'error',
+                    'latency_ms': lat_ms,
+                    'message': f"Erro ao conectar com a Meta: {str(exc)}",
+                }
+
+        try:
+            return self.gateway.call(op, paid=False, publish=False, approved=True)
+        except PermissionError as err:
+            return {
+                'status': 'error',
+                'latency_ms': 0,
+                'message': str(err),
+            }
 
     def _now_iso(self) -> str:
         return datetime.now(timezone.utc).isoformat()
