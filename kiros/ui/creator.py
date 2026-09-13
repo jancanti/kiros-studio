@@ -101,6 +101,60 @@ def dispatch_creator_action(app: Application, action: str, data: Dict[str, str])
     raise ValueError(f"Ação desconhecida: {action}")
 
 
+def render_idea_card(idea: Dict[str, Any]) -> str:
+    iid = escape(idea['id'])
+    ititle = escape(idea['title'])
+    iconcept = escape(idea['concept'])
+    ipillar = escape(idea['pillar'].capitalize())
+    istate = escape(idea['state'])
+    ispinned = idea.get('is_pinned', False)
+    rej_reason = escape(idea.get('rejection_reason') or '')
+
+    state_badge = 'badge-success' if istate in ('approved', 'pinned') else ('badge-error' if istate == 'rejected' else 'status-active')
+
+    card_html = f'''
+    <div class="idea-card {'idea-pinned' if ispinned else ''}" style="border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:14px;background:var(--canvas);">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div>
+                <span class="tag" style="font-size:10px;">{ipillar}</span>
+                <h4 style="margin:4px 0 2px;font-size:15px;font-weight:600;color:var(--ink);">{ititle}</h4>
+            </div>
+            <div class="card-badge-group">
+                <span class="badge {state_badge}">{istate.upper()}</span>
+                { '<span class="badge badge-pinned" style="background:var(--primary);color:#fff;margin-left:4px;">FIXADA</span>' if ispinned else '' }
+            </div>
+        </div>
+        <p class="idea-concept-text" style="font-size:13px;color:var(--muted-blue);margin:8px 0 12px;line-height:1.5;">{iconcept}</p>
+        { f'<div class="rejection-note" style="background:#fbeae5;border:1px solid #f2c7bd;padding:8px 12px;border-radius:4px;font-size:12px;color:#8a2e1d;margin-bottom:10px;"><strong>Motivo da Rejeição:</strong> <em>{rej_reason}</em></div>' if rej_reason else '' }
+        <div class="card-actions" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+    '''
+
+    if istate != 'rejected':
+        card_html += f'''
+            <form method="post" action="/api/creator/use_idea" class="inline-form" style="margin:0;">
+                <input type="hidden" name="title" value="{ititle}">
+                <input type="hidden" name="concept" value="{iconcept}">
+                <button type="submit" class="button" style="margin:0;padding:6px 12px;font-size:12px;min-height:34px;">⚡ Usar no Briefing</button>
+            </form>
+            <form method="post" action="/api/creator/pin_idea" class="inline-form" style="margin:0;">
+                <input type="hidden" name="idea_id" value="{iid}">
+                <input type="hidden" name="pin" value="{'0' if ispinned else '1'}">
+                <button type="submit" class="button-secondary" style="margin:0;padding:6px 12px;font-size:12px;min-height:34px;">{'Desafixar' if ispinned else 'Fixar'}</button>
+            </form>
+            <details class="inline-form reject-drawer" style="margin:0;">
+                <summary class="button-secondary" style="font-size:12px;padding:6px 12px;min-height:34px;cursor:pointer;">Rejeitar com motivo</summary>
+                <form method="post" action="/api/creator/reject_idea" class="reject-form" style="margin-top:8px;display:flex;gap:6px;">
+                    <input type="hidden" name="idea_id" value="{iid}">
+                    <input name="reason" placeholder="Motivo da rejeição..." required style="padding:4px 8px;font-size:12px;width:180px;">
+                    <button type="submit" class="button-danger" style="padding:4px 10px;min-height:32px;font-size:11px;margin:0;">Rejeitar</button>
+                </form>
+            </details>
+        '''
+
+    card_html += '</div></div>'
+    return card_html
+
+
 def render_creator(app: Application, query: Dict[str, Any]) -> str:
     """Renderiza painel principal do Creative Director em /criar."""
     director = app.director
@@ -291,9 +345,8 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         </div>
         ''')
 
-    # 2. Banco de Ideias por Pilar
+    # 2. Banco de Ideias por Pilar (Accordions Aninhados por Governança Editorial)
     all_ideas = ideas.list_ideas()
-    displayed_ideas = [i for i in all_ideas if i['pillar'].lower() == selected_pillar] if selected_pillar else all_ideas
 
     html.append(f'''
     <div class="panel" id="banco-de-ideias">
@@ -301,7 +354,7 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
             <div>
                 <span class="tag">Governança Editorial</span>
                 <h2 style="margin:4px 0 6px;">Banco de Ideias ({MAX_ACTIVE_IDEAS_PER_PILLAR} ativas por pilar)</h2>
-                <p style="margin:0 0 12px;">Ideias rejeitadas são arquivadas com motivo para impedir reapresentações superficiais. Ideias podem ser fixadas.</p>
+                <p style="margin:0 0 12px;">Ideias categorizadas em accordions por pilar e estado. Ideias rejeitadas são arquivadas com motivo para impedir reapresentações superficiais.</p>
             </div>
         </div>
 
@@ -328,13 +381,13 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         matching_pillar = next((p['name'] for p in pillars if p['id'].lower() == selected_pillar), selected_pillar.capitalize())
         html.append(f'''
         <div class="filter-active-indicator">
-            <span>Filtrando ideias por <strong>{matching_pillar}</strong> ({len(displayed_ideas)} encontradas)</span>
+            <span>Filtrando ideias por <strong>{matching_pillar}</strong></span>
             <a href="/criar#banco-de-ideias" class="clear-filter-link">Ver todos os pilares ✕</a>
         </div>
         ''')
 
     html.append(f'''
-        <details class="revision idea-form-drawer">
+        <details class="revision idea-form-drawer" style="margin-bottom:16px;">
             <summary>+ Propor Nova Ideia Manualmente</summary>
             <form method="post" action="/api/creator/add_idea" class="idea-manual-form">
                 <div class="form-group">
@@ -363,65 +416,79 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         </details>
     ''')
 
-    if displayed_ideas:
-        html.append('<div class="idea-cards" style="margin-top:12px;">')
-        for idea in displayed_ideas:
-            iid = escape(idea['id'])
-            ititle = escape(idea['title'])
-            iconcept = escape(idea['concept'])
-            ipillar = escape(idea['pillar'].capitalize())
-            istate = escape(idea['state'])
-            ispinned = idea['is_pinned']
-            rej_reason = escape(idea.get('rejection_reason') or '')
+    # Renderização por Accordions Aninhados
+    if all_ideas:
+        html.append('<div class="nested-accordions-container" style="margin-top:16px;">')
+        for p in pillars:
+            pid = p['id']
+            pname = p['name']
+            p_ideas = [i for i in all_ideas if i['pillar'].lower() == pid.lower()]
+            active_ideas = [i for i in p_ideas if i.get('state') != 'rejected']
+            rejected_ideas = [i for i in p_ideas if i.get('state') == 'rejected']
 
-            state_badge = 'badge-success' if istate in ('approved', 'pinned') else ('badge-error' if istate == 'rejected' else 'status-active')
+            # Se houver filtro ativo e este pilar não for o selecionado, ignora
+            if selected_pillar and pid.lower() != selected_pillar:
+                continue
+
+            active_cnt = len(active_ideas)
+            is_full = active_cnt >= MAX_ACTIVE_IDEAS_PER_PILLAR
+            badge_cls = 'badge-error' if is_full else 'badge-success'
+            is_open = 'open' if (selected_pillar == pid.lower() or active_cnt > 0) else ''
 
             html.append(f'''
-            <div class="idea-card {'idea-pinned' if ispinned else ''}">
-                <div class="card-header">
-                    <div>
-                        <span class="tag">{ipillar}</span>
-                        <h3 style="margin:4px 0;">{ititle}</h3>
+            <details class="pillar-accordion" {is_open}>
+                <summary class="pillar-summary-bar">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <strong style="color:var(--ink);">{pname}</strong>
+                        <span class="tag" style="font-size:11px;">{len(p_ideas)} pauta(s)</span>
                     </div>
-                    <div class="card-badge-group">
-                        <span class="badge {state_badge}">{istate.upper()}</span>
-                        { '<span class="badge badge-pinned">FIXADA</span>' if ispinned else '' }
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="badge {badge_cls}">{active_cnt}/{MAX_ACTIVE_IDEAS_PER_PILLAR} ativas</span>
+                        <span style="font-size:12px;color:var(--muted)">▼</span>
                     </div>
-                </div>
-                <p class="idea-concept-text">{iconcept}</p>
-                { f'<div class="rejection-note"><strong>Rejeitada:</strong> <em>{rej_reason}</em></div>' if rej_reason else '' }
-                <div class="card-actions">
+                </summary>
+                <div class="pillar-content">
             ''')
-            if istate != 'rejected':
+
+            # Sub-accordion 1: Ideias Ativas e Fixadas
+            if active_ideas:
                 html.append(f'''
-                    <form method="post" action="/api/creator/pin_idea" class="inline-form">
-                        <input type="hidden" name="idea_id" value="{iid}">
-                        <input type="hidden" name="pin" value="{'0' if ispinned else '1'}">
-                        <button type="submit" class="button-secondary">{'Desafixar' if ispinned else 'Fixar'}</button>
-                    </form>
-                    <details class="inline-form reject-drawer">
-                        <summary class="button-secondary" style="font-size:12px;padding:6px 12px;min-height:36px;">Rejeitar com motivo</summary>
-                        <form method="post" action="/api/creator/reject_idea" class="reject-form">
-                            <input type="hidden" name="idea_id" value="{iid}">
-                            <div class="reject-input-group">
-                                <input name="reason" placeholder="Informe o motivo da rejeição" required class="reject-reason-input">
-                                <button type="submit" class="button-danger" style="padding:6px 12px;min-height:36px;font-size:12px;">Confirmar rejeição</button>
-                            </div>
-                        </form>
-                    </details>
+                <details class="subgroup-accordion" open>
+                    <summary class="subgroup-summary">
+                        📌 Ideias Ativas &amp; Em Destaque ({len(active_ideas)})
+                    </summary>
+                    <div class="subgroup-content">
                 ''')
-            html.append('</div></div>')
+                for idea in active_ideas:
+                    html.append(render_idea_card(idea))
+                html.append('</div></details>')
+            else:
+                html.append('<p class="hint" style="margin:8px 0;">Nenhuma ideia ativa neste pilar.</p>')
+
+            # Sub-accordion 2: Ideias Rejeitadas & Arquivadas
+            if rejected_ideas:
+                html.append(f'''
+                <details class="subgroup-accordion">
+                    <summary class="subgroup-summary" style="background:#fff5f2;color:#8a2e1d;">
+                        📁 Histórico de Ideias Rejeitadas ({len(rejected_ideas)})
+                    </summary>
+                    <div class="subgroup-content">
+                ''')
+                for idea in rejected_ideas:
+                    html.append(render_idea_card(idea))
+                html.append('</div></details>')
+
+            html.append('</div></details>')
         html.append('</div>')
     else:
-        html.append(f'''
+        html.append('''
         <div class="empty-idea-state">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-            <p>Nenhuma ideia encontrada {f"no pilar '{selected_pillar.capitalize()}'" if selected_pillar else "no momento"}.</p>
-            <span class="hint">Use as sugestões rápidas de briefing acima ou proponha uma nova ideia manualmente.</span>
+            <p>Nenhuma ideia cadastrada no momento.</p>
+            <span class="hint">Use as sugestões rápidas acima ou adicione uma nova ideia.</span>
         </div>
         ''')
-    html.append('</div>')
 
+    html.append('</div>') # fecha banco-de-ideias panel
     html.append('</div>') # fecha creator-primary-col
 
     # ==========================================

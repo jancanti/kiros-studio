@@ -161,6 +161,18 @@ th{font-weight:600;font-family:var(--font-body)}
 .idea-card{padding:20px 24px;border:1px solid var(--hairline);border-radius:var(--radius-sm);background:var(--canvas)}
 .idea-pinned{border-color:var(--hairline-cool);background:var(--surface-input)}
 
+/* Accordions Aninhados de Governança Editorial */
+details.pillar-accordion{border:1px solid var(--hairline);border-radius:var(--radius-sm);margin-bottom:14px;background:var(--canvas);overflow:hidden}
+details.pillar-accordion summary.pillar-summary-bar{padding:14px 18px;font-weight:600;font-size:15px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--surface-input);user-select:none;list-style:none}
+details.pillar-accordion summary.pillar-summary-bar::-webkit-details-marker{display:none}
+details.pillar-accordion[open] summary.pillar-summary-bar{border-bottom:1px solid var(--hairline-cool)}
+.pillar-content{padding:16px}
+details.subgroup-accordion{border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);margin-bottom:12px;background:var(--canvas)}
+details.subgroup-accordion:last-child{margin-bottom:0}
+details.subgroup-accordion summary.subgroup-summary{padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;background:#faf8ff;color:var(--ink);list-style:none}
+details.subgroup-accordion summary.subgroup-summary::-webkit-details-marker{display:none}
+.subgroup-content{padding:14px;display:grid;gap:12px}
+
 /* M10: extensão da área de operação, com a identidade existente. */
 .insights{min-width:0;max-width:1100px}
 .insights p{max-width:74ch;line-height:1.7}
