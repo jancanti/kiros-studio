@@ -147,22 +147,40 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     # -------------------------------------------------------------------------
     # Status e Limites da Conta do Instagram (M09-A03, M09-A06)
     # -------------------------------------------------------------------------
-    status_label = 'Simulação Mock (Seguro)' if account.connection_status == 'mock' else 'Não validado'
+    if account.connection_status == 'connected':
+        status_label = 'Conectado (Ao Vivo)'
+        status_badge_cls = 'badge-success'
+        status_inline_style = 'background:#e6f4ea;color:#137333;border:1px solid #ceead6;'
+        mode_pill = '<span class="badge badge-success" style="background:#e6f4ea;color:#137333;border:1px solid #ceead6;font-weight:600;">● Conexão Real Ativa</span>'
+        note_text = 'Conta oficial autenticada e pronta para publicação direta ou agendada. Para gerenciar chaves ou revalidar conexão, acesse <a href="/configuracoes#instagram-credentials">Configurações</a>.'
+    elif account.connection_status == 'mock':
+        status_label = 'Simulação Mock (Seguro)'
+        status_badge_cls = 'status-active'
+        status_inline_style = ''
+        mode_pill = '<span class="badge" style="background:var(--surface-input);color:var(--ink)">Modo Mock Ativo</span>'
+        note_text = 'Ambiente de desenvolvimento seguro: nenhuma chamada de rede externa é disparada sem autorização explícita (Seção 70). Para cadastrar o Token de Acesso da Meta, acesse <a href="/configuracoes#instagram-credentials">Configurações</a>.'
+    else:
+        status_label = 'Não validado'
+        status_badge_cls = 'status-inactive'
+        status_inline_style = ''
+        mode_pill = '<span class="badge" style="background:var(--surface-input);color:var(--muted)">Não Validado</span>'
+        note_text = 'Token ainda não configurado ou não validado. Para cadastrar o Token de Acesso da Meta, acesse <a href="/configuracoes#instagram-credentials">Configurações</a>.'
+
     html += f'''<div class="panel" style="margin-bottom:24px">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
             <span class="tag">Conexão Oficial Instagram (Meta Graph API v20.0+)</span>
             <h2 style="margin:6px 0">Conta: @{escape(account.username or 'usekiros')}</h2>
-            <p style="margin:4px 0">Status: <strong class="badge {'status-active' if account.connection_status == 'mock' else 'status-inactive'}">{status_label}</strong> · Cota de Publicação: <strong>{account.rate_limit_remaining}/{account.rate_limit_total} posts / 24h</strong></p>
+            <p style="margin:4px 0">Status: <strong class="badge {status_badge_cls}" style="{status_inline_style}">{status_label}</strong> · Cota de Publicação: <strong>{account.rate_limit_remaining}/{account.rate_limit_total} posts / 24h</strong></p>
         </div>
         <div>
-            <span class="badge" style="background:var(--surface-input);color:var(--ink)">Modo Mock Ativo</span>
+            {mode_pill}
         </div>
     </div>
     <div style="margin-top:14px;padding:12px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm);font-size:13px;color:var(--muted);line-height:1.6">
         <strong>Permissões Meta Documentadas:</strong> <code>{', '.join(account.permissions)}</code><br>
         <strong>Formatos Suportados:</strong> Feed (1:1, 4:5; máx 8 MB), Stories (9:16; máx 4 MB). Agendamento oficial: entre 15min e 75 dias.<br>
-        <em>Ambiente de desenvolvimento seguro: nenhuma chamada de rede externa é disparada sem autorização explícita (Seção 70). Para cadastrar o Token de Acesso da Meta, acesse <a href="/configuracoes#instagram-credentials">Configurações</a>.</em>
+        <em>{note_text}</em>
     </div>
     </div>'''
 
