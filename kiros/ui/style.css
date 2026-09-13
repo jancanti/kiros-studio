@@ -391,3 +391,37 @@ details.subgroup-accordion summary.subgroup-summary::-webkit-details-marker{disp
   .creator-secondary-grid{grid-template-columns:1fr}
 }
 
+/* Editorial Calendar Styles (Impeccable & Distill Layout) */
+.calendar-status-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding:14px 20px;background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);margin-bottom:32px;box-shadow:0 1px 2px rgba(0,0,0,0.02)}
+.calendar-status-info{display:flex;align-items:center;flex-wrap:wrap;gap:12px;font-size:13.5px}
+.calendar-status-meta{color:var(--muted-blue);font-size:13px}
+
+.calendar-main-panel{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:28px 32px;margin-bottom:36px;box-shadow:0 1px 3px rgba(0,0,0,0.02)}
+.calendar-main-panel h2{margin:0 0 4px;font-size:20px;font-weight:600}
+
+.calendar-post-card{padding:24px 28px;border:1px solid var(--hairline);border-radius:var(--radius-sm);background:var(--canvas);transition:border-color 0.15s ease,box-shadow 0.15s ease}
+.calendar-post-card:hover{border-color:var(--hairline-soft);box-shadow:0 2px 8px rgba(0,0,0,0.03)}
+.calendar-post-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:14px}
+.calendar-post-title{font-size:17px;font-weight:600;color:var(--ink);margin:8px 0 6px;line-height:1.4}
+.calendar-post-notes{font-size:13.5px;line-height:1.6;color:var(--muted-blue);margin:0}
+
+.calendar-time-badge{display:inline-flex;flex-direction:column;align-items:flex-end;padding:8px 14px;background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);text-align:right}
+.calendar-time-label{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted-blue);letter-spacing:0.5px}
+.calendar-time-val{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px}
+
+.calendar-recommendation-box{margin:18px 0;padding:18px 20px;background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm)}
+.calendar-action-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px;align-items:center}
+
+.calendar-secondary-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:32px;align-items:start;margin-bottom:40px}
+.calendar-col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.calendar-col .panel{max-width:100%;margin-bottom:0;padding:26px 28px}
+
+.calendar-cadence-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+.calendar-cadence-card{padding:16px 18px;background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm)}
+.calendar-cadence-val{margin:6px 0 2px;font-size:20px;font-weight:600;color:var(--ink)}
+
+@media(max-width:960px){
+  .calendar-secondary-grid{grid-template-columns:1fr}
+  .calendar-cadence-grid{grid-template-columns:1fr}
+}
+
