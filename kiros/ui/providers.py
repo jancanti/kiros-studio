@@ -81,6 +81,34 @@ def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]
             'test_msg': res.get('message', ''),
         })
 
+    elif action == 'save_instagram':
+        account_id = data.get('account_id', '').strip()
+        username = data.get('username', '').strip() or 'usekiros'
+        access_token = data.get('access_token', '').strip()
+        app_secret = data.get('app_secret', '').strip() or None
+
+        if not account_id:
+            raise ValueError('O identificador de conta (Account ID ou Page ID) do Instagram é obrigatório.')
+
+        if not access_token:
+            existing = app.publisher.get_credentials()
+            if existing.get('has_token'):
+                access_token = existing['access_token']
+            else:
+                raise ValueError('O Token de Acesso do Instagram (Access Token) é obrigatório.')
+
+        app.publisher.save_credentials(
+            account_id=account_id,
+            access_token=access_token,
+            username=username,
+            app_secret=app_secret,
+        )
+        return urlencode({'tab': 'providers', 'saved': '1', 'msg': f"Credenciais do Instagram (@{username.lstrip('@')}) salvas com sucesso no dispositivo."})
+
+    elif action == 'clear_instagram':
+        app.publisher.clear_credentials()
+        return urlencode({'tab': 'providers', 'msg': 'Credenciais do Instagram removidas com sucesso.'})
+
     raise ValueError(f"Ação desconhecida: {action}")
 
 
@@ -301,6 +329,66 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             <button type="submit" class="button">Salvar Provedor</button>
         </form>
     </details>
+    ''')
+
+    # Seção: Credenciais do Instagram Meta Graph API
+    ig_creds = app.publisher.get_credentials()
+    ig_has_token = ig_creds.get('has_token', False)
+    ig_status_badge = '<span class="tag badge-success">✓ Token Configurado</span>' if ig_has_token else '<span class="tag badge-error">Pendente de Configuração</span>'
+    ig_token_placeholder = '••••••••••••••••' if ig_has_token else 'EAAB... (Cole aqui seu User ou Page Access Token)'
+    ig_token_hint = 'Token já cadastrado e protegido no banco local. Deixe em branco para manter o atual.' if ig_has_token else 'Token oficial da Meta com permissões instagram_content_publish e instagram_basic.'
+
+    html.append(f'''
+    <div class="panel" id="instagram-credentials" style="margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+                <span class="tag">Rede Social &amp; Agendamento</span>
+                <h2 style="margin: 4px 0 0;">Credenciais do Instagram (Meta Graph API v20.0+)</h2>
+            </div>
+            <div>
+                {ig_status_badge}
+            </div>
+        </div>
+        <p style="color: #5d5d5d; font-size: 13px; margin: 4px 0 16px;">
+            Cadastre o Token de Acesso da Meta e o ID da conta do Instagram para controle de agendamento e publicação das campanhas de <strong>@{escape(ig_creds.get('username') or 'usekiros')}</strong>. As credenciais são armazenadas com segurança no seu dispositivo local.
+        </p>
+        <form method="post" action="/api/providers/save_instagram" class="form-grid">
+            <div class="form-group">
+                <label for="ig_username">Nome de Usuário (@)</label>
+                <input id="ig_username" name="username" value="{escape(ig_creds.get('username') or 'usekiros')}" placeholder="ex: usekiros" required>
+            </div>
+            <div class="form-group">
+                <label for="ig_account_id">Instagram Account ID / Page ID</label>
+                <input id="ig_account_id" name="account_id" value="{escape(ig_creds.get('account_id') or '')}" placeholder="ex: 17841400000000000" required>
+                <small class="hint">Identificador da conta profissional ou da Página do Facebook vinculada no Meta for Developers.</small>
+            </div>
+            <div class="form-group">
+                <label for="ig_token">Token de Acesso (User / Page Access Token)</label>
+                <input id="ig_token" name="access_token" type="password" placeholder="{ig_token_placeholder}" autocomplete="new-password">
+                <small class="hint">{ig_token_hint}</small>
+            </div>
+            <div class="form-group">
+                <label for="ig_secret">App Secret da Meta (Opcional)</label>
+                <input id="ig_secret" name="app_secret" type="password" placeholder="{'••••••••' if ig_creds.get('app_secret') else 'Opcional para verificação de app'}" autocomplete="new-password">
+            </div>
+            <div style="margin-top:4px;">
+                <button type="submit" class="button">Salvar Credenciais do Instagram</button>
+            </div>
+        </form>
+    ''')
+
+    if ig_has_token:
+        html.append(f'''
+        <div style="margin-top: 14px; border-top: 1px solid var(--hairline); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 12px; color: var(--muted);">Credencial ativa: <code>{escape(ig_creds.get('token_preview') or '')}</code></span>
+            <form method="post" action="/api/providers/clear_instagram" style="margin:0;" onsubmit="return confirm('Deseja realmente remover as credenciais salvas do Instagram?');">
+                <button type="submit" class="button-danger" style="font-size:12px; padding:4px 10px;">Desconectar Conta</button>
+            </form>
+        </div>
+        ''')
+
+    html.append('''
+    </div>
     ''')
 
     # Seção 3 & 4: Telemetria do Roteador & Histórico de Testes (Gaveta Retrátil)

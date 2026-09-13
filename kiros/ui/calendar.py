@@ -162,7 +162,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
     <div style="margin-top:14px;padding:12px;background:var(--surface-input);border:1px solid var(--hairline);border-radius:var(--radius-sm);font-size:13px;color:var(--muted);line-height:1.6">
         <strong>Permissões Meta Documentadas:</strong> <code>{', '.join(account.permissions)}</code><br>
         <strong>Formatos Suportados:</strong> Feed (1:1, 4:5; máx 8 MB), Stories (9:16; máx 4 MB). Agendamento oficial: entre 15min e 75 dias.<br>
-        <em>Ambiente de desenvolvimento seguro: nenhuma chamada de rede externa é disparada sem autorização explícita (Seção 70).</em>
+        <em>Ambiente de desenvolvimento seguro: nenhuma chamada de rede externa é disparada sem autorização explícita (Seção 70). Para cadastrar o Token de Acesso da Meta, acesse <a href="/configuracoes#instagram-credentials">Configurações</a>.</em>
     </div>
     </div>'''
 

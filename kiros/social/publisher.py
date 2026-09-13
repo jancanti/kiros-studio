@@ -66,11 +66,109 @@ class InstagramPublisher(SocialPublisher):
         conn.row_factory = sqlite3.Row
         return conn
 
+    def _ensure_columns(self):
+        with self._connection() as conn:
+            cols = [r[1] for r in conn.execute('PRAGMA table_info(instagram_accounts)').fetchall()]
+            if 'access_token' not in cols:
+                conn.execute('ALTER TABLE instagram_accounts ADD COLUMN access_token TEXT')
+            if 'app_secret' not in cols:
+                conn.execute('ALTER TABLE instagram_accounts ADD COLUMN app_secret TEXT')
+            conn.commit()
+
+    def get_credentials(self) -> Dict[str, Any]:
+        self._ensure_columns()
+        with self._connection() as conn:
+            row = conn.execute('SELECT account_id, username, access_token, app_secret, connection_status FROM instagram_accounts WHERE id="default"').fetchone()
+            if not row:
+                return {
+                    'account_id': '',
+                    'username': 'usekiros',
+                    'access_token': None,
+                    'app_secret': None,
+                    'has_token': False,
+                    'token_preview': '',
+                    'connection_status': 'mock' if self.mock_mode else 'unvalidated',
+                }
+            tok = row['access_token']
+            has_tok = bool(tok and tok.strip())
+            tok_prev = (tok[:6] + '••••••••' + tok[-4:]) if (has_tok and len(tok) > 12) else ('••••••••' if has_tok else '')
+            return {
+                'account_id': row['account_id'] or '',
+                'username': row['username'] or 'usekiros',
+                'access_token': tok,
+                'app_secret': row['app_secret'],
+                'has_token': has_tok,
+                'token_preview': tok_prev,
+                'connection_status': row['connection_status'],
+            }
+
+    def save_credentials(
+        self,
+        account_id: str,
+        access_token: str,
+        username: str = 'usekiros',
+        app_secret: Optional[str] = None,
+    ) -> None:
+        self._ensure_columns()
+        now = self._now_iso()
+        status = 'connected' if access_token else ('mock' if self.mock_mode else 'unvalidated')
+        with self._connection() as conn:
+            row = conn.execute('SELECT id FROM instagram_accounts WHERE id="default"').fetchone()
+            if row:
+                conn.execute(
+                    '''UPDATE instagram_accounts 
+                       SET account_id = ?, username = ?, access_token = ?, app_secret = ?, 
+                           connection_status = ?, updated_at = ? 
+                       WHERE id = "default"''',
+                    (
+                        account_id.strip(),
+                        username.strip().lstrip('@'),
+                        access_token.strip(),
+                        app_secret.strip() if app_secret else None,
+                        status,
+                        now,
+                    )
+                )
+            else:
+                conn.execute(
+                    '''INSERT INTO instagram_accounts 
+                       (id, account_id, username, account_type, connection_status, permissions_json, 
+                        rate_limit_total, rate_limit_remaining, access_token, app_secret, last_checked_at, updated_at)
+                       VALUES ("default", ?, ?, "business", ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (
+                        account_id.strip(),
+                        username.strip().lstrip('@'),
+                        status,
+                        json.dumps(list(INSTAGRAM_PERMISSIONS)),
+                        MAX_POSTS_PER_24_HOURS,
+                        MAX_POSTS_PER_24_HOURS,
+                        access_token.strip(),
+                        app_secret.strip() if app_secret else None,
+                        now,
+                        now,
+                    )
+                )
+            conn.commit()
+
+    def clear_credentials(self) -> None:
+        self._ensure_columns()
+        now = self._now_iso()
+        with self._connection() as conn:
+            conn.execute(
+                '''UPDATE instagram_accounts 
+                   SET access_token = NULL, app_secret = NULL, 
+                       connection_status = ?, updated_at = ? 
+                   WHERE id = "default"''',
+                ('mock' if self.mock_mode else 'unvalidated', now)
+            )
+            conn.commit()
+
     def _now_iso(self) -> str:
         return datetime.now(timezone.utc).isoformat()
 
     def get_account_status(self) -> AccountStatus:
         """Obtém status da conta oficial e limites de publicação disponíveis."""
+        self._ensure_columns()
         now = self._now_iso()
         with self._connection() as conn:
             row = conn.execute('SELECT * FROM instagram_accounts WHERE id="default"').fetchone()
