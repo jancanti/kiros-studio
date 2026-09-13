@@ -189,9 +189,10 @@ def make_server(data_dir, port=8765):
                     return self.respond(415, 'Formato não permitido')
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 64000:
+                    if not 0 <= size <= 64000:
                         raise ValueError('Tamanho de requisição inválido.')
-                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=50)
+                    raw_body = self.rfile.read(size).decode('utf-8') if size > 0 else ''
+                    parsed = parse_qs(raw_body, keep_blank_values=True, strict_parsing=True, max_num_fields=50) if raw_body else {}
                     data = {k: v[0] for k, v in parsed.items()}
                     query_str = dispatch_provider_action(app, action, data)
                     return self.respond(303, '', location='/configuracoes?' + query_str)
@@ -204,9 +205,10 @@ def make_server(data_dir, port=8765):
                     return self.respond(415, 'Formato não permitido')
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 64000:
+                    if not 0 <= size <= 64000:
                         raise ValueError('Tamanho de requisição inválido.')
-                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=50)
+                    raw_body = self.rfile.read(size).decode('utf-8') if size > 0 else ''
+                    parsed = parse_qs(raw_body, keep_blank_values=True, strict_parsing=True, max_num_fields=50) if raw_body else {}
                     data = {k: v[0] for k, v in parsed.items()}
                     query_str = dispatch_creator_action(app, action, data)
                     return self.respond(303, '', location='/criar?' + query_str)
@@ -219,9 +221,10 @@ def make_server(data_dir, port=8765):
                     return self.respond(415, 'Formato não permitido')
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 64000:
+                    if not 0 <= size <= 64000:
                         raise ValueError('Tamanho de requisição inválido.')
-                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=50)
+                    raw_body = self.rfile.read(size).decode('utf-8') if size > 0 else ''
+                    parsed = parse_qs(raw_body, keep_blank_values=True, strict_parsing=True, max_num_fields=50) if raw_body else {}
                     data = {k: v[0] for k, v in parsed.items()}
                     query_str = dispatch_campaign_action(app, action, data)
                     return self.respond(303, '', location='/conteudo?' + query_str)
@@ -234,9 +237,10 @@ def make_server(data_dir, port=8765):
                     return self.respond(415, 'Formato não permitido')
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 64000:
+                    if not 0 <= size <= 64000:
                         raise ValueError('Tamanho de requisição inválido.')
-                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True, strict_parsing=True, max_num_fields=50)
+                    raw_body = self.rfile.read(size).decode('utf-8') if size > 0 else ''
+                    parsed = parse_qs(raw_body, keep_blank_values=True, strict_parsing=True, max_num_fields=50) if raw_body else {}
                     data = {k: v[0] for k, v in parsed.items()}
                     query_str = dispatch_calendar_action(app, action, data)
                     return self.respond(303, '', location='/calendario?' + query_str)
@@ -250,10 +254,11 @@ def make_server(data_dir, port=8765):
                     return self.respond(415, 'Formato não permitido')
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    if not 0 < size <= 64000:
+                    if not 0 <= size <= 64000:
                         raise ValueError('Tamanho de requisição inválido.')
-                    parsed = parse_qs(self.rfile.read(size).decode('utf-8'), keep_blank_values=True,
-                                     strict_parsing=True, max_num_fields=70)
+                    raw_body = self.rfile.read(size).decode('utf-8') if size > 0 else ''
+                    parsed = parse_qs(raw_body, keep_blank_values=True,
+                                     strict_parsing=True, max_num_fields=70) if raw_body else {}
                     if any(len(values) != 1 for values in parsed.values()):
                         raise ValueError('Campos duplicados não são permitidos.')
                     dispatch_insights(app.insights, action, {k: v[0] for k, v in parsed.items()})

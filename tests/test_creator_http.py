@@ -133,6 +133,20 @@ class CreatorHTTPTests(unittest.TestCase):
         )
         self.assertEqual(status, 415)
 
+    def test_generate_ai_ideas_empty_and_form_post(self):
+        # Requisição vazia (Content-Length: 0) não quebra e redireciona com sucesso
+        status, _, headers = self.request('/api/creator/generate_ai_ideas', body='')
+        self.assertEqual(status, 303)
+        self.assertIn('/criar?', headers.get('Location', ''))
+        self.assertIn('ideas_generated=1', headers.get('Location', ''))
+
+        # Requisição com campo de formulário também funciona
+        status, _, headers = self.post('generate_ai_ideas', {'action': 'generate'})
+        self.assertEqual(status, 303)
+        self.assertIn('/criar?', headers.get('Location', ''))
+        self.assertIn('ideas_generated=1', headers.get('Location', ''))
+
+
 
 if __name__ == '__main__':
     unittest.main()

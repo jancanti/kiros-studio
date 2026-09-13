@@ -195,6 +195,7 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
                 <h2>💡 Ideias Recomendadas para Você</h2>
             </div>
             <form method="post" action="/api/creator/generate_ai_ideas">
+                <input type="hidden" name="action" value="generate">
                 <button type="submit" class="button-secondary" style="font-size: 13px;">✨ Gerar Novas Ideias</button>
             </form>
         </div>
