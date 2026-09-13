@@ -126,8 +126,20 @@ def make_server(data_dir, port=8765):
 
         def do_POST(self):
             origin = self.headers.get('Origin')
-            expected = f'http://{self.headers.get("Host")}'
-            if not self.valid_host() or origin != expected or self.headers.get('Sec-Fetch-Site') == 'cross-site':
+            referer = self.headers.get('Referer')
+            host = self.headers.get('Host')
+            port = self.server.server_port
+            valid_origins = {f'http://127.0.0.1:{port}', f'http://localhost:{port}'}
+            if host:
+                valid_origins.add(f'http://{host}')
+
+            origin_valid = False
+            if origin:
+                origin_valid = origin in valid_origins
+            elif referer:
+                origin_valid = any(referer.startswith(vo) for vo in valid_origins)
+
+            if not self.valid_host() or not origin_valid or self.headers.get('Sec-Fetch-Site') == 'cross-site':
                 return self.respond(403, 'Origem não permitida')
             if self.path.startswith('/api/library/'):
                 action = self.path.rsplit('/', 1)[-1]
