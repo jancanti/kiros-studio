@@ -128,13 +128,18 @@ class GeminiImageEngine(BaseImageEngine, ImageEngine):
 
     def test_connection(self) -> Dict[str, Any]:
         def op():
-            req = self._build_request('connection test ping')
+            url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent'
+            headers = {'Content-Type': 'application/json'}
+            if self.secret_value:
+                headers['x-goog-api-key'] = self.secret_value
+            payload = json.dumps({'contents': [{'parts': [{'text': 'ping'}]}]}).encode('utf-8')
+            req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
             res = self._execute_http(req, timeout=10.0)
             if res.get('status') == 200:
                 return {
                     'status': 'ok',
                     'latency_ms': res.get('latency_ms', 0),
-                    'message': f"Conexão bem-sucedida com Gemini ({self.model}).",
+                    'message': f"Conexão bem-sucedida com Google Gemini API ({self.model}).",
                 }
             return {
                 'status': 'error',
@@ -195,14 +200,17 @@ class OpenAIImageEngine(BaseImageEngine, ImageEngine):
 
     def test_connection(self) -> Dict[str, Any]:
         def op():
-            # Teste de conexão envia prompt mínimo
-            req = self._build_request('connection test ping')
+            url = 'https://api.openai.com/v1/models'
+            headers = {}
+            if self.secret_value:
+                headers['Authorization'] = f'Bearer {self.secret_value}'
+            req = urllib.request.Request(url, headers=headers, method='GET')
             res = self._execute_http(req, timeout=10.0)
             if res.get('status') == 200:
                 return {
                     'status': 'ok',
                     'latency_ms': res.get('latency_ms', 0),
-                    'message': f"Conexão bem-sucedida com OpenAI ({self.model}).",
+                    'message': f"Conexão bem-sucedida com OpenAI API ({self.model}).",
                 }
             return {
                 'status': 'error',
