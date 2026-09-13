@@ -39,9 +39,9 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # Coluna Direita: Architectural Gradient Slab (3-stop Copy.ai Gradient)
     out += '<div class="gradient-panel">'
     out += '<div>'
-    out += '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px;">'
-    out += '<span class="tag" style="color:rgba(255,255,255,0.85);letter-spacing:1.5px;">ESTÚDIO &amp; FILA</span>'
-    out += f'<span style="font-size:11px;background:rgba(255,255,255,0.18);padding:3px 8px;border-radius:4px;font-weight:500;color:rgba(255,255,255,0.9);">{e(hoje["mode"])}</span>'
+    out += '<div class="gradient-panel-header">'
+    out += '<span class="tag">ESTÚDIO &amp; FILA</span>'
+    out += f'<span class="gradient-panel-badge">{e(hoje["mode"])}</span>'
     out += '</div>'
     out += f'<h3 style="font-size:22px;margin:8px 0 6px;">Status: {e(hoje["queue_status"])}</h3>'
     out += '<p style="font-size:13px;margin:0 0 16px;">Ambiente determinístico local com orquestração contínua.</p>'
@@ -54,11 +54,11 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     out += f'<div class="hero-stat-item"><div class="hero-stat-value">{aprendizados["approved_prompts_count"]}</div><div class="hero-stat-label">Prompts Ativos</div></div>'
     out += '</div>'
 
-    out += '<div style="margin-top:20px;display:flex;justify-content:flex-end;">'
+    out += '<div class="gradient-panel-actions">'
     if hoje['queue_paused']:
-        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button-secondary" style="height:38px;min-height:38px;padding:8px 16px;border:0;color:#171717;background:#ffffff;font-size:13px;">Retomar Fila</button></form>'
+        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button-secondary button-resume">Retomar Fila</button></form>'
     else:
-        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary" style="height:38px;min-height:38px;padding:8px 16px;background:rgba(255,255,255,0.15);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:13px;">Pausar Fila</button></form>'
+        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar Fila</button></form>'
     out += '</div>'
     out += '</div>'
     out += '</div>'
