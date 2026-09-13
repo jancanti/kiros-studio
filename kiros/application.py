@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from kiros.core.contracts import Provenance
@@ -43,9 +44,8 @@ NAVIGATION = (
 class Application:
     def __init__(self, data_dir: Path):
         self.data_dir = Path(data_dir)
-        self.policy = Policy.from_env()
-        self.gateway = ExternalGateway(self.policy)
         self.database = SQLiteDatabase(data_dir / 'studio.sqlite3')
+        self._init_policy()
         self.storage = FileStorage(data_dir / 'files')
         self.library = Library(self.database, self.storage, MockVision())
         self.memory = MemoryStore(self.database)
@@ -121,6 +121,59 @@ class Application:
             prompt_library=self.prompt_library,
         )
         self.backup = BackupService(self.data_dir, self.database, self.storage)
+
+    def _init_policy(self):
+        env_policy = Policy.from_env()
+        mode = env_policy.mode
+        allow_paid = env_policy.allow_paid
+        allow_publish = env_policy.allow_publish
+
+        try:
+            with sqlite3.connect(self.database.path) as conn:
+                r_mode = conn.execute("SELECT value FROM preferences WHERE key='provider_mode'").fetchone()
+                if r_mode and r_mode[0]:
+                    mode = r_mode[0]
+                r_paid = conn.execute("SELECT value FROM preferences WHERE key='allow_paid_apis'").fetchone()
+                if r_paid and r_paid[0] is not None:
+                    allow_paid = (r_paid[0] == '1')
+                r_pub = conn.execute("SELECT value FROM preferences WHERE key='allow_publish'").fetchone()
+                if r_pub and r_pub[0] is not None:
+                    allow_publish = (r_pub[0] == '1')
+        except Exception:
+            pass
+
+        self.policy = Policy(mode=mode, allow_paid=allow_paid, allow_publish=allow_publish)
+        self.gateway = ExternalGateway(self.policy)
+
+    def get_gateway_policy(self) -> dict:
+        return {
+            'mode': self.gateway.policy.mode,
+            'allow_paid': self.gateway.policy.allow_paid,
+            'allow_publish': self.gateway.policy.allow_publish,
+        }
+
+    def update_gateway_policy(self, mode: str, allow_paid: bool = False, allow_publish: bool = False) -> None:
+        if mode not in ('mock', 'live'):
+            raise ValueError("Modo de operação inválido. Escolha 'mock' ou 'live'.")
+        now = datetime.now(timezone.utc).isoformat()
+        with sqlite3.connect(self.database.path) as conn:
+            conn.execute(
+                "INSERT INTO preferences (key, value, source, reference, recorded_at) VALUES ('provider_mode', ?, 'user', 'settings', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, recorded_at=excluded.recorded_at",
+                (mode, now)
+            )
+            conn.execute(
+                "INSERT INTO preferences (key, value, source, reference, recorded_at) VALUES ('allow_paid_apis', ?, 'user', 'settings', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, recorded_at=excluded.recorded_at",
+                ('1' if allow_paid else '0', now)
+            )
+            conn.execute(
+                "INSERT INTO preferences (key, value, source, reference, recorded_at) VALUES ('allow_publish', ?, 'user', 'settings', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, recorded_at=excluded.recorded_at",
+                ('1' if allow_publish else '0', now)
+            )
+            conn.commit()
+        self.gateway.set_policy(mode=mode, allow_paid=allow_paid, allow_publish=allow_publish)
+        self.policy = self.gateway.policy
+        if hasattr(self, 'publisher') and self.publisher:
+            self.publisher.mock_mode = (mode == 'mock')
 
     def status(self):
         # Lista explícita: nunca serializar ambiente, configurações ou segredos.

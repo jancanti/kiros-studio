@@ -35,6 +35,9 @@ class ExternalGateway:
     def __init__(self, policy: Policy):
         self.policy = policy
 
+    def set_policy(self, mode: str, allow_paid: bool = False, allow_publish: bool = False):
+        self.policy = Policy(mode=mode, allow_paid=allow_paid, allow_publish=allow_publish)
+
     def call(self, operation: Callable[[], T], *, paid=True, publish=False,
              approved=False) -> T:
         if self.policy.mode == 'mock':

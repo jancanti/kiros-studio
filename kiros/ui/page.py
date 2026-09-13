@@ -89,6 +89,8 @@ def render_page(app, section, saved=False, query=None):
         <div class="panel"><span class="tag">Ainda não disponível</span>
         <h2>{DESCRIPTIONS[section]}</h2><p>Esta etapa contém somente a navegação base do estúdio.</p>
         <a href="/inicio">Voltar ao início</a></div>'''
+    gw_policy = app.get_gateway_policy()
+    mode_badge = '<span class="mode" style="background:#e6f4ea;color:#137333;border-color:#ceead6;font-weight:600;">● Ao Vivo (Conectado)</span>' if gw_policy['mode'] == 'live' else '<span class="mode">Simulação local</span>'
     return f'''<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{title} · KIROS Studio</title>
@@ -104,5 +106,5 @@ def render_page(app, section, saved=False, query=None):
     <form class="header-command-bar" method="post" action="/api/command">
     <input id="head-cmd" type="text" name="command" placeholder="Command Bar (ex: 'Abra a última campanha')" aria-label="Buscar comandos ou navegar" required>
     <button type="submit">Executar</button></form>
-    <span class="mode">Simulação local</span></header>
+    {mode_badge}</header>
     <main id="main" tabindex="-1">{content}</main><footer>KIROS Aromas <span>Sorocaba · SP</span></footer></div></body></html>'''

@@ -109,6 +109,15 @@ def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]
         app.publisher.clear_credentials()
         return urlencode({'tab': 'providers', 'msg': 'Credenciais do Instagram removidas com sucesso.'})
 
+    elif action == 'update_gateway_policy':
+        mode = data.get('provider_mode', 'mock').strip()
+        allow_paid = data.get('allow_paid_apis') == '1'
+        allow_publish = data.get('allow_publish') == '1'
+
+        app.update_gateway_policy(mode=mode, allow_paid=allow_paid, allow_publish=allow_publish)
+        status_txt = 'Operação Real (Live Conectado)' if mode == 'live' else 'Simulação Local (Mock Seguro)'
+        return urlencode({'tab': 'providers', 'saved': '1', 'msg': f"Política de segurança atualizada: Estúdio em {status_txt}."})
+
     raise ValueError(f"Ação desconhecida: {action}")
 
 
@@ -205,6 +214,57 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             <p style="font-size: 13px; margin: 2px 0;"><strong>Mensagem:</strong> {t_msg}</p>
         </div>
         ''')
+
+    # Seção de Controle do Gateway de Segurança
+    gateway_policy = app.get_gateway_policy()
+    is_live = gateway_policy['mode'] == 'live'
+    gw_badge = '<span class="tag badge-success">⚡ Operação Real (Live)</span>' if is_live else '<span class="tag badge-error" style="background:#e8f0fe;color:#1a73e8;border-color:#aecbfa;">🛡️ Simulação Local (Mock Seguro)</span>'
+    gw_border_color = '#10a37f' if is_live else '#4285f4'
+
+    html.append(f'''
+    <div class="panel" id="gateway-control" style="margin-bottom: 20px; border-left: 4px solid {gw_border_color};">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+                <span class="tag">Segurança &amp; Conexão Externa</span>
+                <h2 style="margin: 4px 0 0;">Modo de Conexão do Estúdio (ExternalGateway)</h2>
+            </div>
+            <div>
+                {gw_badge}
+            </div>
+        </div>
+        <p style="color: #5d5d5d; font-size: 13px; margin: 4px 0 16px;">
+            O <code>ExternalGateway</code> (Seção 70) gerencia e protege as chamadas de rede externas. Selecione o modo desejado para habilitar os testes de conexão com as suas chaves reais:
+        </p>
+        <form method="post" action="/api/providers/update_gateway_policy" style="display:grid; gap:14px; max-width:720px;">
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                <label style="display:inline-flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; padding:10px 14px; background:var(--surface-input); border:1px solid var(--hairline); border-radius:var(--radius-sm);">
+                    <input type="radio" name="provider_mode" value="mock" {'checked' if not is_live else ''} style="width:16px; height:16px;">
+                    <span>🛡️ Simulação Local (Mock Seguro)</span>
+                </label>
+                <label style="display:inline-flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; padding:10px 14px; background:var(--surface-input); border:1px solid var(--hairline); border-radius:var(--radius-sm);">
+                    <input type="radio" name="provider_mode" value="live" {'checked' if is_live else ''} style="width:16px; height:16px;">
+                    <span>⚡ Operação Real (Live Conectado)</span>
+                </label>
+            </div>
+            <div style="background:var(--surface-input); padding:12px 16px; border:1px solid var(--hairline); border-radius:var(--radius-sm); font-size:13px;">
+                <p style="margin:0 0 8px 0; font-weight:600; color:var(--ink);">Permissões de Conexão (Modo Live):</p>
+                <div style="display:grid; gap:8px;">
+                    <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" name="allow_paid_apis" value="1" {'checked' if gateway_policy['allow_paid'] else ''} style="width:16px; height:16px;">
+                        <span>Permitir chamadas a APIs pagas de IA (Geração de imagens e testes simples com saldo real)</span>
+                    </label>
+                    <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" name="allow_publish" value="1" {'checked' if gateway_policy['allow_publish'] else ''} style="width:16px; height:16px;">
+                        <span>Permitir publicação externa direta no Instagram (@usekiros)</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <button type="submit" class="button">Salvar Política de Conexão</button>
+            </div>
+        </form>
+    </div>
+    ''')
 
     # Seção 1: Provedores cadastrados
     html.append('''
