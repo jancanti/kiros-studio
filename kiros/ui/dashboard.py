@@ -25,41 +25,42 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     criacao = data['criacao']
     aprendizados = data['aprendizados']
 
-    out = '<div class="hero-split">'
-    # Coluna Esquerda: Editorial (Geist Display + Inter + CTA)
-    out += '<div class="hero-editorial">'
+    out = '<div class="dashboard-header">'
+    out += '<div class="dashboard-header-top">'
+    out += '<div>'
     out += '<p class="eyebrow">Dashboard Contextual · Visão Geral do Estúdio · KIROS V1</p>'
     out += '<p class="intro">Esteira KIROS para Instagram (@usekiros): Hub de Ideias, Cadastro de Produtos, Aprovação Visual e Agendamento Simplificado.</p>'
-    out += '<div class="hero-actions">'
-    out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a> '
+    out += '</div>'
+    out += '<div class="dashboard-header-actions">'
+    out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a>'
     out += '<a class="button button-secondary" href="/criar#banco-de-ideias">Hub de Ideias</a>'
     out += '</div>'
     out += '</div>'
-
-    # Coluna Direita: Architectural Gradient Slab (3-stop Copy.ai Gradient)
-    out += '<div class="gradient-panel">'
-    out += '<div>'
-    out += '<div class="gradient-panel-header">'
-    out += '<span class="tag">ESTÚDIO &amp; FILA</span>'
-    out += f'<span class="gradient-panel-badge">{e(hoje["mode"])}</span>'
-    out += '</div>'
-    out += f'<h3 style="font-size:22px;margin:8px 0 6px;">Status: {e(hoje["queue_status"])}</h3>'
-    out += '<p style="font-size:13px;margin:0 0 16px;">Ambiente determinístico local com orquestração contínua.</p>'
     out += '</div>'
 
-    out += '<div class="hero-stats">'
-    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{hoje["completed_jobs"]}</div><div class="hero-stat-label">Jobs Concluídos</div></div>'
-    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{len(criacao["recent_campaigns"])}</div><div class="hero-stat-label">Campanhas</div></div>'
-    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{calendario["scheduled_count"]}</div><div class="hero-stat-label">Agendados</div></div>'
-    out += f'<div class="hero-stat-item"><div class="hero-stat-value">{aprendizados["approved_prompts_count"]}</div><div class="hero-stat-label">Prompts Ativos</div></div>'
+    # Barra Slim Horizontal de Métricas & Status da Fila
+    is_paused = hoje['queue_paused']
+    queue_badge_class = 'dashboard-queue-badge paused' if is_paused else 'dashboard-queue-badge'
+    queue_dot = '⏸️' if is_paused else '🟢'
+    queue_text = 'Fila Pausada' if is_paused else f'Fila {e(hoje["queue_status"])}'
+
+    out += '<div class="dashboard-metrics-bar">'
+    out += '<div class="dashboard-metrics-group">'
+    out += f'<div class="dashboard-metrics-item"><strong>{hoje["completed_jobs"]}</strong> <span>Jobs Concluídos</span></div>'
+    out += '<span style="color:var(--hairline);">·</span>'
+    out += f'<div class="dashboard-metrics-item"><strong>{len(criacao["recent_campaigns"])}</strong> <span>Campanhas</span></div>'
+    out += '<span style="color:var(--hairline);">·</span>'
+    out += f'<div class="dashboard-metrics-item"><strong>{calendario["scheduled_count"]}</strong> <span>Agendados</span></div>'
+    out += '<span style="color:var(--hairline);">·</span>'
+    out += f'<div class="dashboard-metrics-item"><strong>{aprendizados["approved_prompts_count"]}</strong> <span>Prompts Ativos</span></div>'
     out += '</div>'
 
-    out += '<div class="gradient-panel-actions">'
-    if hoje['queue_paused']:
-        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button-secondary button-resume">Retomar Fila</button></form>'
+    out += '<div class="dashboard-metrics-queue">'
+    out += f'<span class="{queue_badge_class}">{queue_dot} {queue_text}</span>'
+    if is_paused:
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Retome a geração"><button type="submit" class="button">Retomar Fila</button></form>'
     else:
-        out += '<form method="post" action="/api/command"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar Fila</button></form>'
-    out += '</div>'
+        out += '<form method="post" action="/api/command" style="margin:0;"><input type="hidden" name="command" value="Pause a geração"><button type="submit" class="button-secondary">Pausar Fila</button></form>'
     out += '</div>'
     out += '</div>'
 
@@ -74,10 +75,10 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     # 1. Bloco: Hoje
     out += '<section class="panel dashboard-card">'
     out += '<div class="dashboard-card-body">'
-    out += f'<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag">Hoje</span><span class="aside-note" style="font-size:11px;color:var(--muted);">{e(hoje["mode"])}</span></div>'
+    out += '<span class="tag">Hoje</span>'
     out += f'<h2>{e(hoje["data_formatada"])}</h2>'
-    queue_dot = '🟢' if not hoje['queue_paused'] else '⏸️'
-    out += f'<div class="dashboard-card-meta"><span>{queue_dot} <strong>Fila {e(hoje["queue_status"])}</strong></span><span>·</span><span>{hoje["pending_jobs"]} pendentes</span><span>·</span><span>{hoje["completed_jobs"]} concluídas</span></div>'
+    queue_dot_mini = '🟢' if not hoje['queue_paused'] else '⏸️'
+    out += f'<div class="dashboard-card-meta"><span>{queue_dot_mini} <strong>Fila {e(hoje["queue_status"])}</strong></span><span>·</span><span>{hoje["pending_jobs"]} pendentes</span><span>·</span><span>{hoje["completed_jobs"]} concluídas</span></div>'
     out += '</div>'
     out += '<div class="dashboard-card-footer">'
     if hoje['queue_paused']:
