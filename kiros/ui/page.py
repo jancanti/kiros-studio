@@ -38,32 +38,49 @@ def render_page(app, section, saved=False, query=None):
         from kiros.ui.providers import render_providers_panel
         content = '<p class="eyebrow">Preferências locais, Backup e Provedores</p><h1>Configurações</h1>'
         if saved:
-            content += '<p role="status" class="notice">Nome do espaço salvo neste dispositivo.</p>'
+            content += '<p role="status" class="notice">Configurações salvas com sucesso neste dispositivo.</p>'
         if query and query.get('backup_created'):
-            content += f'<p role="status" class="notice">Backup gerado com sucesso: {query["backup_created"][0]}</p>'
-        content += f'''<div class="panel"><h2>Seu espaço</h2>
-        <p>Este nome identifica o espaço local. A identidade oficial da marca é preservada.</p>
-        <form method="post" action="/api/preferences">
-        <label for="workspace">Nome do espaço</label>
-        <input id="workspace" name="workspace_name" value="{name}" maxlength="80" required>
-        <button type="submit">Salvar nome</button></form></div>
-        <div class="note"><h2>Simulação local</h2>
-        <p>Nenhuma IA externa está conectada. Geração e publicação reais exigem configuração explícita e autorização.</p></div>'''
+            content += f'<p role="status" class="notice">Backup gerado com sucesso: {escape(query["backup_created"][0])}</p>'
 
-        # Painel de Backup & Restauração (Seção 71 e M12-A01)
+        # Painel Distil: Seu Espaço e Backup Unificados
         backups = app.backup.list_backups()
-        content += '''<div class="panel"><h2>Backup e Restauração (Seção 71)</h2>
-        <p>O backup gera um snapshot atômico do SQLite, Brand Bible, Product Bible, campanhas, assets e configurações. <strong>O histórico nunca é apagado automaticamente.</strong></p>
-        <form method="post" action="/api/backup/create"><button type="submit">Gerar Novo Backup Agora</button></form>'''
+        content += f'''
+        <div class="panel" style="margin-bottom:24px;max-width:900px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;">
+                <div style="flex:1;min-width:260px;">
+                    <span class="tag">Espaço Local</span>
+                    <h2 style="margin:4px 0 8px;">Seu Espaço de Trabalho</h2>
+                    <form method="post" action="/api/preferences" class="inline-form" style="gap:8px;margin:0;">
+                        <input id="workspace" name="workspace_name" value="{name}" maxlength="80" required style="max-width:240px;height:38px;">
+                        <button type="submit" class="button-secondary" style="margin:0;padding:6px 12px;font-size:13px;min-height:38px;">Salvar Nome</button>
+                    </form>
+                </div>
+                <div style="flex:1;min-width:260px;border-left:1px solid var(--hairline);padding-left:20px;">
+                    <span class="tag">Segurança &amp; Backup</span>
+                    <h2 style="margin:4px 0 8px;">Backup Atômico (Seção 71)</h2>
+                    <form method="post" action="/api/backup/create" class="inline-form" style="margin:0;">
+                        <button type="submit" class="button" style="margin:0;padding:6px 14px;font-size:13px;min-height:38px;">Gerar Backup Agora 💾</button>
+                    </form>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <p class="aside-note" style="margin:0;font-size:12px;color:var(--muted);">Simulação local ativa: Nenhuma IA externa está conectada sem autorização explícita.</p>
+        '''
+
         if backups:
-            content += '<h3>Backups disponíveis neste dispositivo</h3><div class="table-scroll"><table><thead><tr><th>Arquivo</th><th>Data</th><th>Tamanho</th><th>Arquivos</th><th>Ações</th></tr></thead><tbody>'
+            content += f'''
+                <details style="margin-top:12px;padding:12px;background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);">
+                    <summary style="font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">
+                        📁 Ver Backups Salvos Neste Dispositivo ({len(backups)})
+                    </summary>
+                    <div class="table-scroll" style="margin-top:12px;">
+                        <table><thead><tr><th>Arquivo</th><th>Data</th><th>Tamanho</th><th>Arquivos</th><th>Ação</th></tr></thead><tbody>
+            '''
             for b in backups:
                 sz_kb = b['size_bytes'] / 1024
                 date_str = b['created_at'][:19] if b['created_at'] else b['modified_at'][:19]
-                content += f'<tr><td><strong>{b["name"]}</strong></td><td>{date_str}</td><td>{sz_kb:.1f} KB</td><td>{b["files_count"]}</td><td><a href="/api/backup/download?name={b["name"]}">Baixar ZIP</a></td></tr>'
-            content += '</tbody></table></div>'
-        else:
-            content += '<p class="aside-note">Nenhum backup gerado ainda neste dispositivo.</p>'
+                content += f'<tr><td><strong>{escape(b["name"])}</strong></td><td>{date_str}</td><td>{sz_kb:.1f} KB</td><td>{b["files_count"]}</td><td><a href="/api/backup/download?name={escape(b["name"])}" class="button-secondary" style="padding:4px 8px;font-size:11px;text-decoration:none;">Baixar ZIP</a></td></tr>'
+            content += '</tbody></table></div></details>'
         content += '</div>'
 
         content += render_providers_panel(app, query or {})

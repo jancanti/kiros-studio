@@ -85,75 +85,74 @@ def dispatch_provider_action(app: Application, action: str, data: Dict[str, str]
 
 
 def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
-    """Renderiza painel simples e didático para provedores de IA e Instagram."""
+    """Renderiza painel simples, destilado e didático para provedores de IA e Instagram."""
     pm = app.providers
     providers = pm.list_providers()
     test_logs = pm.get_test_logs(limit=10)
 
     html = []
 
-    # Wizard de Boas-Vindas / Instalação Guiada
+    # Wizard de Boas-Vindas / Instalação Guiada Compacto
     html.append('''
-    <div class="panel onboarding-wizard-panel" style="background: linear-gradient(135deg, rgba(105,62,223,0.08) 0%, rgba(69,20,166,0.03) 100%); border: 1px solid var(--hairline-cool, #e4edf1); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-        <span class="tag" style="background: #693edf; color: white; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 11px;">PASSO A PASSO INICIAL</span>
-        <h2 style="margin-top: 10px; margin-bottom: 8px;">👋 Bem-vindo às Configurações do KIROS Studio!</h2>
-        <p style="color: #444; margin-bottom: 16px;">Conecte seus motores de Inteligência Artificial para gerar imagens deslumbrantes e agendar seus posts diretamente no Instagram.</p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px;">
-            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
-                <strong style="color: #693edf;">1. Provedor de IA</strong>
-                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Adobe Firefly, ChatGPT ou Gemini.</p>
+    <div class="panel onboarding-wizard-panel" style="background: linear-gradient(135deg, rgba(105,62,223,0.06) 0%, rgba(69,20,166,0.02) 100%); border: 1px solid var(--hairline-cool, #e4edf1); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <span class="tag" style="background: #693edf; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">PASSOS INICIAIS</span>
+                <h3 style="margin: 6px 0 2px; font-size: 17px;">👋 Bem-vindo às Configurações do KIROS Studio!</h3>
+                <p style="color: #555; font-size: 13px; margin: 0;">Conecte seus motores de IA para gerar imagens e agendar posts para @usekiros.</p>
             </div>
-            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
-                <strong style="color: #693edf;">2. Fallback Inteligente</strong>
-                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Troca automática se faltar créditos em uma IA.</p>
-            </div>
-            <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px;">
-                <strong style="color: #693edf;">3. Instagram API</strong>
-                <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Fila de postagens automáticas para @usekiros.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="badge" style="background:#eef2ff; color:#693edf; border:1px solid #c7d2fe; font-size:12px; padding:4px 10px;">1. IA (Firefly, ChatGPT, Gemini)</span>
+                <span class="badge" style="background:#eef2ff; color:#693edf; border:1px solid #c7d2fe; font-size:12px; padding:4px 10px;">2. Fallback Ativo</span>
+                <span class="badge" style="background:#eef2ff; color:#693edf; border:1px solid #c7d2fe; font-size:12px; padding:4px 10px;">3. Instagram Graph</span>
             </div>
         </div>
     </div>
+    ''')
 
-    <!-- Guia Rápido: Como encontrar suas chaves -->
-    <div class="panel" style="margin-bottom: 24px;">
-        <h2>💡 Como pegar sua chave de API em 3 cliques</h2>
-        <p style="color: #5d5d5d;">Consulte as instruções abaixo para cadastrar suas credenciais sem complicação:</p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
-            <div style="border-left: 3px solid #e00000; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
-                <h4 style="margin: 0 0 6px 0;">🎨 Adobe Firefly Services</h4>
-                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+    # Guia Rápido: Como encontrar suas chaves (Gaveta retrátil)
+    guide_open_attr = 'open' if not providers else ''
+    html.append(f'''
+    <details class="panel" style="margin-bottom: 20px;" {guide_open_attr}>
+        <summary style="font-size: 15px; font-weight: 600; cursor: pointer; color: var(--ink);">
+            💡 Como pegar sua chave de API em 3 cliques
+        </summary>
+        <p style="color: #5d5d5d; font-size: 13px; margin: 12px 0 16px;">Consulte as instruções abaixo para cadastrar suas credenciais sem complicação:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <div style="border-left: 3px solid #e00000; background: #fafafa; padding: 12px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0; font-size: 14px;">🎨 Adobe Firefly Services</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 12px; color: #444;">
                     <li>Acesse <a href="https://developer.adobe.com/console" target="_blank" rel="noopener">Adobe Developer Console</a></li>
                     <li>Crie um projeto de Firefly Services</li>
                     <li>Copie o Client ID e Secret obtidos</li>
                 </ol>
             </div>
-            <div style="border-left: 3px solid #10a37f; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
-                <h4 style="margin: 0 0 6px 0;">🤖 ChatGPT (OpenAI / DALL-E)</h4>
-                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+            <div style="border-left: 3px solid #10a37f; background: #fafafa; padding: 12px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0; font-size: 14px;">🤖 ChatGPT (OpenAI / DALL-E)</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 12px; color: #444;">
                     <li>Acesse <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI API Keys</a></li>
                     <li>Clique em <em>Create new secret key</em></li>
                     <li>Copie a chave gerada (inicia com <code>sk-</code>)</li>
                 </ol>
             </div>
-            <div style="border-left: 3px solid #4285f4; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
-                <h4 style="margin: 0 0 6px 0;">✨ Google Gemini / Imagen</h4>
-                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+            <div style="border-left: 3px solid #4285f4; background: #fafafa; padding: 12px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0; font-size: 14px;">✨ Google Gemini / Imagen</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 12px; color: #444;">
                     <li>Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></li>
                     <li>Clique em <em>Get API key</em></li>
                     <li>Copie sua chave de API do Gemini</li>
                 </ol>
             </div>
-            <div style="border-left: 3px solid #e1306c; background: #fafafa; padding: 14px; border-radius: 0 6px 6px 0;">
-                <h4 style="margin: 0 0 6px 0;">📸 Instagram Graph API</h4>
-                <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #444;">
+            <div style="border-left: 3px solid #e1306c; background: #fafafa; padding: 12px; border-radius: 0 6px 6px 0;">
+                <h4 style="margin: 0 0 6px 0; font-size: 14px;">📸 Instagram Graph API</h4>
+                <ol style="margin: 0; padding-left: 18px; font-size: 12px; color: #444;">
                     <li>Acesse Meta for Developers</li>
                     <li>Vincule sua página do Instagram (@usekiros)</li>
                     <li>Obtenha o User Access Token de publicação</li>
                 </ol>
             </div>
         </div>
-    </div>
+    </details>
     ''')
 
     # Avisos e resultados de teste
@@ -171,25 +170,27 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
         badge_text = 'Sucesso' if is_ok else 'Erro'
 
         html.append(f'''
-        <div class="panel test-result-panel" role="region" aria-label="Resultado do teste">
+        <div class="panel test-result-panel" role="region" aria-label="Resultado do teste" style="margin-bottom: 20px;">
             <span class="tag {badge_class}">{badge_text}</span>
-            <h3>Resultado do Teste: {t_type}</h3>
-            <p><strong>Status:</strong> {t_status.upper()}</p>
-            <p><strong>Latência:</strong> {t_lat} ms</p>
-            <p><strong>Mensagem:</strong> {t_msg}</p>
+            <h3 style="margin: 6px 0;">Resultado do Teste: {t_type}</h3>
+            <p style="font-size: 13px; margin: 2px 0;"><strong>Status:</strong> {t_status.upper()} | <strong>Latência:</strong> {t_lat} ms</p>
+            <p style="font-size: 13px; margin: 2px 0;"><strong>Mensagem:</strong> {t_msg}</p>
         </div>
         ''')
 
     # Seção 1: Provedores cadastrados
     html.append('''
-    <div class="panel">
-        <span class="tag">Motores de Imagem</span>
-        <h2>Provedores Configurados</h2>
-        <p>Cadastre, teste e selecione motores de geração. Credenciais salvas são protegidas e nunca retornam à interface.</p>
+    <div class="panel" style="margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+                <span class="tag">Motores de Imagem</span>
+                <h2 style="margin: 4px 0 0;">Provedores Configurados</h2>
+            </div>
+        </div>
     ''')
 
     if not providers:
-        html.append('<p class="empty-state">Nenhum provedor configurado ainda. Utilize o formulário abaixo para adicionar seu primeiro motor de IA (Adobe Firefly, ChatGPT ou Gemini).</p>')
+        html.append('<p class="empty-state" style="margin-top:8px;">Nenhum provedor configurado ainda. Utilize o formulário abaixo para adicionar seu primeiro motor de IA (Adobe Firefly, ChatGPT ou Gemini).</p>')
     else:
         html.append('<div class="provider-cards">')
         for p in providers:
@@ -202,7 +203,6 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             status_text = 'Ativo' if pactive else 'Inativo'
             status_class = 'status-active' if pactive else 'status-inactive'
             secret_preview = escape(p['secret_preview'])
-
 
             html.append(f'''
             <div class="card provider-card">
@@ -242,11 +242,14 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
         html.append('</div>')
     html.append('</div>')
 
-    # Seção 2: Adicionar / Editar Provedor
-    html.append('''
-    <div class="panel">
-        <h2>Adicionar ou Atualizar Provedor</h2>
-        <p>Cadastre adaptadores oficiais da especificação (Gemini, OpenAI, Firefly) ou provedor customizado. Nenhum modelo inexistente ou presumido é aceito.</p>
+    # Seção 2: Adicionar / Editar Provedor (Gaveta retrátil)
+    form_open_attr = 'open' if not providers or query.get('saved') or query.get('msg') else ''
+    html.append(f'''
+    <details class="panel" style="margin-bottom: 20px;" {form_open_attr}>
+        <summary style="font-size: 16px; font-weight: 600; cursor: pointer; color: var(--ink);">
+            ➕ Adicionar ou Atualizar Provedor
+        </summary>
+        <p style="color: #5d5d5d; font-size: 13px; margin: 8px 0 16px;">Cadastre adaptadores oficiais da especificação (Gemini, OpenAI, Firefly) ou provedor customizado. Nenhum modelo inexistente ou presumido é aceito.</p>
         <form method="post" action="/api/providers/save" class="form-grid">
             <div class="form-group">
                 <label for="p_id">Identificador único (ID)</label>
@@ -294,39 +297,40 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
             </div>
             <button type="submit" class="button">Salvar Provedor</button>
         </form>
-    </div>
+    </details>
     ''')
 
-    # Seção 3: Roteamento Inteligente & Orçamento
+    # Seção 3 & 4: Telemetria do Roteador & Histórico de Testes (Gaveta Retrátil)
     rec = app.router.recommend()
     html.append(f'''
-    <div class="panel">
-        <span class="tag">Roteador de Motores</span>
-        <h2>Recomendação Automática de Motor</h2>
-        <p>O <code>ImageEngineRouter</code> avalia a tarefa do slide e sugere o motor mais eficiente. Decisões manuais sempre prevalecem.</p>
-        <div class="recommendation-box">
-            <p><strong>Motor Recomendado:</strong> {rec['provider'].upper()} — <code>{rec['model']}</code></p>
-            <p><strong>Motivo:</strong> {rec['reason']}</p>
-            <p><strong>Custo estimado por imagem:</strong> ${rec['estimated_cost']:.4f}</p>
-            <p><strong>Confiança do roteador:</strong> {int(rec['confidence'] * 100)}%</p>
-            <h4>Alternativas avaliadas:</h4>
-            <ul>
+    <details class="panel" style="margin-bottom: 20px;">
+        <summary style="font-size: 15px; font-weight: 600; cursor: pointer; color: var(--ink);">
+            📊 Telemetria do Roteador &amp; Histórico de Testes
+        </summary>
+        <div style="margin-top: 16px;">
+            <span class="tag">Roteador de Motores</span>
+            <h3 style="margin: 4px 0 8px;">Recomendação Automática de Motor</h3>
+            <p style="font-size: 13px; color: #555;">O <code>ImageEngineRouter</code> avalia a tarefa do slide e sugere o motor mais eficiente. Decisões manuais sempre prevalecem.</p>
+            <div class="recommendation-box" style="margin-bottom: 20px;">
+                <p><strong>Motor Recomendado:</strong> {rec['provider'].upper()} — <code>{rec['model']}</code></p>
+                <p><strong>Motivo:</strong> {rec['reason']}</p>
+                <p><strong>Custo estimado por imagem:</strong> ${rec['estimated_cost']:.4f}</p>
+                <p><strong>Confiança do roteador:</strong> {int(rec['confidence'] * 100)}%</p>
+                <h4 style="margin-top: 8px;">Alternativas avaliadas:</h4>
+                <ul>
     ''')
     for alt in rec.get('alternatives', []):
         html.append(f'''
             <li><strong>{alt['provider'].upper()}</strong> (<code>{alt['model']}</code>) — ${alt['estimated_cost']:.4f} ({int(alt['confidence']*100)}% confiança): {alt['reason']}</li>
         ''')
     html.append('''
-            </ul>
-        </div>
-    </div>
+                </ul>
+            </div>
     ''')
 
-    # Seção 4: Histórico de testes
     if test_logs:
         html.append('''
-        <div class="panel">
-            <h2>Histórico Recente de Testes</h2>
+            <h3 style="margin: 16px 0 8px;">Histórico Recente de Testes</h3>
             <div class="table-responsive">
             <table class="data-table">
                 <thead>
@@ -358,8 +362,13 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
                 </tbody>
             </table>
             </div>
-        </div>
         ''')
 
+    html.append('''
+        </div>
+    </details>
+    ''')
+
     return '\n'.join(html)
+
 
