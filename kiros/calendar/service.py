@@ -4,6 +4,7 @@ import json
 import sqlite3
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
+from kiros.tz import SAO_PAULO_TZ, now_sp, to_sp
 
 from kiros.calendar.models import (
     CalendarPreferences,
@@ -486,14 +487,11 @@ class EditorialCalendarService:
         preferred_date: Optional[str] = None,
     ) -> TimeRecommendation:
         """Gera recomendação de dia/horário com camadas: KIROS -> Setor -> Plataforma Geral (Seções 41 e 42)."""
-        # Base temporal de partida: amanhã ou preferred_date
-        now = datetime.now(timezone.utc)
+        # Base temporal de partida: amanhã ou preferred_date no fuso de São Paulo
+        now = now_sp()
         if preferred_date:
-            try:
-                base_dt = datetime.fromisoformat(preferred_date)
-                if base_dt.tzinfo is None:
-                    base_dt = base_dt.replace(tzinfo=timezone.utc)
-            except ValueError:
+            base_dt = to_sp(preferred_date)
+            if not base_dt:
                 base_dt = now + timedelta(days=1)
         else:
             base_dt = now + timedelta(days=1)
@@ -515,7 +513,7 @@ class EditorialCalendarService:
             rec_weekday = 2  # Quarta-feira
             reasoning = (
                 f"Com base nas vendas e engajamento registrados na conta local da KIROS Aromas: "
-                f"{kiros_insight}. O melhor intervalo de conversão é entre 19h00 e 20h30."
+                f"{kiros_insight}. O melhor intervalo de conversão é entre 19:00 e 20:30 (Horário de Brasília)."
             )
         else:
             # Camada 2: Setor (Perfumaria, Aromaterapia e Casa no Brasil)
@@ -529,7 +527,7 @@ class EditorialCalendarService:
                 rec_weekday = 4  # Sexta-feira
                 reasoning = (
                     "Para o segmento de aromas para casa e bem-estar, os momentos de transição pós-trabalho "
-                    "e desaceleração (quarta a sexta, 18h30–20h00) concentram maior tempo de leitura de posts sensoriais."
+                    "e desaceleração (quarta a sexta, 18:30 às 20:00) concentram maior tempo de leitura de posts sensoriais."
                 )
             else:
                 # Camada 3: Plataforma Geral (Instagram Brasil)
@@ -541,7 +539,7 @@ class EditorialCalendarService:
                 rec_weekday = base_dt.weekday()
                 reasoning = (
                     "Padrão genérico de distribuição de tráfego na plataforma Instagram Brasil "
-                    "nos horários de pico noturnos (19h00 às 21h00)."
+                    "nos horários de pico noturnos (19:00 às 21:00)."
                 )
 
         # Calcula o próximo dia com o weekday recomendado mais próximo da data base
@@ -549,7 +547,7 @@ class EditorialCalendarService:
         if days_ahead == 0 and base_dt.hour >= rec_hour:
             days_ahead = 7
         recommended_dt = (base_dt + timedelta(days=days_ahead)).replace(
-            hour=rec_hour, minute=rec_minute, second=0, microsecond=0, tzinfo=timezone.utc
+            hour=rec_hour, minute=rec_minute, second=0, microsecond=0, tzinfo=SAO_PAULO_TZ
         )
 
         recommended_iso = recommended_dt.isoformat()

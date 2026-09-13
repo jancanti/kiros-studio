@@ -8,9 +8,11 @@ Reúne informações dos serviços existentes sem duplicar lógica:
 - Criação
 - Aprendizados
 """
+import json
 import sqlite3
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from kiros.tz import now_sp, format_sp_display, format_sp_day_month
 
 
 class DashboardService:
@@ -37,7 +39,7 @@ class DashboardService:
         self.prompt_library = prompt_library
 
     def get_dashboard_data(self) -> Dict[str, Any]:
-        now = datetime.now(timezone.utc)
+        now = now_sp()
         hoje_data = self._build_hoje(now)
         oportunidade_data = self._build_oportunidade(now)
         calendario_data = self._build_calendario(now)
@@ -60,11 +62,7 @@ class DashboardService:
         }
 
     def _build_hoje(self, now: datetime) -> Dict[str, Any]:
-        meses = [
-            'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-            'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
-        ]
-        data_formatada = f"{now.day} de {meses[now.month - 1]} de {now.year}"
+        data_formatada = format_sp_day_month(now)
 
         queue_paused = False
         pending_jobs = 0
@@ -197,7 +195,7 @@ class DashboardService:
                     upcoming.append({
                         'title': e.title,
                         'pillar': e.pillar,
-                        'publish_time': e.scheduled_time or 'A definir',
+                        'publish_time': format_sp_display(e.scheduled_for or e.scheduled_time) if (e.scheduled_for or e.scheduled_time) else 'A definir',
                         'format': e.format_type,
                     })
             except Exception:

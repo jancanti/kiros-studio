@@ -1,5 +1,6 @@
 from html import escape
 from kiros.application import NAVIGATION
+from kiros.tz import format_sp
 
 DESCRIPTIONS = {
     'criar': 'Briefings, estratégia e criação de conteúdo serão organizados aqui.',
@@ -78,7 +79,7 @@ def render_page(app, section, saved=False, query=None):
             '''
             for b in backups:
                 sz_kb = b['size_bytes'] / 1024
-                date_str = b['created_at'][:19] if b['created_at'] else b['modified_at'][:19]
+                date_str = format_sp(b.get('created_at') or b.get('modified_at'))
                 content += f'<tr><td><strong>{escape(b["name"])}</strong></td><td>{date_str}</td><td>{sz_kb:.1f} KB</td><td>{b["files_count"]}</td><td><a href="/api/backup/download?name={escape(b["name"])}" class="button-secondary" style="padding:4px 8px;font-size:11px;text-decoration:none;">Baixar ZIP</a></td></tr>'
             content += '</tbody></table></div></details>'
         content += '</div>'

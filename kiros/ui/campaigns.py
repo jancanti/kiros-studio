@@ -9,6 +9,7 @@ from kiros.application import Application
 from kiros.campaigns.models import UnapprovedExecutionError
 from kiros.core.contracts import Provenance
 from kiros.layout import VALID_LAYOUT_FAMILIES, VALID_FRAMINGS, VALID_LIGHTINGS
+from kiros.tz import now_sp, ensure_sp_iso, format_sp, format_sp_display
 
 
 def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]) -> str:
@@ -143,25 +144,19 @@ def dispatch_campaign_action(app: Application, action: str, data: Dict[str, str]
         # Cria agendamento automático para amanhã no melhor horário (18:00)
         camp = mgr.get_campaign(cid)
         c_title = getattr(camp, 'title', 'Campanha KIROS')
-        target_iso = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=18, minute=0, second=0).isoformat()
+        target_iso = (now_sp() + timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0).isoformat()
         app.calendar.create_entry(title=c_title, content_type='feed', pillar='institucional', scheduled_for=target_iso, campaign_id=cid, status='scheduled')
 
-        return urlencode({'campaign_id': cid, 'msg': f'⚡ Campanha aprovada e agendada automaticamente para {target_iso[:10]} às 18:00 no Instagram (@usekiros)!'})
+        return urlencode({'campaign_id': cid, 'msg': f'⚡ Campanha aprovada e agendada automaticamente para {format_sp_display(target_iso)} no Instagram (@usekiros)!'})
 
     elif action == 'approve_and_schedule_manual':
         cid = data.get('campaign_id', '').strip()
         approver = data.get('approver', 'Diretoria Criativa').strip()
         target_date = data.get('scheduled_date', '').strip()
         if not target_date:
-            target_date = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%dT18:00:00+00:00')
+            target_date = (now_sp() + timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0).isoformat()
         else:
-            try:
-                dt = datetime.fromisoformat(target_date.replace(' ', 'T'))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                target_date = dt.isoformat()
-            except Exception:
-                target_date = (datetime.now(timezone.utc) + timedelta(days=1)).strftime('%Y-%m-%dT18:00:00+00:00')
+            target_date = ensure_sp_iso(target_date)
 
         mgr.approve_campaign(cid, approver=approver)
         try:

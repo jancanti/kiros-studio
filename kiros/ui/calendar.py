@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 from kiros.application import Application
 from kiros.calendar.models import VALID_PILLARS, VALID_PRIORITIES, VALID_CONTENT_TYPES, SEASONAL_PHASES
+from kiros.tz import now_sp, format_sp_display, format_sp_input, ensure_sp_iso, normalize_input_sp_iso
 
 
 def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]) -> str:
@@ -35,6 +36,8 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
         priority = data.get('priority', 'medium')
         campaign_id = data.get('campaign_id', '').strip() or None
         scheduled_for = data.get('scheduled_for', '').strip() or None
+        if scheduled_for:
+            scheduled_for = normalize_input_sp_iso(scheduled_for)
         seasonal_tag = data.get('seasonal_tag', '').strip() or None
         phase = data.get('phase', 'none').strip() or 'none'
         notes = data.get('notes', '').strip()
@@ -77,12 +80,14 @@ def dispatch_calendar_action(app: Application, action: str, data: Dict[str, str]
         )
         return urlencode({
             'entry_id': entry_id,
-            'msg': f"Sugestão de horário ({rec.recommended_time[:16].replace('T', ' ')}) aplicada via Creative Director.",
+            'msg': f"Sugestão de horário ({format_sp_display(rec.recommended_time)}) aplicada via Creative Director.",
         })
 
     elif action == 'set_time_decision':
         entry_id = data.get('entry_id', '').strip()
         selected_time = data.get('selected_time', '').strip()
+        if selected_time:
+            selected_time = normalize_input_sp_iso(selected_time)
         accept_rec = data.get('accept_recommendation') == '1'
 
         calendar.record_time_decision(
@@ -227,7 +232,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
                     </div>
                     <div class="calendar-time-badge">
                         <span class="calendar-time-label">Data e Horário:</span>
-                        <strong class="calendar-time-val">{escape(entry.scheduled_for[:16].replace('T', ' ') if entry.scheduled_for else 'Aguardando agendamento')}</strong>
+                        <strong class="calendar-time-val">{escape(format_sp_display(entry.scheduled_for) if entry.scheduled_for else 'Aguardando agendamento')}</strong>
                     </div>
                 </div>'''
 
@@ -252,7 +257,7 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
                     <p style="margin:4px 0 6px;font-size:13px;color:var(--muted-blue);line-height:1.5">{escape(basis.get('reasoning', ''))}</p>
                     <p style="margin:4px 0;font-size:12px;color:var(--muted)"><em>⚠️ {escape(basis.get('disclaimer', ''))}</em></p>
                     <div style="margin-top:10px;font-size:12.5px;color:var(--ink)">
-                        Sugerido: <code>{escape(entry.recommended_time[:16].replace('T', ' ') if entry.recommended_time else '—')}</code> · 
+                        Sugerido: <code>{escape(format_sp_display(entry.recommended_time) if entry.recommended_time else '—')}</code> · 
                         Decisão: <strong>{escape(accepted_txt)}</strong>
                     </div>
                 </div>'''
@@ -267,10 +272,10 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
             </form>'''
 
             # Formulário de Horário Manual ("Manual sempre vence" - Seção 41)
-            now_def = entry.scheduled_for or (datetime.now(timezone.utc).isoformat()[:16])
+            now_def = format_sp_input(entry.scheduled_for or now_sp())
             html += f'''<form method="post" action="/api/calendar/set_time_decision" class="inline-form" style="gap:8px;margin:0">
                 <input type="hidden" name="entry_id" value="{entry.id}">
-                <input type="datetime-local" name="selected_time" value="{now_def[:16]}" aria-label="Definir data e horário manual" style="padding:6px 10px;max-width:210px;font-size:13px" required>
+                <input type="datetime-local" name="selected_time" value="{now_def}" aria-label="Definir data e horário manual" style="padding:6px 10px;max-width:210px;font-size:13px" required>
                 <input type="hidden" name="accept_recommendation" value="0">
                 <button type="submit" class="button-secondary" style="margin:0;padding:8px 14px;font-size:13px">Salvar Horário Manual</button>
             </form>'''
@@ -363,8 +368,8 @@ def render_calendar(app: Application, query: Dict[str, Any]) -> str:
                     </select>
                 </div>
                 <div class="form-group" style="margin:0;">
-                    <label for="scheduled_for" style="display:block;font-weight:500;margin-bottom:4px">Data e Horário Pretendido</label>
-                    <input type="datetime-local" id="scheduled_for" name="scheduled_for" style="max-width:100%;">
+                    <label for="scheduled_for" style="display:block;font-weight:500;margin-bottom:4px">Data e Horário Pretendido (Fuso São Paulo · 24h)</label>
+                    <input type="datetime-local" id="scheduled_for" name="scheduled_for" value="{format_sp_input(now_sp())}" style="max-width:100%;">
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">

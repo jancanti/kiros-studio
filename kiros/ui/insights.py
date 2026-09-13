@@ -5,6 +5,7 @@ formulários recolhidos e ações explícitas. Identidade e navegação preserva
 """
 from html import escape
 from kiros.insights import DIMENSIONS, VARIABLES, RISK_LABELS, STATES, TREND_FIELDS, TREND_LABELS, timestamp
+from kiros.tz import format_sp
 
 
 def e(value):
@@ -12,7 +13,7 @@ def e(value):
 
 
 def date_label(value):
-    return timestamp(value).strftime('%d/%m/%Y %H:%M UTC')
+    return format_sp(value)
 
 
 def field(name, label, value='', required=True, kind='text', multiline=False):
