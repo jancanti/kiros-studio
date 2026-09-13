@@ -29,9 +29,14 @@ from kiros.dashboard import DashboardService
 from kiros.backup import BackupService
 
 NAVIGATION = (
-    ('inicio', 'Início'), ('criar', 'Criar'), ('calendario', 'Calendário'),
-    ('conteudo', 'Conteúdo'), ('biblioteca', 'Biblioteca'), ('insights', 'Insights'),
-    ('marca', 'Marca'), ('configuracoes', 'Configurações'),
+    ('inicio', 'Início'),
+    ('biblioteca', 'Produtos & Biblioteca'),
+    ('criar', 'Ideias & Criar'),
+    ('conteudo', 'Conteúdo & Aprovação'),
+    ('calendario', 'Calendário & Fila'),
+    ('insights', 'Insights'),
+    ('marca', 'Marca'),
+    ('configuracoes', 'Configurações'),
 )
 
 
