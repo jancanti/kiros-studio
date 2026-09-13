@@ -119,6 +119,8 @@ def make_server(data_dir, port=8765):
                 self.end_headers()
                 self.wfile.write(content)
                 return
+            if path == '/ideias':
+                return self.respond(301, '', location='/criar#banco-de-ideias')
             section = path.strip('/') or 'inicio'
             if section not in dict(NAVIGATION):
                 return self.respond(404, 'Página não encontrada')

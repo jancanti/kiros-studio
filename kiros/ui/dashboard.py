@@ -32,7 +32,7 @@ def render_dashboard(app, query: Dict[str, Any]) -> str:
     out += '<p class="intro">Esteira KIROS para Instagram (@usekiros): Hub de Ideias, Cadastro de Produtos, Aprovação Visual e Agendamento Simplificado.</p>'
     out += '<div class="hero-actions">'
     out += '<a class="button button-primary" href="/criar">Criar Nova Campanha <span aria-hidden="true">+</span></a> '
-    out += '<a class="button button-secondary" href="/ideias">Hub de Ideias</a>'
+    out += '<a class="button button-secondary" href="/criar#banco-de-ideias">Hub de Ideias</a>'
     out += '</div>'
     out += '</div>'
 
