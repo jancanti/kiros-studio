@@ -286,12 +286,17 @@ def render_providers_panel(app: Application, query: Dict[str, Any]) -> str:
                 <input id="p_endpoint" name="endpoint" placeholder="Deixe em branco para usar o endpoint oficial">
             </div>
             <div class="form-group">
-                <label for="p_secret">Chave de API / Segredo</label>
-                <input id="p_secret" name="secret" type="password" placeholder="Digite a chave da API (armazenada de forma segura)">
-                <small class="hint" style="display: block; margin-top: 4px;">A chave nunca será reexibida após o salvamento.</small>
-                <label class="checkbox-inline">
-                    <input type="checkbox" name="is_active" value="1" checked> Provedor ativo para roteamento
-                </label>
+                <label for="p_secret" style="display: block; margin-bottom: 6px;">Chave de API / Segredo</label>
+                <input id="p_secret" name="secret" type="password" placeholder="Digite a chave da API (armazenada de forma segura)" style="display: block; width: 100%; max-width: 440px;">
+                <div class="hint" style="display: block; width: 100%; margin-top: 6px; margin-bottom: 10px; font-size: 12px; color: var(--muted-blue);">
+                    A chave nunca será reexibida após o salvamento.
+                </div>
+                <div style="display: block; margin-top: 4px;">
+                    <label class="checkbox-inline" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; cursor: pointer;">
+                        <input type="checkbox" name="is_active" value="1" checked style="width: 16px !important; height: 16px !important; margin: 0 !important; cursor: pointer;">
+                        <span>Provedor ativo para roteamento</span>
+                    </label>
+                </div>
             </div>
             <button type="submit" class="button">Salvar Provedor</button>
         </form>
