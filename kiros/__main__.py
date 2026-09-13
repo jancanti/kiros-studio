@@ -29,7 +29,7 @@ def make_server(data_dir, port=8765):
             self.send_header('Cache-Control', 'no-store')
             self.send_header('Content-Security-Policy', "default-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
             self.send_header('X-Content-Type-Options', 'nosniff')
-            self.send_header('Referrer-Policy', 'no-referrer')
+            self.send_header('Referrer-Policy', 'same-origin')
             if location:
                 self.send_header('Location', location)
             self.end_headers()
@@ -127,6 +127,7 @@ def make_server(data_dir, port=8765):
         def do_POST(self):
             origin = self.headers.get('Origin')
             referer = self.headers.get('Referer')
+            sec_fetch_site = self.headers.get('Sec-Fetch-Site')
             host = self.headers.get('Host')
             port = self.server.server_port
             valid_origins = {f'http://127.0.0.1:{port}', f'http://localhost:{port}'}
@@ -138,8 +139,10 @@ def make_server(data_dir, port=8765):
                 origin_valid = origin in valid_origins
             elif referer:
                 origin_valid = any(referer.startswith(vo) for vo in valid_origins)
+            elif sec_fetch_site in {'same-origin', 'same-site'}:
+                origin_valid = True
 
-            if not self.valid_host() or not origin_valid or self.headers.get('Sec-Fetch-Site') == 'cross-site':
+            if not self.valid_host() or not origin_valid or sec_fetch_site == 'cross-site':
                 return self.respond(403, 'Origem não permitida')
             if self.path.startswith('/api/library/'):
                 action = self.path.rsplit('/', 1)[-1]

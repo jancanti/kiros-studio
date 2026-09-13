@@ -46,6 +46,7 @@ with tempfile.TemporaryDirectory() as directory:
             assert status == 200 and f'<title>{label} · KIROS Studio</title>' in page
             assert 'aria-current="page"' in page and 'Pular para o conteúdo' in page
             assert 'frame-ancestors' in headers['Content-Security-Policy']
+            assert headers['Referrer-Policy'] == 'same-origin'
         assert request(port, '/.env')[0] == 404
         assert request(port, '/api/health', headers={'Host': 'attacker.test'})[0] == 403
         payload = urlencode({'workspace_name': '<script>teste</script>'})
@@ -55,6 +56,8 @@ with tempfile.TemporaryDirectory() as directory:
         assert request(port, '/api/preferences', 'POST', payload, headers)[0] == 403
         headers['Origin'] = f'http://127.0.0.1:{port}'
         assert request(port, '/api/preferences', 'POST', payload, headers)[0] == 303
+        assert request(port, '/api/preferences', 'POST', payload, {'Content-Type': 'application/x-www-form-urlencoded', 'Referer': f'http://127.0.0.1:{port}/configuracoes'})[0] == 303
+        assert request(port, '/api/preferences', 'POST', payload, {'Content-Type': 'application/x-www-form-urlencoded', 'Sec-Fetch-Site': 'same-origin'})[0] == 303
         assert request(port, '/api/preferences', 'POST', 'workspace_name=', headers)[0] == 400
         assert '&lt;script&gt;teste&lt;/script&gt;' in request(port, '/configuracoes')[1]
     finally:

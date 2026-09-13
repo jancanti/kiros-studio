@@ -119,6 +119,49 @@ class ProvidersHTTPTests(unittest.TestCase):
         )
         self.assertEqual(status, 415)
 
+    def test_configuracoes_ui_and_same_origin_form_submission(self):
+        # 1. Cabeçalho Referrer-Policy deve ser same-origin
+        status, page, headers = self.request('/configuracoes')
+        self.assertEqual(status, 200)
+        self.assertEqual(headers.get('Referrer-Policy'), 'same-origin')
+
+        # 2. Estilos do botão e input para evitar quebra de linha em telas estreitas
+        self.assertIn('white-space:nowrap', page)
+        self.assertIn('min-width:max-content', page)
+        self.assertIn('flex-shrink:0', page)
+        self.assertIn('flex:1;min-width:140px', page)
+
+        # 3. Submissão via formulário padrão com Referer (sem Origin) é aceita
+        payload = urlencode({'workspace_name': 'Estúdio Teste Referer'})
+        status, _, resp_headers = self.request(
+            '/api/preferences',
+            body=payload,
+            origin=False,
+            headers={'Referer': f'http://127.0.0.1:{self.port}/configuracoes'},
+        )
+        self.assertEqual(status, 303)
+        self.assertIn('/configuracoes?saved=1', resp_headers.get('Location', ''))
+
+        # 4. Submissão via formulário padrão com Sec-Fetch-Site same-origin (sem Origin/Referer) é aceita
+        payload = urlencode({'workspace_name': 'Estúdio Teste SecFetch'})
+        status, _, resp_headers = self.request(
+            '/api/preferences',
+            body=payload,
+            origin=False,
+            headers={'Sec-Fetch-Site': 'same-origin'},
+        )
+        self.assertEqual(status, 303)
+        self.assertIn('/configuracoes?saved=1', resp_headers.get('Location', ''))
+
+        # 5. Requisição com Sec-Fetch-Site cross-site é bloqueada com 403
+        status, _, _ = self.request(
+            '/api/preferences',
+            body=payload,
+            origin=False,
+            headers={'Sec-Fetch-Site': 'cross-site'},
+        )
+        self.assertEqual(status, 403)
+
 
 if __name__ == '__main__':
     unittest.main()
