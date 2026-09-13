@@ -252,14 +252,29 @@ details.subgroup-accordion summary.subgroup-summary::-webkit-details-marker{disp
   .dashboard-grid{grid-template-columns:1fr}
 }
 
-/* Creative Director Studio Workbench */
-.creator-workbench{display:grid;grid-template-columns:1.55fr 1fr;gap:28px;align-items:start;margin-top:24px}
-.creator-primary-col{display:flex;flex-direction:column;gap:28px;min-width:0}
-.creator-sidebar-col{display:flex;flex-direction:column;gap:24px;min-width:0}
+/* Creative Director Studio Workbench (Impeccable & Distill Layout) */
+.creator-workbench{display:flex;flex-direction:column;gap:32px;margin-top:20px}
+.creator-hero-zone{display:flex;flex-direction:column;gap:24px;width:100%}
+.creator-secondary-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.creator-column-left{display:flex;flex-direction:column;gap:24px;min-width:0}
+.creator-column-right{display:flex;flex-direction:column;gap:24px;min-width:0}
 
 /* Header & Workbench Framing */
-.creator-header{margin-bottom:28px}
-.creator-header h1{margin:0 0 12px}
+.creator-header{margin-bottom:20px}
+.creator-header h1{margin:0 0 8px;font-size:26px;font-weight:600;letter-spacing:-0.5px}
+.creator-header .intro{color:var(--muted-blue);font-size:14px;line-height:22px;margin:0}
+
+/* AI Ideas Hub (Full Width Horizontal Grid) */
+.ai-ideas-hub{background:var(--canvas);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);padding:24px}
+.ai-ideas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.ai-ideas-header-left{display:flex;flex-direction:column;gap:4px}
+.ai-ideas-header-left h2{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
+.ai-ideas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.ai-idea-card{background:var(--surface-input);border:1px solid var(--hairline-cool);border-radius:var(--radius-sm);padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.15s ease,background-color 0.15s ease}
+.ai-idea-card:hover{border-color:var(--hairline);background:var(--canvas)}
+.ai-idea-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ai-idea-card h3{font-size:14px;font-weight:600;color:var(--ink);margin:0 0 6px 0;line-height:1.4}
+.ai-idea-card p{font-size:12px;color:var(--muted-blue);line-height:1.5;margin:0 0 14px 0}
 
 /* Briefing Canvas */
 .briefing-canvas{background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:28px;transition:border-color 0.25s ease,background-color 0.25s ease}
@@ -367,6 +382,6 @@ details.subgroup-accordion summary.subgroup-summary::-webkit-details-marker{disp
 .adjacent-discovery-card h4{margin:0;font-size:14px;color:var(--ink)}
 
 @media(max-width:960px){
-  .creator-workbench{grid-template-columns:1fr}
+  .creator-secondary-grid{grid-template-columns:1fr}
 }
 

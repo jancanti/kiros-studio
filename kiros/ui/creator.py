@@ -181,25 +181,25 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
     html.append('<div class="creator-workbench">')
 
     # ==========================================
-    # COLUNA 1: Fluxo Principal de Criação (Esquerda - 62%)
+    # ZONA 1: Criação & Inspiração (1 Coluna - Full Width)
     # ==========================================
-    html.append('<div class="creator-primary-col">')
+    html.append('<div class="creator-hero-zone">')
 
     # 0. Hub de Ideias Recomendadas pela IA
     ai_recs = director.generate_ai_recommendations(limit=3)
     html.append('''
-    <div class="panel ai-ideas-hub" style="background: #faf8ff; border: 1px solid #e2d9f8; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <div>
-                <span class="tag" style="background: #693edf; color: white;">Inteligência de Conteúdo</span>
-                <h2 style="margin: 6px 0 0 0; font-size: 20px; color: #171717;">💡 Ideias Recomendadas para Você</h2>
+    <div class="panel ai-ideas-hub">
+        <div class="ai-ideas-header">
+            <div class="ai-ideas-header-left">
+                <span class="tag">Inteligência de Conteúdo</span>
+                <h2>💡 Ideias Recomendadas para Você</h2>
             </div>
             <form method="post" action="/api/creator/generate_ai_ideas">
                 <button type="submit" class="button-secondary" style="font-size: 13px;">✨ Gerar Novas Ideias</button>
             </form>
         </div>
-        <p style="color: #555; font-size: 14px; margin-bottom: 16px;">A IA analisou seus produtos cadastrados e sua marca para sugerir campanhas prontas de alta conversão. Clique no botão de 1-Clique para iniciar:</p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+        <p style="color: var(--muted-blue); font-size: 14px; margin-bottom: 16px;">A IA analisou seus produtos cadastrados e sua marca para sugerir campanhas prontas de alta conversão. Clique no botão de 1-Clique para iniciar:</p>
+        <div class="ai-ideas-grid">
     ''')
 
     for rec in ai_recs:
@@ -213,20 +213,20 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         theme_bg = '#693edf' if 'Estética' in theme else ('#10a37f' if 'Ingredientes' in theme else '#e1306c')
 
         html.append(f'''
-        <div class="card idea-card" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card ai-idea-card">
             <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="ai-idea-card-header">
                     <span class="tag" style="background: {theme_bg}; color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px;">{theme}</span>
-                    <small style="color: #888; font-size: 11px;">{fmt}</small>
+                    <small style="color: var(--muted-blue); font-size: 11px;">{fmt}</small>
                 </div>
-                <h3 style="font-size: 15px; font-weight: 600; color: #171717; margin: 0 0 6px 0;">{title}</h3>
-                <p style="font-size: 12px; color: #555; line-height: 1.4; margin-bottom: 12px;">{concept}</p>
+                <h3>{title}</h3>
+                <p>{concept}</p>
             </div>
             <form method="post" action="/api/creator/use_idea">
                 <input type="hidden" name="title" value="{title}">
                 <input type="hidden" name="concept" value="{concept}">
                 <input type="hidden" name="objective" value="{obj}">
-                <button type="submit" class="button" style="width: 100%; padding: 8px; font-size: 13px; text-align: center;">⚡ Criar esta Campanha em 1-Clique</button>
+                <button type="submit" class="button" style="width: 100%; padding: 8px 12px; font-size: 13px; text-align: center;">⚡ Criar esta Campanha em 1-Clique</button>
             </form>
         </div>
         ''')
@@ -344,6 +344,17 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
             </form>
         </div>
         ''')
+
+    # Fecha Zona 1 (1 Coluna Full Width)
+    html.append('</div>') # fecha creator-hero-zone
+
+    # ==========================================
+    # ZONA 2: Apoio & Governança (2 Colunas: 50% / 50%)
+    # ==========================================
+    html.append('<div class="creator-secondary-grid">')
+
+    # Coluna Esquerda: Banco de Ideias & Governança Editorial
+    html.append('<div class="creator-column-left">')
 
     # 2. Banco de Ideias por Pilar (Accordions Aninhados por Governança Editorial)
     all_ideas = ideas.list_ideas()
@@ -489,12 +500,12 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         ''')
 
     html.append('</div>') # fecha banco-de-ideias panel
-    html.append('</div>') # fecha creator-primary-col
+    html.append('</div>') # fecha creator-column-left
 
     # ==========================================
-    # COLUNA 2: Radar Estratégico & Inteligência (Direita - 38%)
+    # COLUNA DIREITA: Radar Estratégico & Governança (50%)
     # ==========================================
-    html.append('<div class="creator-sidebar-col">')
+    html.append('<div class="creator-column-right">')
 
     # Mini-painel: Governança dos 6 Pilares
     html.append(f'''
@@ -610,7 +621,8 @@ def render_creator(app: Application, query: Dict[str, Any]) -> str:
         ''')
     html.append('</div></div>')
 
-    html.append('</div>') # fecha creator-sidebar-col
+    html.append('</div>') # fecha creator-column-right
+    html.append('</div>') # fecha creator-secondary-grid
     html.append('</div>') # fecha creator-workbench
 
     # Script com micro-interações do Studio
